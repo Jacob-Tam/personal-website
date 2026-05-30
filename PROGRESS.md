@@ -4,8 +4,10 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 1 — Tailwind config + design tokens + fonts + grain overlay: COMPLETE (awaiting Jacob's review at checkpoint).**
-- Step 0 (bootstrap) complete and committed.
+- **Step 1 (Tailwind config + design tokens + fonts + grain overlay): COMPLETE and committed.** Reviewed at checkpoint (commit `20fd984`).
+- **Step 2 (Layout shell): NOT STARTED.**
+- Step 0 (bootstrap): complete and committed (commit `4d48046`).
+- Session ended cleanly here. Working tree is clean, no half-finished work.
 
 ## Next action on resume
 - Jacob reviews the Step 1 checkpoint (near-black page, grain, Geist fonts, tokens).
