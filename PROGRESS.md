@@ -126,6 +126,17 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     drifts up + outward and fades (instanceColor), restoring on scroll-up.
   - Verified via store + screenshots: interlude beat (orb centered + pulse over the line; pin adds
     ~665px), mid-About drift + shedding, Projects = orb gone / phase past.
+- Refinements after Step 8 (Jacob's requests), before Step 9:
+  - Instagram in nav (icon, next to GitHub/LinkedIn) + footer (text); "resume" link in the nav,
+    left of work (opens /resume.pdf). PROJECTS bg word 2.5% -> 5% opacity.
+  - Core orb is now 3D: directional view-space shading in coreShader (lit side / shadow side) +
+    CORE.emissive 1.6 -> 1.3 so the form reads instead of clipping to a flat white disc.
+  - Orb lifts above the interlude text during the beat (CHOREOGRAPHY.interludeLift) so the
+    pulse/zoom is not on top of "Here's some of it." ScrollTrigger re-refreshes on
+    document.fonts.ready (interlude-pin robustness: it can mis-measure if scrolled before the
+    refresh settles on load).
+  - ~30% of particles are blue-violet (PARTICLES.purpleFraction / purpleHue*), rest steel-blue;
+    leva controls added. This intentionally overrides the docs' blue-only rule per Jacob.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
@@ -175,8 +186,8 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - Need a pick for the About photo (4 `.jpeg` candidates in `Assets/`).
 - Purpose of `Gemini_Generated_Image...png` and the two screenshots is unclear.
 - All current visuals are placeholders by Jacob's instruction even though real files exist.
-- Real GitHub + LinkedIn profile URLs (placeholders in lib/assets.ts point to site roots so they
-  never 404). Email (jotam916@gmail.com) is known and wired.
+- Real GitHub + LinkedIn + Instagram profile URLs (placeholders in lib/assets.ts point to site
+  roots so they never 404). Email (jotam916@gmail.com) is known and wired.
 
 ## Notes
 - leva must stay gated behind `import.meta.env.DEV` (Step 3 onward).
