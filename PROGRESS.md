@@ -4,16 +4,17 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 1 (Tailwind config + design tokens + fonts + grain overlay): COMPLETE and committed.** Reviewed at checkpoint (commit `20fd984`).
-- **Step 2 (Layout shell): NOT STARTED.**
-- Step 0 (bootstrap): complete and committed (commit `4d48046`).
-- Session ended cleanly here. Working tree is clean, no half-finished work.
+- **Step 2 (Layout shell): COMPLETE.** Awaiting Jacob's review at checkpoint.
+- **Step 3 (Static 3D scene): NOT STARTED.**
+- Steps 0, 1 complete and committed (`4d48046`, `20fd984`).
 
 ## Next action on resume
-- Jacob reviews the Step 1 checkpoint (near-black page, grain, Geist fonts, tokens).
-- On "continue": start **Step 2 — Layout shell** (feature-folder structure; stub Nav, Hero,
-  Interlude, About, Projects, Contact as empty full-height blocks in order; Zustand store
-  skeleton `src/store/useScrollStore.ts`). No 3D, no motion, no real content yet.
+- Jacob reviews the Step 2 checkpoint (scrollable page, all 5 sections in order, fixed nav).
+- On "continue": start **Step 3 — Static 3D scene** (persistent fixed `<Canvas>` behind
+  content at z-0; core sphere with subtle-noise shader + ~50 instanced orbiting particles on a
+  few tilted planes; slow idle rotation + core breathing only; NO scroll/cursor yet). Add leva
+  (DEV only) for tuning params, r3f-perf in dev, and create `src/lib/constants.ts` for the orb
+  params. Signature element + big tuning checkpoint: commit WIP after each working sub-piece.
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
@@ -33,6 +34,20 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     side-effect imports (TS couldn't resolve the bare specifiers otherwise).
   - Verified: dev server runs (localhost:5174), `npm run build` passes (TS + Vite + Tailwind),
     console clean. Screenshot reviewed.
+- Step 2:
+  - `src/store/useScrollStore.ts`: Zustand skeleton with the full ScrollState shape from
+    docs/03 (scrollProgress, heroProgress, mouse, phase, isLoaded, reducedMotion, lowPower) +
+    setters. `OrbPhase` type exported. Defaults: phase 'hero', everything else 0/false. Not
+    consumed yet (wired up Step 5/7/8/11/12/13).
+  - Section stubs, each a full-height `<section>` with an `id` (for later anchor scroll) and a
+    centered mono `NN / name` label: `nav/Nav.tsx` (fixed top bar, h-16, z-30), `hero/Hero.tsx`
+    (01), `interlude/Interlude.tsx` (02), `about/About.tsx` (03), `projects/Projects.tsx` (04),
+    `contact/Contact.tsx` (05). Sections after Hero have a `border-t border-border` hairline.
+  - `src/App.tsx`: composes Nav + the 5 sections inside `<main class="relative z-20">`, keeps
+    GrainOverlay, leaves comment markers for the Step 3 canvas mount and the Step 3+ analytics
+    drop-in. Step 1 specimen removed.
+  - Verified: build passes, console clean, full-page screenshot shows 5 sections in order with
+    fixed nav and hairline dividers; page scrolls top to bottom.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
