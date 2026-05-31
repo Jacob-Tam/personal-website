@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { GitHubIcon, LinkedInIcon } from '../shared/icons'
+import { GitHubIcon, InstagramIcon, LinkedInIcon } from '../shared/icons'
 import { LINKS } from '../../lib/assets'
 import { lenis } from '../../lib/lenis'
 
@@ -45,6 +45,16 @@ export function Nav() {
 
         <div className="flex items-center gap-8">
           <ul className="hidden items-center gap-8 sm:flex">
+            <li>
+              <a
+                href={LINKS.resume}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-text-mute transition-colors hover:text-accent-hi"
+              >
+                resume
+              </a>
+            </li>
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <a
@@ -75,6 +85,15 @@ export function Nav() {
               className="text-text-mute transition-colors hover:text-accent-hi"
             >
               <LinkedInIcon className="h-5 w-5" />
+            </a>
+            <a
+              href={LINKS.instagram}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Instagram"
+              className="text-text-mute transition-colors hover:text-accent-hi"
+            >
+              <InstagramIcon className="h-5 w-5" />
             </a>
           </div>
         </div>

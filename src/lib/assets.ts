@@ -20,5 +20,6 @@ export const LINKS = {
   email: 'jotam916@gmail.com',
   github: 'https://github.com',
   linkedin: 'https://www.linkedin.com',
+  instagram: 'https://www.instagram.com',
   resume: '/resume.pdf', // current version now; Jacob updates the PDF later
 }

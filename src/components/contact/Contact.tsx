@@ -22,6 +22,9 @@ export function Contact() {
           <a href={LINKS.linkedin} target="_blank" rel="noreferrer" className="text-text-mute transition-colors hover:text-accent-hi">
             linkedin
           </a>
+          <a href={LINKS.instagram} target="_blank" rel="noreferrer" className="text-text-mute transition-colors hover:text-accent-hi">
+            instagram
+          </a>
           <a href={LINKS.resume} target="_blank" rel="noreferrer" className="text-text-mute transition-colors hover:text-accent-hi">
             resume
           </a>

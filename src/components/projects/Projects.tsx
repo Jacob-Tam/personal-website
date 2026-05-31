@@ -18,7 +18,7 @@ export function Projects() {
     <section id="projects" className="relative overflow-hidden px-6 py-32 md:px-12">
       <span
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-20 -translate-x-1/2 select-none text-[22vw] font-semibold leading-none tracking-tighter text-text/[0.025]"
+        className="pointer-events-none absolute left-1/2 top-20 -translate-x-1/2 select-none text-[22vw] font-semibold leading-none tracking-tighter text-text/5"
       >
         PROJECTS
       </span>
