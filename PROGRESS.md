@@ -4,17 +4,20 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 2 (Layout shell): COMPLETE.** Awaiting Jacob's review at checkpoint.
-- **Step 3 (Static 3D scene): NOT STARTED.**
-- Steps 0, 1 complete and committed (`4d48046`, `20fd984`).
+- **Step 3 (Static 3D scene): COMPLETE.** Awaiting Jacob's review + leva tuning at checkpoint.
+- **Step 4 (Bloom + postprocessing): NOT STARTED.**
+- Steps 0-2 complete and committed (latest `eb658c4`); Step 3 sub-piece 1 committed (`1231da5`).
 
 ## Next action on resume
-- Jacob reviews the Step 2 checkpoint (scrollable page, all 5 sections in order, fixed nav).
-- On "continue": start **Step 3 — Static 3D scene** (persistent fixed `<Canvas>` behind
-  content at z-0; core sphere with subtle-noise shader + ~50 instanced orbiting particles on a
-  few tilted planes; slow idle rotation + core breathing only; NO scroll/cursor yet). Add leva
-  (DEV only) for tuning params, r3f-perf in dev, and create `src/lib/constants.ts` for the orb
-  params. Signature element + big tuning checkpoint: commit WIP after each working sub-piece.
+- Jacob reviews the orb and tunes the look in the leva panel (collapsed, top-right). This is
+  the "spend real time" checkpoint. Bloom (next step) transforms the glow, so don't over-tune
+  core/particle brightness yet.
+- On "continue": start **Step 4 — Bloom + postprocessing**. Add @react-three/postprocessing
+  EffectComposer + Bloom (subtle: intensity ~0.6-0.9, luminanceThreshold ~0.6, smoothing ~0.4),
+  optional slight vignette, expose in leva, tune against the palette, bake good values into
+  constants. IMPORTANT: re-verify the core shader color/tonemapping against the composer
+  pipeline (the `colorspace_fragment` chunk in coreShader.ts may need to come out once the
+  composer does the final conversion); confirm particles bloom correctly.
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
@@ -48,6 +51,21 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     drop-in. Step 1 specimen removed.
   - Verified: build passes, console clean, full-page screenshot shows 5 sections in order with
     fixed nav and hairline dividers; page scrolls top to bottom.
+- Step 3:
+  - `lib/constants.ts`: orb tuning defaults (CAMERA, CORE, PARTICLES, LIGHTS, GROUP, FOG, SEED).
+  - `three/Scene.tsx`: single persistent `<Canvas>` in a `pointer-events-none fixed inset-0 z-0`
+    div. drei PerspectiveCamera (leva fov/distance), scene `<fog>` for depth, low ambient +
+    point light at core. `OrbSystem` group (core + particles) slow idle-spins on Y. leva folders
+    (camera/core/particles/depth/lights) + r3f-perf, both DEV-only.
+  - `three/coreShader.ts` + `three/Orb.tsx`: emissive core, blue fresnel rim, 3D-simplex
+    internal turbulence, HDR output (toneMapped false), sinusoidal breathing.
+  - `three/OrbParticles.tsx`: 50 particles on `planes` tilted orbital planes as ONE instanced
+    mesh (IcosahedronGeometry detail 1, MeshBasicMaterial toneMapped false). Deterministic via
+    mulberry32(SEED): per-instance plane/radius/speed(mixed dir)/phase/size, per-instance hue
+    via setColorAt, global brightness gain via material.color for HDR. Orbit math in useFrame
+    (position is a pure function of elapsed time -> frame-rate independent). Depth dimming via fog.
+  - Verified: 60fps, 2 draw calls (core + 1 instanced), ~12k tris; particles animate (two
+    screenshots show movement). Core is flat-bright until Step 4 bloom.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
@@ -59,10 +77,19 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   `/public/media/`. Anchored as `/Assets/` so it doesn't also catch `src/assets/` on
   case-insensitive macOS.
 - Grain: SVG turbulence data-URI at 4% opacity (mid of the 3-5% spec range). Tunable.
-- Z-layering convention: canvas `z-0`, grain `z-10`, content `z-20`.
+- Z-layering convention: canvas `z-0`, grain `z-10`, content `z-20`, nav `z-30`.
+- Particles use MeshBasicMaterial (unlit) + scene fog for depth + an HDR brightness gain for
+  bloom eligibility. The spec's "lit by the core" point light is included but currently inert
+  (the unlit + emissive look matches the glowing-points reference better). Revisit only if needed.
+- Core color management: coreShader includes tonemapping + colorspace chunks for correct Step 3
+  display. Flagged to re-verify at Step 4 with the composer (the colorspace chunk may come out).
+- leva + r3f-perf currently ship in the bundle (only their UI is DEV-gated). Stripping them from
+  the prod bundle is deferred to the Step 15 performance pass, per the build order.
 
 ## Tuned values to eventually move into `src/lib/constants.ts`
-- (none yet — constants.ts is created in Step 3 for the orb params.)
+- constants.ts now exists with orb defaults. leva seeds FROM these but does not write back, so
+  whatever Jacob lands on in the panel must be copied back into the CORE / PARTICLES / CAMERA /
+  FOG / GROUP / LIGHTS objects by hand. Re-bake again after Step 4 bloom tuning.
 
 ## Blocked on Jacob / owed assets (tracked in ASSETS.md)
 - Taxi highlight video, Hyperloop pod photo, and `resume.pdf` are NOT in `Assets/` yet.
