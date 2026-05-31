@@ -7,17 +7,41 @@ import * as THREE from 'three'
 import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
-import { BLOOM, CAMERA, CORE, FOG, GROUP, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
+import { useScrollStore } from '../../store/useScrollStore'
+import { BLOOM, CAMERA, CORE, CURSOR, FOG, GROUP, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
 
 const isDev = import.meta.env.DEV
 
 // Core + particles as one group, slowly rotating overall (docs/04). useFrame must run inside
 // the Canvas, so this lives in its own component. Scroll choreography (Step 8) drives this
 // group's position later; for now it only idle-spins.
-function OrbSystem({ core, particles }: { core: Omit<OrbProps, 'segments'>; particles: ParticleProps }) {
+type CursorTuning = { lerp: number; clampX: number; clampY: number }
+
+function OrbSystem({
+  core,
+  particles,
+  cursor,
+}: {
+  core: Omit<OrbProps, 'segments'>
+  particles: ParticleProps
+  cursor: CursorTuning
+}) {
   const groupRef = useRef<THREE.Group>(null!)
   useFrame((_, delta) => {
-    groupRef.current.rotation.y += delta * GROUP.idleSpinY
+    const group = groupRef.current
+    group.rotation.y += delta * GROUP.idleSpinY
+
+    // Cursor-follow (hero only). Read the high-frequency mouse via getState(), never a reactive
+    // subscription (docs/09). Influence is full in the hero and fades to 0 as the user scrolls
+    // past it (heroProgress is driven in Step 8); reduced motion disables it entirely.
+    const { mouse, heroProgress, reducedMotion } = useScrollStore.getState()
+    const influence = reducedMotion ? 0 : 1 - heroProgress
+    const targetX = mouse.x * cursor.clampX * influence
+    const targetY = mouse.y * cursor.clampY * influence
+    // Frame-rate-independent easing, tuned to feel like `lerp` per frame at 60fps.
+    const alpha = 1 - Math.pow(1 - cursor.lerp, delta * 60)
+    group.position.x += (targetX - group.position.x) * alpha
+    group.position.y += (targetY - group.position.y) * alpha
   })
   return (
     <group ref={groupRef}>
@@ -91,6 +115,12 @@ export function Scene() {
     offset: { value: VIGNETTE.offset, min: 0, max: 1, step: 0.01 },
   })
 
+  const cursor = useControls('cursor', {
+    lerp: { value: CURSOR.lerp, min: 0.01, max: 0.2, step: 0.005 },
+    clampX: { value: CURSOR.clampX, min: 0, max: 3, step: 0.05 },
+    clampY: { value: CURSOR.clampY, min: 0, max: 3, step: 0.05 },
+  })
+
   return (
     <>
       {isDev && <Leva collapsed />}
@@ -101,7 +131,7 @@ export function Scene() {
           <fog attach="fog" args={[FOG.color, depth.fogNear, depth.fogFar]} />
           <ambientLight intensity={lights.ambient} />
           <pointLight position={[0, 0, 0]} intensity={lights.pointIntensity} decay={2} color="#ffffff" />
-          <OrbSystem core={core} particles={particles} />
+          <OrbSystem core={core} particles={particles} cursor={cursor} />
           <EffectComposer multisampling={4} frameBufferType={THREE.HalfFloatType}>
             <Bloom
               intensity={bloom.intensity}

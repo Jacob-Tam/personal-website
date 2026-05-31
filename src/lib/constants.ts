@@ -49,6 +49,12 @@ export const GROUP = {
   idleSpinY: 0.04, // rad/s, slow overall rotation of the whole orb system
 }
 
+export const CURSOR = {
+  lerp: 0.05, // trailing ease; the orb chases the cursor with a lag (docs/04)
+  clampX: 1.2, // max horizontal drift in world units (never far enough to hide the name)
+  clampY: 0.8, // max vertical drift
+}
+
 export const FOG = {
   near: 4,
   far: 9.5,

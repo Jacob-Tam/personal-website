@@ -4,18 +4,30 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 4 (Bloom + postprocessing): COMPLETE.** Awaiting Jacob's review at checkpoint.
-- **Step 5 (Hero cursor-follow): NOT STARTED.**
-- Steps 0-3 complete and committed (latest `6698134`).
+- **Step 5 (Hero cursor-follow): COMPLETE.** Awaiting Jacob's review at checkpoint.
+- **Step 6 (All sections as static 2D content): NOT STARTED.**
+- Steps 0-4 complete and committed (latest `cb5ced2`).
 
 ## Next action on resume
-- Jacob reviews the bloomed orb (may tune bloom/vignette in leva).
-- On "continue": start **Step 5 — Hero cursor-follow**. Single mousemove listener -> normalized
-  mouse (-1..1) into useScrollStore (hero phase only). The orb GROUP position lerps (~0.05)
-  toward a clamped mouse-driven offset (clamp ~+/-1.2 x, +/-0.8 y so the name stays readable);
-  particles follow because they orbit the moving core. Read mouse via useScrollStore.getState()
-  inside useFrame (NO reactive subscription). Cursor influence will later fade as heroProgress
-  rises (Step 8); for now it is simply always-on. Expose lerp + clamp in leva.
+- Jacob reviews the cursor-follow (move the mouse in the hero; the orb trails it with a lag).
+- On "continue": start **Step 6 - All sections as static 2D content** (the big layout step; NO
+  scroll choreography/parallax yet, hover states OK). Use VERBATIM copy from docs/02. Build:
+  - Nav: "Jacob Tam" / work / about / contact + GitHub + LinkedIn icons (hide-on-scroll is
+    Step 7+; static for now). JT logo = text "JT" placeholder.
+  - Hero overlay: name (display) + tagline (body-lg), white, centered over the orb; subtle
+    radial dark gradient behind the text for contrast floor (docs/06); small mono scroll
+    affordance at the bottom. Replaces the "01/HERO" stub.
+  - Interlude: "Here's some of it." centered (h2-ish).
+  - About: 3 paragraphs left (verbatim) + TiltPhoto right (blue duotone -> full colour on hover
+    + cursor tilt). Placeholder portrait ~4:5.
+  - Projects: title + faint giant "PROJECTS" bg word (static now); 2-col staggered cards (4, in
+    docs/02 order) with placeholder media (poster+play for the 3 videos, gray block for
+    hyperloop); hover lift+scale, border -> accent; click opens an OVERLAY-style expanded view
+    (NOT grid reflow) with larger media + full description + Geist Mono tech tags + close.
+  - Contact/footer: "Get in touch", mailto, github/linkedin/resume, colophon line.
+  - Create `src/lib/assets.ts` (single source of non-project asset paths) and
+    `projectsData.ts` (typed project data incl. media paths). Placeholders per ASSETS.md.
+  - Commit WIP per section (big step).
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
@@ -73,6 +85,17 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     default), there is no `disableNormalPass`.
   - Verified: core glows softly, particles glow as steel-blue points, colors correct, 60fps,
     ~19 draw calls (bloom mipmap passes), console clean.
+- Step 5:
+  - `lib/useHeroPointer.ts`: single window pointermove listener, gated to phase === 'hero',
+    writes a normalized (-1..1, y-up) pointer to the store; resets to (0,0) off-hero. Called once
+    in App.
+  - `lib/constants.ts`: CURSOR (lerp 0.05, clampX 1.2, clampY 0.8).
+  - `three/Scene.tsx`: OrbSystem group position eases toward the clamped mouse offset each frame
+    (mouse read via getState()). influence = reducedMotion ? 0 : 1 - heroProgress, so it
+    auto-fades when Step 8 drives heroProgress and is off under reduced motion (Step 13).
+    Frame-rate-independent easing. leva 'cursor' folder (lerp/clampX/clampY).
+  - Verified by dispatching pointermove to opposite corners: orb trails the cursor with lag in
+    both directions, particles follow, clamp keeps it on-screen and off the name. 60fps.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
