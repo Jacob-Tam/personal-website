@@ -48,14 +48,29 @@ export function OrbParticles(props: ParticleProps) {
 
   const { plane, radius, speed, phase, size, planeMatrices } = useMemo(() => {
     const rng = mulberry32(SEED)
+    const planeCount = Math.max(1, props.planes)
+
+    // Per plane: a tilt, a base radius (the rings nest at distinct radii from inner to outer),
+    // and one rigid angular speed + direction. Sharing the speed and base radius across a plane
+    // keeps it reading as a clean tilted RING (a stylized Bohr atom), not a fuzzy cloud (docs/04
+    // C4). Size, phase spacing, and a tiny radius jitter still vary per particle for life.
     const planeMatrices: THREE.Matrix4[] = []
-    for (let p = 0; p < props.planes; p++) {
+    const planeRadius: number[] = []
+    const planeSpeed: number[] = []
+    const planeCounts = new Array(planeCount).fill(0)
+    for (let i = 0; i < props.count; i++) planeCounts[i % planeCount]++
+
+    for (let p = 0; p < planeCount; p++) {
       const euler = new THREE.Euler(
         (rng() - 0.5) * Math.PI, // tilt out of the screen plane
-        (p / props.planes) * Math.PI + (rng() - 0.5) * 0.6, // spread the planes around
+        (p / planeCount) * Math.PI + (rng() - 0.5) * 0.6, // spread the planes around
         (rng() - 0.5) * Math.PI,
       )
       planeMatrices.push(new THREE.Matrix4().makeRotationFromEuler(euler))
+      const t = planeCount > 1 ? p / (planeCount - 1) : 0.5
+      planeRadius.push(THREE.MathUtils.lerp(props.radiusMin, props.radiusMax, t))
+      const magnitude = THREE.MathUtils.lerp(props.speedMin, props.speedMax, rng())
+      planeSpeed.push(rng() < 0.5 ? -magnitude : magnitude)
     }
 
     const plane = new Int32Array(props.count)
@@ -63,12 +78,15 @@ export function OrbParticles(props: ParticleProps) {
     const speed = new Float32Array(props.count)
     const phase = new Float32Array(props.count)
     const size = new Float32Array(props.count)
+    const seenOnPlane = new Array(planeCount).fill(0)
     for (let i = 0; i < props.count; i++) {
-      plane[i] = i % Math.max(1, props.planes)
-      radius[i] = THREE.MathUtils.lerp(props.radiusMin, props.radiusMax, rng())
-      const magnitude = THREE.MathUtils.lerp(props.speedMin, props.speedMax, rng())
-      speed[i] = rng() < 0.5 ? -magnitude : magnitude
-      phase[i] = rng() * Math.PI * 2
+      const p = i % planeCount
+      const k = seenOnPlane[p]++
+      plane[i] = p
+      // Even spacing around the ring + a little jitter so it is not mechanically perfect.
+      phase[i] = (k / planeCounts[p]) * Math.PI * 2 + (rng() - 0.5) * 0.4
+      radius[i] = planeRadius[p] + (rng() - 0.5) * 0.12
+      speed[i] = planeSpeed[p]
       size[i] = THREE.MathUtils.lerp(props.sizeMin, props.sizeMax, rng())
     }
     return { plane, radius, speed, phase, size, planeMatrices }

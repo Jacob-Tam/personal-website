@@ -117,6 +117,11 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   Verified at Step 4, left as-is.
 - leva + r3f-perf currently ship in the bundle (only their UI is DEV-gated). Stripping them from
   the prod bundle is deferred to the Step 15 performance pass, per the build order.
+- Step 3 correction (made during the Step 5 review): particle distribution rebuilt so each plane
+  is a clean tilted RING (shared base radius + rigid per-plane angular speed + even phase spacing)
+  rather than a random per-particle scatter. The first pass read as the "fuzzy cloud" docs/04 C4
+  warns against and looked flat; concentric tilted rings read as a 3D Bohr atom. The strongest 3D
+  cue still arrives with the Step 8 scroll motion (orb drifting up past the viewer).
 
 ## Tuned values to eventually move into `src/lib/constants.ts`
 - constants.ts now exists with orb defaults. leva seeds FROM these but does not write back, so
