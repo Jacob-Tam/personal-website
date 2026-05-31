@@ -55,5 +55,18 @@ export const FOG = {
   color: '#000102', // --color-bg, so distant particles fade into the page
 }
 
+export const BLOOM = {
+  intensity: 0.75, // subtle/technical, not white-hot dreamy (docs/04 C9)
+  luminanceThreshold: 0.6, // only the bright orb/particles bloom, not the dark bg
+  luminanceSmoothing: 0.4,
+  radius: 0.7, // spread of the mipmap blur
+}
+
+export const VIGNETTE = {
+  enabled: true, // very subtle; toggle off in leva if it muddies the scene
+  darkness: 0.35,
+  offset: 0.35,
+}
+
 // Fixed seed so the particle distribution is identical every load (not reshuffled).
 export const SEED = 1337

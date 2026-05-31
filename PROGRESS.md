@@ -4,20 +4,18 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 3 (Static 3D scene): COMPLETE.** Awaiting Jacob's review + leva tuning at checkpoint.
-- **Step 4 (Bloom + postprocessing): NOT STARTED.**
-- Steps 0-2 complete and committed (latest `eb658c4`); Step 3 sub-piece 1 committed (`1231da5`).
+- **Step 4 (Bloom + postprocessing): COMPLETE.** Awaiting Jacob's review at checkpoint.
+- **Step 5 (Hero cursor-follow): NOT STARTED.**
+- Steps 0-3 complete and committed (latest `6698134`).
 
 ## Next action on resume
-- Jacob reviews the orb and tunes the look in the leva panel (collapsed, top-right). This is
-  the "spend real time" checkpoint. Bloom (next step) transforms the glow, so don't over-tune
-  core/particle brightness yet.
-- On "continue": start **Step 4 — Bloom + postprocessing**. Add @react-three/postprocessing
-  EffectComposer + Bloom (subtle: intensity ~0.6-0.9, luminanceThreshold ~0.6, smoothing ~0.4),
-  optional slight vignette, expose in leva, tune against the palette, bake good values into
-  constants. IMPORTANT: re-verify the core shader color/tonemapping against the composer
-  pipeline (the `colorspace_fragment` chunk in coreShader.ts may need to come out once the
-  composer does the final conversion); confirm particles bloom correctly.
+- Jacob reviews the bloomed orb (may tune bloom/vignette in leva).
+- On "continue": start **Step 5 — Hero cursor-follow**. Single mousemove listener -> normalized
+  mouse (-1..1) into useScrollStore (hero phase only). The orb GROUP position lerps (~0.05)
+  toward a clamped mouse-driven offset (clamp ~+/-1.2 x, +/-0.8 y so the name stays readable);
+  particles follow because they orbit the moving core. Read mouse via useScrollStore.getState()
+  inside useFrame (NO reactive subscription). Cursor influence will later fade as heroProgress
+  rises (Step 8); for now it is simply always-on. Expose lerp + clamp in leva.
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
@@ -66,6 +64,15 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     (position is a pure function of elapsed time -> frame-rate independent). Depth dimming via fog.
   - Verified: 60fps, 2 draw calls (core + 1 instanced), ~12k tris; particles animate (two
     screenshots show movement). Core is flat-bright until Step 4 bloom.
+- Step 4:
+  - `lib/constants.ts`: added BLOOM (intensity 0.75, threshold 0.6, smoothing 0.4, radius 0.7)
+    and VIGNETTE (enabled, darkness 0.35, offset 0.35).
+  - `three/Scene.tsx`: `<EffectComposer multisampling={4} frameBufferType={HalfFloatType}>` with
+    `<Bloom mipmapBlur>` + `<Vignette>` (darkness 0 when toggled off, to avoid conditional effect
+    children). leva folders bloom + vignette. v3 prop note: use `enableNormalPass` (off by
+    default), there is no `disableNormalPass`.
+  - Verified: core glows softly, particles glow as steel-blue points, colors correct, 60fps,
+    ~19 draw calls (bloom mipmap passes), console clean.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
@@ -81,8 +88,10 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - Particles use MeshBasicMaterial (unlit) + scene fog for depth + an HDR brightness gain for
   bloom eligibility. The spec's "lit by the core" point light is included but currently inert
   (the unlit + emissive look matches the glowing-points reference better). Revisit only if needed.
-- Core color management: coreShader includes tonemapping + colorspace chunks for correct Step 3
-  display. Flagged to re-verify at Step 4 with the composer (the colorspace chunk may come out).
+- Core color management: coreShader's tonemapping + colorspace chunks render correctly both
+  standalone (Step 3) and through the composer (Step 4): the colorspace chunk no-ops on the
+  composer's linear intermediate target, and the composer's OutputPass does the final sRGB.
+  Verified at Step 4, left as-is.
 - leva + r3f-perf currently ship in the bundle (only their UI is DEV-gated). Stripping them from
   the prod bundle is deferred to the Step 15 performance pass, per the build order.
 

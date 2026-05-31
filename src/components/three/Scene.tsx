@@ -6,7 +6,8 @@ import { Leva, useControls } from 'leva'
 import * as THREE from 'three'
 import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
-import { CAMERA, CORE, FOG, GROUP, LIGHTS, PARTICLES } from '../../lib/constants'
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
+import { BLOOM, CAMERA, CORE, FOG, GROUP, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
 
 const isDev = import.meta.env.DEV
 
@@ -77,6 +78,19 @@ export function Scene() {
     pointIntensity: { value: LIGHTS.pointIntensity, min: 0, max: 6, step: 0.1 },
   })
 
+  const bloom = useControls('bloom', {
+    intensity: { value: BLOOM.intensity, min: 0, max: 2, step: 0.01 },
+    luminanceThreshold: { value: BLOOM.luminanceThreshold, min: 0, max: 1, step: 0.01 },
+    luminanceSmoothing: { value: BLOOM.luminanceSmoothing, min: 0, max: 1, step: 0.01 },
+    radius: { value: BLOOM.radius, min: 0, max: 1, step: 0.01 },
+  })
+
+  const vignette = useControls('vignette', {
+    enabled: VIGNETTE.enabled,
+    darkness: { value: VIGNETTE.darkness, min: 0, max: 1, step: 0.01 },
+    offset: { value: VIGNETTE.offset, min: 0, max: 1, step: 0.01 },
+  })
+
   return (
     <>
       {isDev && <Leva collapsed />}
@@ -88,6 +102,20 @@ export function Scene() {
           <ambientLight intensity={lights.ambient} />
           <pointLight position={[0, 0, 0]} intensity={lights.pointIntensity} decay={2} color="#ffffff" />
           <OrbSystem core={core} particles={particles} />
+          <EffectComposer multisampling={4} frameBufferType={THREE.HalfFloatType}>
+            <Bloom
+              intensity={bloom.intensity}
+              luminanceThreshold={bloom.luminanceThreshold}
+              luminanceSmoothing={bloom.luminanceSmoothing}
+              radius={bloom.radius}
+              mipmapBlur
+            />
+            <Vignette
+              darkness={vignette.enabled ? vignette.darkness : 0}
+              offset={vignette.offset}
+              eskil={false}
+            />
+          </EffectComposer>
         </Canvas>
       </div>
     </>
