@@ -3,6 +3,7 @@ import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useScrollStore } from '../store/useScrollStore'
+import { CHOREOGRAPHY } from './constants'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -25,7 +26,8 @@ export function useSmoothScroll() {
     const raf = (time: number) => instance.raf(time * 1000)
     gsap.ticker.add(raf)
     gsap.ticker.lagSmoothing(0)
-    const { setScrollProgress, setHeroProgress, setDriftProgress, setPhase } = useScrollStore.getState()
+    const { setScrollProgress, setHeroProgress, setInterludeProgress, setDriftProgress, setPhase } =
+      useScrollStore.getState()
     instance.on('scroll', () => {
       ScrollTrigger.update()
       setScrollProgress(instance.progress || 0)
@@ -40,10 +42,18 @@ export function useSmoothScroll() {
         scrub: true,
         onUpdate: (self) => setHeroProgress(self.progress),
       }),
-      // Interlude phase. The pin that makes it "harder to scroll" + interludeProgress is added next.
+      // Interlude: PINNED so the user must scroll extra to pass it ("harder to scroll", per
+      // Jacob's request) - the dwell where the orb slows almost to a stop and pulses once.
+      // interludeProgress scrubs 0..1 across the pin and drives that beat.
       ScrollTrigger.create({
         trigger: '#interlude',
-        start: 'top 60%',
+        start: 'top top',
+        end: () => '+=' + window.innerHeight * CHOREOGRAPHY.interludePinVh,
+        pin: true,
+        scrub: true,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => setInterludeProgress(self.progress),
         onEnter: () => setPhase('interlude'),
         onLeaveBack: () => setPhase('hero'),
       }),
