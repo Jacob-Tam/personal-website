@@ -60,12 +60,11 @@ export const CURSOR = {
 }
 
 export const CHOREOGRAPHY = {
-  driftDistance: 6, // world units the orb rises (group.y) to fully clear the top of the screen
-  positionLerp: 0.08, // ease toward the scroll-driven target position
-  // Interlude: the orb sweeps right -> left along a sideways-U arc, staying above the text.
-  interludeSweepX: 2.2, // horizontal half-span of the sweep (right at start, left at end)
-  interludeLiftHigh: 1.8, // y at the U's tips (up high, above the text)
-  interludeUDepth: 0.6, // how far it dips at the centre of the U (still above the text)
+  driftDistance: 8, // world units the orb rises (group.y) from its below-text interlude end to off-screen
+  positionLerp: 0.05, // floatier ease toward the scroll-driven target (less snappy)
+  // Interlude: the orb arcs clockwise around the centered text - starts above it, swings through
+  // the right, ends below it at horizontal center.
+  interludeRadius: 2.1, // radius of that arc (clears the text on all sides)
   pulseAmount: 0.18, // group scale bump at the interlude beat
   rotationStill: 0.85, // how much the idle spin slows at the beat (0..1)
   interludePinVh: 0.9, // interlude pin length as a fraction of viewport height ("harder to scroll")

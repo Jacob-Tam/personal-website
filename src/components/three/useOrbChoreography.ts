@@ -36,20 +36,23 @@ export function useOrbChoreography(groupRef: RefObject<Group | null>, cursor: Cu
     // Idle spin, slowed almost to a stop at the interlude beat.
     group.rotation.y += delta * GROUP.idleSpinY * (1 - CHOREOGRAPHY.rotationStill * beat)
 
-    // Interlude: the orb sweeps right -> left along a sideways-U arc that stays above the text
-    // (cos puts it on the right at the start, centre at the beat, left at the end; sin dips it).
-    // Active from the interlude onward; the horizontal offset fades out as the About drift lifts
-    // it away, so it recenters as it exits upward.
+    // Interlude: the orb arcs CLOCKWISE around the centered text - starts above it, swings through
+    // the right, ends below it at horizontal center. Smoothstep eases the arc in/out so there is no
+    // snap at the start. theta: +pi/2 (top) -> 0 (right) -> -pi/2 (bottom). Active from the
+    // interlude onward; during About the arc holds at the bottom (0, -radius) and the drift lifts
+    // it from there up and off the screen.
     const interludeActive = phase === 'hero' ? 0 : 1
-    const sweepX = CHOREOGRAPHY.interludeSweepX * Math.cos(interludeProgress * Math.PI) * (1 - driftProgress)
-    const sweepY = CHOREOGRAPHY.interludeLiftHigh - CHOREOGRAPHY.interludeUDepth * Math.sin(interludeProgress * Math.PI)
+    const eased = interludeProgress * interludeProgress * (3 - 2 * interludeProgress)
+    const theta = (0.5 - eased) * Math.PI
+    const orbitX = CHOREOGRAPHY.interludeRadius * Math.cos(theta)
+    const orbitY = CHOREOGRAPHY.interludeRadius * Math.sin(theta)
 
-    // x: faded cursor offset (-> 0 as the hero exits) + the interlude sweep.
+    // x: faded cursor offset (-> 0 as the hero exits) + the interlude arc.
     // y: faded cursor offset + the interlude arc + the upward scroll drift through About.
     const cursorInfluence = reducedMotion ? 0 : 1 - heroProgress
-    const targetX = mouse.x * cursor.clampX * cursorInfluence + interludeActive * sweepX
+    const targetX = mouse.x * cursor.clampX * cursorInfluence + interludeActive * orbitX
     const targetY =
-      mouse.y * cursor.clampY * cursorInfluence + interludeActive * sweepY + driftProgress * CHOREOGRAPHY.driftDistance
+      mouse.y * cursor.clampY * cursorInfluence + interludeActive * orbitY + driftProgress * CHOREOGRAPHY.driftDistance
 
     // Frame-rate-independent easing: cursor rate for x, a slightly firmer rate for the y drift.
     const cursorAlpha = 1 - Math.pow(1 - cursor.lerp, delta * 60)
