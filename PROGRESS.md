@@ -137,11 +137,12 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     refresh settles on load).
   - ~30% of particles are blue-violet (PARTICLES.purpleFraction / purpleHue*), rest steel-blue;
     leva controls added. This intentionally overrides the docs' blue-only rule per Jacob.
-  - leva panel moved BELOW the nav (top-left) so it stops covering the nav links (was top-center
-    over "resume").
-  - Interlude motion changed to a right -> left sideways-U sweep (CHOREOGRAPHY.interludeSweepX /
-    interludeLiftHigh / interludeUDepth), replacing the straight vertical lift. Stays above the
-    text; recenters as it drifts up.
+  - leva panel: top-center at the very top, narrowed to w-64; nav is now full-width (no max-w-6xl)
+    so its wordmark/links/icons sit at the screen edges, clear of the panel.
+  - Interlude motion (final): the orb arcs CLOCKWISE around the centered text - starts above it,
+    swings through the right, ends below it at horizontal center; then the About drift lifts it
+    from there up and off. Smoothstep-eased (no snappy start). CHOREOGRAPHY.interludeRadius +
+    positionLerp 0.05 + driftDistance 8 (it starts the drift from below the text now).
   - `shared/BackgroundWord` extracted; About ("ABOUT") + Contact ("CONTACT") now have the faint
     giant background word like Projects. About's is subtler (behind the text column) - reposition
     if Jacob wants it more prominent.
