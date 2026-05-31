@@ -9,13 +9,14 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - Steps 0-7 complete and committed; Step 8 in 3 commits (latest `a1a1d65`).
 
 ## Next action on resume
-- Jacob reviews the orb choreography end to end: cursor fade -> centered interlude beat (PINNED,
-  "harder to scroll") -> upward drift + particle shedding through About -> gone by Projects (canvas
-  frameloop off). The orb-floats-behind-every-section issue is resolved.
-- On "continue": start **Step 9 - Parallax system**. Reusable `shared/Parallax.tsx` (GSAP, reads
-  the Lenis scroll) applied to: the faint giant PROJECTS bg word (slow), the About photo vs text
-  column (photo slightly slower), and project media vs its caption. Subtle/restrained. Disabled
-  under reduced-motion + mobile (fully wired in Steps 12/13). Orb parallax is already handled (Step 8).
+- Step 8 + a batch of Jacob's refinements are done (see below). Jacob is tuning the orb via the
+  dev leva 'choreography' folder. **Do NOT start Step 9 until Jacob says go** (he asked to be
+  prompted first).
+- When Jacob says go: start **Step 9 - Parallax system**. Reusable `shared/Parallax.tsx` (GSAP,
+  reads the Lenis scroll) applied to: the faint giant PROJECTS/ABOUT/CONTACT bg words (slow), the
+  About photo vs text column (photo slightly slower), and project media vs its caption.
+  Subtle/restrained. Disabled under reduced-motion + mobile (fully wired in Steps 12/13). Orb
+  parallax is already handled (Step 8).
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
@@ -181,9 +182,10 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - Bloom-bump at the interlude beat is DEFERRED: passing a ref to @react-three/postprocessing
   <Bloom> crashes its reconciler with a circular-structure-to-JSON error, so the pulse is
   scale-only. Revisit with a non-ref method if the bloom bump is wanted.
-- Choreography + pin + shed values live in lib/constants (CHOREOGRAPHY / SHED / interludePinVh),
-  NOT in leva yet. docs/05 suggests leva-tuning these; deferred to keep the frame-loop/pin wiring
-  simple. Easy to expose a leva 'choreography' folder if Jacob wants to dial drift/pulse/pin live.
+- Choreography is now live-tunable via a dev leva 'choreography' folder (interludeRadius,
+  driftDistance, positionLerp, pulseAmount, rotationStill, pinVh). Defaults in CHOREOGRAPHY; the
+  pin length flows through lib/lenis.ts setInterludePin() (re-refreshes ScrollTrigger). Whatever
+  Jacob lands on must be baked back into CHOREOGRAPHY. SHED params remain constants (not leva yet).
 
 ## Tuned values to eventually move into `src/lib/constants.ts`
 - constants.ts now exists with orb defaults. leva seeds FROM these but does not write back, so
