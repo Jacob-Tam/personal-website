@@ -33,7 +33,7 @@ export function Nav() {
         atTop ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
       }`}
     >
-      <nav className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 md:px-12">
+      <nav className="flex h-20 w-full items-center justify-between px-6 md:px-12">
         {/* Wordmark placeholder for the JT logo (docs/02). */}
         <a
           href="#hero"

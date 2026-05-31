@@ -113,12 +113,12 @@ export function Scene() {
 
   return (
     <>
-      {/* DEV-only orb controls, anchored below the 80px nav bar (left) so they never cover the
-          nav links or social icons. */}
+      {/* DEV-only orb controls, anchored top-center (narrow) - the nav is full-width so its
+          links/icons sit at the screen edges, clear of this panel. */}
       {isDev && (
-        <div className="pointer-events-none fixed left-4 top-24 z-50 w-80">
+        <div className="pointer-events-none fixed left-1/2 top-1 z-50 w-64 -translate-x-1/2">
           <div className="pointer-events-auto">
-            <Leva fill flat collapsed titleBar={{ drag: true, title: 'orb controls' }} />
+            <Leva fill flat collapsed titleBar={{ drag: false, title: 'orb controls' }} />
           </div>
         </div>
       )}
