@@ -73,6 +73,9 @@ export function useSmoothScroll() {
     ]
 
     ScrollTrigger.refresh()
+    // Fonts can shift layout after that first refresh; re-measure once they are ready so the pin
+    // positions (and other triggers) are correct on load.
+    document.fonts?.ready.then(() => ScrollTrigger.refresh())
 
     // DEV-only: expose the store + log phase changes so the values are easy to verify.
     let unsubscribe: (() => void) | undefined

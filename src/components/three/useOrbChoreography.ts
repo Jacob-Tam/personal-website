@@ -39,7 +39,12 @@ export function useOrbChoreography(groupRef: RefObject<Group | null>, cursor: Cu
     // PLUS the upward scroll drift through About.
     const cursorInfluence = reducedMotion ? 0 : 1 - heroProgress
     const targetX = mouse.x * cursor.clampX * cursorInfluence
-    const targetY = mouse.y * cursor.clampY * cursorInfluence + driftProgress * CHOREOGRAPHY.driftDistance
+    // Lift the orb above the interlude text (so the pulse is not on top of it), eased so it is
+    // already clear by the beat; the About drift then carries it the rest of the way up.
+    const interludeLift =
+      CHOREOGRAPHY.interludeLift * (1 - (1 - interludeProgress) * (1 - interludeProgress))
+    const targetY =
+      mouse.y * cursor.clampY * cursorInfluence + interludeLift + driftProgress * CHOREOGRAPHY.driftDistance
 
     // Frame-rate-independent easing: cursor rate for x, a slightly firmer rate for the y drift.
     const cursorAlpha = 1 - Math.pow(1 - cursor.lerp, delta * 60)
