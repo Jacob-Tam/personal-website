@@ -4,21 +4,21 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 6 (All sections as static 2D content): COMPLETE.** Awaiting Jacob's review at checkpoint.
-- **Step 7 (Lenis + GSAP ScrollTrigger + scroll progress + Reveal): NOT STARTED.**
-- Steps 0-5 complete and committed; Step 3 ring fix `5b290ab`; Step 6 in 3 commits (latest `379df47`).
+- **Step 7 (Lenis + GSAP ScrollTrigger + scroll progress + Reveal): COMPLETE.** Awaiting review.
+- **Step 8 (Orb scroll choreography): NOT STARTED.**
+- Steps 0-6 complete and committed (latest Step 6 `379df47`, PROGRESS `dd45504`).
 
 ## Next action on resume
-- Jacob reviews the full static page end to end (hero, interlude, about + TiltPhoto, projects +
-  expanded overlay, contact). NOTE: the orb currently floats behind every section because the
-  fixed canvas never stops; that is expected until Step 8 makes it exit and sets frameloop off.
-- On "continue": start **Step 7 - Lenis + GSAP ScrollTrigger + scroll progress**. Wire
-  `lib/lenis.ts` (Lenis + gsap.ticker -> lenis.raf, ScrollTrigger.update on scroll,
-  lagSmoothing 0). One RAF updates scrollProgress / heroProgress / phase in the store from
-  section DOM positions via ScrollTrigger per section (NOT fixed percentages, docs/09). Add
-  `shared/Reveal.tsx` (fade/slide-up on enter; opacity-only/instant under reduced motion) and
-  apply to headings/paragraphs/cards. Make nav links smooth-scroll via Lenis + add hide-on-scroll.
-  Switch ProjectExpanded's body-overflow lock to lenis.stop()/start(). Log store values to verify.
+- Jacob reviews smooth scroll, reveal-on-enter, nav show-at-top/hide-on-scroll, and the
+  top-center leva panel.
+- On "continue": start **Step 8 - Orb scroll choreography** (second big tuning step). Drive the
+  orb group from the store each frame (extend OrbSystem or add `three/useOrbChoreography.ts`):
+  cursor-follow fades out as heroProgress rises (already wired) -> orb settles x to 0 at the
+  interlude, slows almost to a stop + ONE scale/bloom pulse -> drifts upward through About with
+  progressive particle shedding (released particles get upward velocity + outward drift, fade as
+  they exit the top) -> fully gone by end of About; then set canvas frameloop 'never' (re-enable
+  if scrolled back up). Tie boundaries to the phase triggers in lib/lenis.ts; tune in leva, bake
+  to constants. Commit WIP sub-pieces. NOTE: this resolves the orb-floats-behind-every-section issue.
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
@@ -99,6 +99,22 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     staggered cards, hover lift+scale + border->accent, overlay expanded view (media + full
     description + Geist Mono tech tags; close via X / click-outside / Escape; scroll-locked).
   - Verified full page top-to-bottom + card open/close. Real copy verbatim; all media placeholder.
+- Step 7 (Lenis + GSAP ScrollTrigger + scroll progress + Reveal):
+  - `lib/lenis.ts` useSmoothScroll(): Lenis (duration 1.1, autoRaf false) driven by gsap.ticker;
+    ScrollTrigger.update + scrollProgress written each scroll frame; heroProgress from a scrubbed
+    #hero trigger; phase from #interlude/#about/#projects start triggers (onEnter/onLeaveBack),
+    DOM-position based (NOT fixed %). Module `lenis` handle exported. DEV: exposes window.scrollStore
+    + window.lenis and console-logs phase changes.
+  - `shared/Reveal.tsx`: useGSAP fade+slide-up on enter (once); optional `stagger` reveals direct
+    children in sequence; opacity-only under prefers-reduced-motion. Applied to interlude, About
+    (paragraphs stagger + photo), Projects (title + each card), Contact (staggered). Hero is NOT
+    wrapped (its fade-in is the Step 11 load reveal).
+  - `nav/Nav`: visible only near top (scrollY < 40), hides on scroll, reappears at top; links
+    smooth-scroll via lenis.scrollTo. `ProjectExpanded`: scroll lock now lenis.stop()/start().
+  - leva panel moved to top-center (fill + flat in a fixed wrapper) so it clears nav + socials.
+  - Verified: nav "about" click lands exactly on About (scrollY 1478, phase 'about'); nav hides on
+    scroll; reveals animate; phase chain hero->interlude->about->past; heroProgress 0..1.
+  - Phase trigger thresholds ('top 60/70%') are approximate placeholders; tuned in leva in Step 8.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in

@@ -1,4 +1,5 @@
 import { Scene } from './components/three/Scene'
+import { useSmoothScroll } from './lib/lenis'
 import { useHeroPointer } from './lib/useHeroPointer'
 import { GrainOverlay } from './components/shared/GrainOverlay'
 import { Nav } from './components/nav/Nav'
@@ -9,6 +10,8 @@ import { Projects } from './components/projects/Projects'
 import { Contact } from './components/contact/Contact'
 
 function App() {
+  // Lenis smooth scroll + GSAP ScrollTrigger; populates scrollProgress / heroProgress / phase.
+  useSmoothScroll()
   // Feeds the normalized hero pointer into the store (hero phase only); the orb reads it.
   useHeroPointer()
 

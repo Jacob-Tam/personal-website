@@ -123,7 +123,14 @@ export function Scene() {
 
   return (
     <>
-      {isDev && <Leva collapsed />}
+      {/* DEV-only orb controls, anchored top-center so they clear the nav links + social icons. */}
+      {isDev && (
+        <div className="pointer-events-none fixed left-1/2 top-2 z-50 w-80 -translate-x-1/2">
+          <div className="pointer-events-auto">
+            <Leva fill flat collapsed titleBar={{ drag: false, title: 'orb controls' }} />
+          </div>
+        </div>
+      )}
       <div className="pointer-events-none fixed inset-0 z-0">
         <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]}>
           {isDev && <Perf position="bottom-right" />}

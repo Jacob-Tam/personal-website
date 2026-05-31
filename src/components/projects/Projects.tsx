@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Reveal } from '../shared/Reveal'
 import { PROJECTS, type Project } from './projectsData'
 import { ProjectCard } from './ProjectCard'
 import { ProjectExpanded } from './ProjectExpanded'
@@ -23,16 +24,26 @@ export function Projects() {
       </span>
 
       <div className="relative mx-auto max-w-5xl">
-        <h2 className="text-h2 text-text">Projects</h2>
+        <Reveal>
+          <h2 className="text-h2 text-text">Projects</h2>
+        </Reveal>
 
         <div className="mt-16 grid gap-12 md:grid-cols-2">
           <div className="flex flex-col gap-16">
-            <ProjectCard project={PROJECTS[0]} onOpen={(project) => setOpenProject(project)} />
-            <ProjectCard project={PROJECTS[2]} onOpen={(project) => setOpenProject(project)} />
+            <Reveal>
+              <ProjectCard project={PROJECTS[0]} onOpen={(project) => setOpenProject(project)} />
+            </Reveal>
+            <Reveal>
+              <ProjectCard project={PROJECTS[2]} onOpen={(project) => setOpenProject(project)} />
+            </Reveal>
           </div>
           <div className="flex flex-col gap-16 md:mt-28">
-            <ProjectCard project={PROJECTS[1]} onOpen={(project) => setOpenProject(project)} />
-            <ProjectCard project={PROJECTS[3]} onOpen={(project) => setOpenProject(project)} />
+            <Reveal>
+              <ProjectCard project={PROJECTS[1]} onOpen={(project) => setOpenProject(project)} />
+            </Reveal>
+            <Reveal>
+              <ProjectCard project={PROJECTS[3]} onOpen={(project) => setOpenProject(project)} />
+            </Reveal>
           </div>
         </div>
       </div>

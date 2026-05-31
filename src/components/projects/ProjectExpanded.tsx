@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MEDIA_READY } from '../../lib/assets'
+import { lenis } from '../../lib/lenis'
 import type { Project } from './projectsData'
 
 /*
@@ -16,12 +17,17 @@ export function ProjectExpanded({ project, onClose }: { project: Project; onClos
       if (event.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handleKey)
+
+    // Lock background scroll while open. Prefer Lenis (the scroll owner); fall back to overflow.
     const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    if (lenis) lenis.stop()
+    else document.body.style.overflow = 'hidden'
+
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('keydown', handleKey)
-      document.body.style.overflow = previousOverflow
+      if (lenis) lenis.start()
+      else document.body.style.overflow = previousOverflow
     }
   }, [onClose])
 
