@@ -4,30 +4,21 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 5 (Hero cursor-follow): COMPLETE.** Awaiting Jacob's review at checkpoint.
-- **Step 6 (All sections as static 2D content): NOT STARTED.**
-- Steps 0-4 complete and committed (latest `cb5ced2`).
+- **Step 6 (All sections as static 2D content): COMPLETE.** Awaiting Jacob's review at checkpoint.
+- **Step 7 (Lenis + GSAP ScrollTrigger + scroll progress + Reveal): NOT STARTED.**
+- Steps 0-5 complete and committed; Step 3 ring fix `5b290ab`; Step 6 in 3 commits (latest `379df47`).
 
 ## Next action on resume
-- Jacob reviews the cursor-follow (move the mouse in the hero; the orb trails it with a lag).
-- On "continue": start **Step 6 - All sections as static 2D content** (the big layout step; NO
-  scroll choreography/parallax yet, hover states OK). Use VERBATIM copy from docs/02. Build:
-  - Nav: "Jacob Tam" / work / about / contact + GitHub + LinkedIn icons (hide-on-scroll is
-    Step 7+; static for now). JT logo = text "JT" placeholder.
-  - Hero overlay: name (display) + tagline (body-lg), white, centered over the orb; subtle
-    radial dark gradient behind the text for contrast floor (docs/06); small mono scroll
-    affordance at the bottom. Replaces the "01/HERO" stub.
-  - Interlude: "Here's some of it." centered (h2-ish).
-  - About: 3 paragraphs left (verbatim) + TiltPhoto right (blue duotone -> full colour on hover
-    + cursor tilt). Placeholder portrait ~4:5.
-  - Projects: title + faint giant "PROJECTS" bg word (static now); 2-col staggered cards (4, in
-    docs/02 order) with placeholder media (poster+play for the 3 videos, gray block for
-    hyperloop); hover lift+scale, border -> accent; click opens an OVERLAY-style expanded view
-    (NOT grid reflow) with larger media + full description + Geist Mono tech tags + close.
-  - Contact/footer: "Get in touch", mailto, github/linkedin/resume, colophon line.
-  - Create `src/lib/assets.ts` (single source of non-project asset paths) and
-    `projectsData.ts` (typed project data incl. media paths). Placeholders per ASSETS.md.
-  - Commit WIP per section (big step).
+- Jacob reviews the full static page end to end (hero, interlude, about + TiltPhoto, projects +
+  expanded overlay, contact). NOTE: the orb currently floats behind every section because the
+  fixed canvas never stops; that is expected until Step 8 makes it exit and sets frameloop off.
+- On "continue": start **Step 7 - Lenis + GSAP ScrollTrigger + scroll progress**. Wire
+  `lib/lenis.ts` (Lenis + gsap.ticker -> lenis.raf, ScrollTrigger.update on scroll,
+  lagSmoothing 0). One RAF updates scrollProgress / heroProgress / phase in the store from
+  section DOM positions via ScrollTrigger per section (NOT fixed percentages, docs/09). Add
+  `shared/Reveal.tsx` (fade/slide-up on enter; opacity-only/instant under reduced motion) and
+  apply to headings/paragraphs/cards. Make nav links smooth-scroll via Lenis + add hide-on-scroll.
+  Switch ProjectExpanded's body-overflow lock to lenis.stop()/start(). Log store values to verify.
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
@@ -96,6 +87,18 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     Frame-rate-independent easing. leva 'cursor' folder (lerp/clampX/clampY).
   - Verified by dispatching pointermove to opposite corners: orb trails the cursor with lag in
     both directions, particles follow, clamp keeps it on-screen and off the name. 60fps.
+- Step 6 (all sections as static 2D content; NO scroll choreography/parallax yet):
+  - `lib/assets.ts`: non-project asset paths + LINKS (email/github/linkedin/resume) + MEDIA_READY
+    flag (false). `projects/projectsData.ts`: the 4 projects, copy VERBATIM from docs/02.
+  - `shared/icons.tsx`: GitHub + LinkedIn marks. `nav/Nav`: wordmark + work/about/contact +
+    social icons (anchor links for now). `hero/Hero`: name + tagline over orb + radial
+    contrast-floor gradient + "scroll" affordance. `interlude/Interlude`, `contact/Contact`.
+  - `about/About` + `about/TiltPhoto`: text-left/photo-right; cursor tilt + blue-duotone->colour
+    on hover; 4:5 placeholder until MEDIA_READY.
+  - `projects/Projects` + `ProjectCard` + `ProjectExpanded`: faint giant PROJECTS word, 2-col
+    staggered cards, hover lift+scale + border->accent, overlay expanded view (media + full
+    description + Geist Mono tech tags; close via X / click-outside / Escape; scroll-locked).
+  - Verified full page top-to-bottom + card open/close. Real copy verbatim; all media placeholder.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
@@ -122,6 +125,12 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   rather than a random per-particle scatter. The first pass read as the "fuzzy cloud" docs/04 C4
   warns against and looked flat; concentric tilted rings read as a 3D Bohr atom. The strongest 3D
   cue still arrives with the Step 8 scroll motion (orb drifting up past the viewer).
+- Nav left uses the "Jacob Tam" wordmark as the JT-logo placeholder (docs/02 lists "Jacob Tam"
+  there; the JT logo replaces it when ready). The "JT" text monogram is for the loading screen.
+- MEDIA_READY (lib/assets.ts) gates ALL real media (project cards + About photo) behind one flag;
+  flip to true once trimmed/compressed files are in /public/media. Can split per-asset if needed.
+- Orb floats behind every section until Step 8 (the fixed canvas never stops yet). Expected
+  intermediate state; Step 8 makes the orb exit by end of About and sets frameloop 'never'.
 
 ## Tuned values to eventually move into `src/lib/constants.ts`
 - constants.ts now exists with orb defaults. leva seeds FROM these but does not write back, so
@@ -133,6 +142,8 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - Need a pick for the About photo (4 `.jpeg` candidates in `Assets/`).
 - Purpose of `Gemini_Generated_Image...png` and the two screenshots is unclear.
 - All current visuals are placeholders by Jacob's instruction even though real files exist.
+- Real GitHub + LinkedIn profile URLs (placeholders in lib/assets.ts point to site roots so they
+  never 404). Email (jotam916@gmail.com) is known and wired.
 
 ## Notes
 - leva must stay gated behind `import.meta.env.DEV` (Step 3 onward).
