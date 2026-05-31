@@ -4,21 +4,18 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 7 (Lenis + GSAP ScrollTrigger + scroll progress + Reveal): COMPLETE.** Awaiting review.
-- **Step 8 (Orb scroll choreography): NOT STARTED.**
-- Steps 0-6 complete and committed (latest Step 6 `379df47`, PROGRESS `dd45504`).
+- **Step 8 (Orb scroll choreography): COMPLETE.** Awaiting review.
+- **Step 9 (Parallax system): NOT STARTED.**
+- Steps 0-7 complete and committed; Step 8 in 3 commits (latest `a1a1d65`).
 
 ## Next action on resume
-- Jacob reviews smooth scroll, reveal-on-enter, nav show-at-top/hide-on-scroll, and the
-  top-center leva panel.
-- On "continue": start **Step 8 - Orb scroll choreography** (second big tuning step). Drive the
-  orb group from the store each frame (extend OrbSystem or add `three/useOrbChoreography.ts`):
-  cursor-follow fades out as heroProgress rises (already wired) -> orb settles x to 0 at the
-  interlude, slows almost to a stop + ONE scale/bloom pulse -> drifts upward through About with
-  progressive particle shedding (released particles get upward velocity + outward drift, fade as
-  they exit the top) -> fully gone by end of About; then set canvas frameloop 'never' (re-enable
-  if scrolled back up). Tie boundaries to the phase triggers in lib/lenis.ts; tune in leva, bake
-  to constants. Commit WIP sub-pieces. NOTE: this resolves the orb-floats-behind-every-section issue.
+- Jacob reviews the orb choreography end to end: cursor fade -> centered interlude beat (PINNED,
+  "harder to scroll") -> upward drift + particle shedding through About -> gone by Projects (canvas
+  frameloop off). The orb-floats-behind-every-section issue is resolved.
+- On "continue": start **Step 9 - Parallax system**. Reusable `shared/Parallax.tsx` (GSAP, reads
+  the Lenis scroll) applied to: the faint giant PROJECTS bg word (slow), the About photo vs text
+  column (photo slightly slower), and project media vs its caption. Subtle/restrained. Disabled
+  under reduced-motion + mobile (fully wired in Steps 12/13). Orb parallax is already handled (Step 8).
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
@@ -115,6 +112,20 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   - Verified: nav "about" click lands exactly on About (scrollY 1478, phase 'about'); nav hides on
     scroll; reveals animate; phase chain hero->interlude->about->past; heroProgress 0..1.
   - Phase trigger thresholds ('top 60/70%') are approximate placeholders; tuned in leva in Step 8.
+- Step 8 (orb scroll choreography):
+  - store: interludeProgress + driftProgress. lib/constants: CHOREOGRAPHY + SHED.
+  - `three/useOrbChoreography.ts`: per-frame group driver from the store - faded cursor offset
+    (x -> 0 as hero exits), upward drift (driftProgress * driftDistance), and a scale pulse +
+    rotation slow-down at the interlude beat (beat envelope on interludeProgress). getState only.
+  - `three/Scene.tsx`: OrbSystem uses the hook; Canvas frameloop = phase==='past' ? 'never' :
+    'always' (stops rendering once the orb is gone; resumes on scroll-up into About).
+  - `lib/lenis.ts`: #hero scrub -> heroProgress; #interlude PINNED (start top top, end +=
+    interludePinVh*vh, scrub, anticipatePin, invalidateOnRefresh) -> interludeProgress + the
+    "harder to scroll" dwell (Jacob's request); #about scrub -> driftProgress + about<->past phase.
+  - `OrbParticles`: per-particle release threshold; once driftProgress passes it the particle
+    drifts up + outward and fades (instanceColor), restoring on scroll-up.
+  - Verified via store + screenshots: interlude beat (orb centered + pulse over the line; pin adds
+    ~665px), mid-About drift + shedding, Projects = orb gone / phase past.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
@@ -145,8 +156,14 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   there; the JT logo replaces it when ready). The "JT" text monogram is for the loading screen.
 - MEDIA_READY (lib/assets.ts) gates ALL real media (project cards + About photo) behind one flag;
   flip to true once trimmed/compressed files are in /public/media. Can split per-asset if needed.
-- Orb floats behind every section until Step 8 (the fixed canvas never stops yet). Expected
-  intermediate state; Step 8 makes the orb exit by end of About and sets frameloop 'never'.
+- (Resolved in Step 8) The orb no longer floats behind every section: it drifts off by the end
+  of About and the canvas frameloop goes 'never' for Projects/Contact (resumes on scroll-up).
+- Bloom-bump at the interlude beat is DEFERRED: passing a ref to @react-three/postprocessing
+  <Bloom> crashes its reconciler with a circular-structure-to-JSON error, so the pulse is
+  scale-only. Revisit with a non-ref method if the bloom bump is wanted.
+- Choreography + pin + shed values live in lib/constants (CHOREOGRAPHY / SHED / interludePinVh),
+  NOT in leva yet. docs/05 suggests leva-tuning these; deferred to keep the frame-loop/pin wiring
+  simple. Easy to expose a leva 'choreography' folder if Jacob wants to dial drift/pulse/pin live.
 
 ## Tuned values to eventually move into `src/lib/constants.ts`
 - constants.ts now exists with orb defaults. leva seeds FROM these but does not write back, so
