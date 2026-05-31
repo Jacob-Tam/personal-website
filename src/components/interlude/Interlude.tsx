@@ -1,11 +1,9 @@
-// Step 2 stub. Real interlude ("Here's some of it." + orb pulse beat) is built in Step 6/8.
+// Interlude: a single centered line (verbatim, docs/02). The orb's slow-and-pulse beat that
+// pairs with this lands in Step 8.
 export function Interlude() {
   return (
-    <section
-      id="interlude"
-      className="flex min-h-svh flex-col items-center justify-center border-t border-border"
-    >
-      <span className="font-mono text-label uppercase text-text-mute">02 / interlude</span>
+    <section id="interlude" className="flex min-h-svh items-center justify-center px-6 text-center">
+      <p className="text-h2 text-text">Here's some of it.</p>
     </section>
   )
 }
