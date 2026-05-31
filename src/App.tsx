@@ -1,3 +1,4 @@
+import { Scene } from './components/three/Scene'
 import { GrainOverlay } from './components/shared/GrainOverlay'
 import { Nav } from './components/nav/Nav'
 import { Hero } from './components/hero/Hero'
@@ -9,7 +10,8 @@ import { Contact } from './components/contact/Contact'
 function App() {
   return (
     <>
-      {/* The persistent 3D <Canvas> mounts here in Step 3 (fixed, z-0, behind content). */}
+      {/* The persistent 3D <Canvas> lives here, fixed at z-0 behind all content. */}
+      <Scene />
       <GrainOverlay />
       <Nav />
       <main className="relative z-20">
