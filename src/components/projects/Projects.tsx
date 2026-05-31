@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Reveal } from '../shared/Reveal'
+import { BackgroundWord } from '../shared/BackgroundWord'
 import { PROJECTS, type Project } from './projectsData'
 import { ProjectCard } from './ProjectCard'
 import { ProjectExpanded } from './ProjectExpanded'
@@ -16,12 +17,7 @@ export function Projects() {
 
   return (
     <section id="projects" className="relative overflow-hidden px-6 py-32 md:px-12">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-20 -translate-x-1/2 select-none text-[22vw] font-semibold leading-none tracking-tighter text-text/5"
-      >
-        PROJECTS
-      </span>
+      <BackgroundWord className="left-1/2 top-20 -translate-x-1/2">PROJECTS</BackgroundWord>
 
       <div className="relative mx-auto max-w-5xl">
         <Reveal>

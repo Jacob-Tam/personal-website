@@ -1,11 +1,13 @@
 import { Reveal } from '../shared/Reveal'
+import { BackgroundWord } from '../shared/BackgroundWord'
 import { LINKS } from '../../lib/assets'
 
 // Contact / footer (verbatim copy, docs/02). Calm, lots of space, blue only on hover.
 export function Contact() {
   return (
-    <section id="contact" className="flex min-h-svh items-center justify-center px-6 text-center">
-      <Reveal className="flex flex-col items-center gap-10" stagger={0.1}>
+    <section id="contact" className="relative flex min-h-svh items-center justify-center overflow-hidden px-6 text-center">
+      <BackgroundWord className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">CONTACT</BackgroundWord>
+      <Reveal className="relative flex flex-col items-center gap-10" stagger={0.1}>
         <h2 className="text-h2 text-text">Get in touch</h2>
 
         <a
