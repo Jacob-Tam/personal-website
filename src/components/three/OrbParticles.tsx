@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { SEED } from '../../lib/constants'
+import { useScrollStore } from '../../store/useScrollStore'
+import { SEED, SHED } from '../../lib/constants'
 
 export type ParticleProps = {
   count: number
@@ -34,26 +35,30 @@ function mulberry32(seed: number) {
 }
 
 /*
-  ~50 particles orbiting the core on a few distinct tilted planes (stylized Bohr atom), drawn
-  as ONE instanced mesh. Each particle has a fixed plane, orbit radius, angular speed (mixed
-  directions), phase, and size. Each frame we advance the angle, place the point on its tilted
-  plane, and write the instance matrix (delta-independent: position is a pure function of
-  elapsed time, so it is frame-rate independent). Depth is sold by scene fog dimming distant
-  particles. Colors are per-instance hue; a global brightness gain on the material pushes them
-  into HDR so the Step 4 bloom pass makes them glow.
+  ~50 particles orbiting the core on a few tilted rings (stylized Bohr atom), drawn as ONE
+  instanced mesh. Each frame, position is a pure function of elapsed time (frame-rate
+  independent). Depth is sold by scene fog.
+
+  Shedding (docs/05): as the orb drifts up through About (driftProgress), a growing fraction of
+  particles "release" - each has a release threshold; once driftProgress passes it the particle
+  drifts up + slightly outward and fades, so the orb has noticeably fewer particles by the time
+  it leaves. driftProgress is read via getState() (no reactive subscription).
 */
 export function OrbParticles(props: ParticleProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null!)
   const dummy = useMemo(() => new THREE.Object3D(), [])
+  const outward = useMemo(() => new THREE.Vector3(), [])
+  const scratchColor = useMemo(() => new THREE.Color(), [])
+  const baseColors = useRef<Float32Array>(new Float32Array(0))
+  const wasShedding = useRef(false)
 
-  const { plane, radius, speed, phase, size, planeMatrices } = useMemo(() => {
+  const { plane, radius, speed, phase, size, releaseAt, planeMatrices } = useMemo(() => {
     const rng = mulberry32(SEED)
     const planeCount = Math.max(1, props.planes)
 
-    // Per plane: a tilt, a base radius (the rings nest at distinct radii from inner to outer),
-    // and one rigid angular speed + direction. Sharing the speed and base radius across a plane
-    // keeps it reading as a clean tilted RING (a stylized Bohr atom), not a fuzzy cloud (docs/04
-    // C4). Size, phase spacing, and a tiny radius jitter still vary per particle for life.
+    // Per plane: a tilt, a base radius (rings nest from inner to outer), and one rigid angular
+    // speed + direction. Sharing speed + base radius across a plane keeps it reading as a clean
+    // tilted RING (docs/04 C4). Size, phase spacing, and a tiny radius jitter vary per particle.
     const planeMatrices: THREE.Matrix4[] = []
     const planeRadius: number[] = []
     const planeSpeed: number[] = []
@@ -62,8 +67,8 @@ export function OrbParticles(props: ParticleProps) {
 
     for (let p = 0; p < planeCount; p++) {
       const euler = new THREE.Euler(
-        (rng() - 0.5) * Math.PI, // tilt out of the screen plane
-        (p / planeCount) * Math.PI + (rng() - 0.5) * 0.6, // spread the planes around
+        (rng() - 0.5) * Math.PI,
+        (p / planeCount) * Math.PI + (rng() - 0.5) * 0.6,
         (rng() - 0.5) * Math.PI,
       )
       planeMatrices.push(new THREE.Matrix4().makeRotationFromEuler(euler))
@@ -78,18 +83,20 @@ export function OrbParticles(props: ParticleProps) {
     const speed = new Float32Array(props.count)
     const phase = new Float32Array(props.count)
     const size = new Float32Array(props.count)
+    const releaseAt = new Float32Array(props.count)
     const seenOnPlane = new Array(planeCount).fill(0)
+    const rngShed = mulberry32(SEED + 2) // separate stream so it does not disturb the layout
     for (let i = 0; i < props.count; i++) {
       const p = i % planeCount
       const k = seenOnPlane[p]++
       plane[i] = p
-      // Even spacing around the ring + a little jitter so it is not mechanically perfect.
       phase[i] = (k / planeCounts[p]) * Math.PI * 2 + (rng() - 0.5) * 0.4
       radius[i] = planeRadius[p] + (rng() - 0.5) * 0.12
       speed[i] = planeSpeed[p]
       size[i] = THREE.MathUtils.lerp(props.sizeMin, props.sizeMax, rng())
+      releaseAt[i] = THREE.MathUtils.lerp(SHED.startFraction, 0.95, rngShed())
     }
-    return { plane, radius, speed, phase, size, planeMatrices }
+    return { plane, radius, speed, phase, size, releaseAt, planeMatrices }
   }, [
     props.count, props.planes, props.radiusMin, props.radiusMax,
     props.speedMin, props.speedMax, props.sizeMin, props.sizeMax,
@@ -99,21 +106,24 @@ export function OrbParticles(props: ParticleProps) {
   const material = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), [])
   useEffect(() => () => { geometry.dispose(); material.dispose() }, [geometry, material])
 
-  // Per-instance hue (0..1 range), set once / when color params change.
+  // Per-instance hue, set once / when colour params change; also cached for the shedding fade.
   useEffect(() => {
     const mesh = meshRef.current
     const rng = mulberry32(SEED + 1)
+    const colors = new Float32Array(props.count * 3)
     const color = new THREE.Color()
     for (let i = 0; i < props.count; i++) {
       const hue = THREE.MathUtils.lerp(props.hueMin, props.hueMax, rng()) / 360
       const lightness = THREE.MathUtils.lerp(props.lightnessMin, props.lightnessMax, rng())
       color.setHSL(hue, props.saturation, lightness)
+      color.toArray(colors, i * 3)
       mesh.setColorAt(i, color)
     }
+    baseColors.current = colors
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
   }, [props.count, props.hueMin, props.hueMax, props.saturation, props.lightnessMin, props.lightnessMax])
 
-  // Global brightness gain (material.color multiplies each instance color) -> HDR for bloom.
+  // Global brightness gain (material.color multiplies each instance colour) -> HDR for bloom.
   useEffect(() => {
     material.color.setScalar(props.brightness)
   }, [material, props.brightness])
@@ -121,15 +131,46 @@ export function OrbParticles(props: ParticleProps) {
   useFrame((state) => {
     const time = state.clock.elapsedTime
     const mesh = meshRef.current
+    const drift = useScrollStore.getState().driftProgress
+    const shedding = drift > SHED.startFraction
+
     for (let i = 0; i < props.count; i++) {
       const angle = phase[i] + speed[i] * time
       dummy.position.set(Math.cos(angle) * radius[i], Math.sin(angle) * radius[i], 0)
       dummy.position.applyMatrix4(planeMatrices[plane[i]])
+
+      let fade = 1
+      if (drift > releaseAt[i]) {
+        const release = Math.min((drift - releaseAt[i]) / (1 - releaseAt[i]), 1)
+        outward.copy(dummy.position).normalize()
+        dummy.position.addScaledVector(outward, SHED.outward * release)
+        dummy.position.y += SHED.lift * release
+        fade = 1 - release
+      }
+
       dummy.scale.setScalar(size[i])
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
+
+      if (shedding) {
+        scratchColor.fromArray(baseColors.current, i * 3).multiplyScalar(fade)
+        mesh.setColorAt(i, scratchColor)
+      }
     }
+
     mesh.instanceMatrix.needsUpdate = true
+    if (shedding) {
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+      wasShedding.current = true
+    } else if (wasShedding.current) {
+      // Restore full colours once when scrolling back up out of the shed range.
+      for (let i = 0; i < props.count; i++) {
+        scratchColor.fromArray(baseColors.current, i * 3)
+        mesh.setColorAt(i, scratchColor)
+      }
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+      wasShedding.current = false
+    }
   })
 
   return <instancedMesh ref={meshRef} args={[geometry, material, props.count]} />
