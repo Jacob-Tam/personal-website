@@ -29,22 +29,27 @@ export function useOrbChoreography(groupRef: RefObject<Group | null>, cursor: Cu
     const group = groupRef.current
     if (!group) return
 
-    const { mouse, heroProgress, interludeProgress, driftProgress, reducedMotion } = useScrollStore.getState()
+    const { mouse, heroProgress, interludeProgress, driftProgress, phase, reducedMotion } =
+      useScrollStore.getState()
     const beat = reducedMotion ? 0 : beatEnvelope(interludeProgress)
 
     // Idle spin, slowed almost to a stop at the interlude beat.
     group.rotation.y += delta * GROUP.idleSpinY * (1 - CHOREOGRAPHY.rotationStill * beat)
 
-    // Target position. x: faded cursor offset (-> 0 as the hero exits). y: faded cursor offset
-    // PLUS the upward scroll drift through About.
+    // Interlude: the orb sweeps right -> left along a sideways-U arc that stays above the text
+    // (cos puts it on the right at the start, centre at the beat, left at the end; sin dips it).
+    // Active from the interlude onward; the horizontal offset fades out as the About drift lifts
+    // it away, so it recenters as it exits upward.
+    const interludeActive = phase === 'hero' ? 0 : 1
+    const sweepX = CHOREOGRAPHY.interludeSweepX * Math.cos(interludeProgress * Math.PI) * (1 - driftProgress)
+    const sweepY = CHOREOGRAPHY.interludeLiftHigh - CHOREOGRAPHY.interludeUDepth * Math.sin(interludeProgress * Math.PI)
+
+    // x: faded cursor offset (-> 0 as the hero exits) + the interlude sweep.
+    // y: faded cursor offset + the interlude arc + the upward scroll drift through About.
     const cursorInfluence = reducedMotion ? 0 : 1 - heroProgress
-    const targetX = mouse.x * cursor.clampX * cursorInfluence
-    // Lift the orb above the interlude text (so the pulse is not on top of it), eased so it is
-    // already clear by the beat; the About drift then carries it the rest of the way up.
-    const interludeLift =
-      CHOREOGRAPHY.interludeLift * (1 - (1 - interludeProgress) * (1 - interludeProgress))
+    const targetX = mouse.x * cursor.clampX * cursorInfluence + interludeActive * sweepX
     const targetY =
-      mouse.y * cursor.clampY * cursorInfluence + interludeLift + driftProgress * CHOREOGRAPHY.driftDistance
+      mouse.y * cursor.clampY * cursorInfluence + interludeActive * sweepY + driftProgress * CHOREOGRAPHY.driftDistance
 
     // Frame-rate-independent easing: cursor rate for x, a slightly firmer rate for the y drift.
     const cursorAlpha = 1 - Math.pow(1 - cursor.lerp, delta * 60)
