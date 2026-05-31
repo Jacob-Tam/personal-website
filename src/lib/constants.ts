@@ -55,6 +55,21 @@ export const CURSOR = {
   clampY: 0.8, // max vertical drift
 }
 
+export const CHOREOGRAPHY = {
+  driftDistance: 6, // world units the orb rises (group.y) to fully clear the top of the screen
+  positionLerp: 0.08, // ease toward the scroll-driven target position
+  pulseAmount: 0.18, // group scale bump at the interlude beat
+  bloomBump: 0.5, // extra bloom intensity at the beat
+  rotationStill: 0.85, // how much the idle spin slows at the beat (0..1)
+  interludePinVh: 0.9, // interlude pin length as a fraction of viewport height ("harder to scroll")
+}
+
+export const SHED = {
+  startFraction: 0.15, // driftProgress at which the first particles begin to release
+  lift: 5, // extra upward distance a fully-released particle travels
+  outward: 0.6, // slight outward drift as it releases
+}
+
 export const FOG = {
   near: 4,
   far: 9.5,

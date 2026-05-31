@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useScrollStore, type OrbPhase } from '../store/useScrollStore'
+import { useScrollStore } from '../store/useScrollStore'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -25,22 +25,14 @@ export function useSmoothScroll() {
     const raf = (time: number) => instance.raf(time * 1000)
     gsap.ticker.add(raf)
     gsap.ticker.lagSmoothing(0)
-    const { setScrollProgress, setHeroProgress, setPhase } = useScrollStore.getState()
+    const { setScrollProgress, setHeroProgress, setDriftProgress, setPhase } = useScrollStore.getState()
     instance.on('scroll', () => {
       ScrollTrigger.update()
       setScrollProgress(instance.progress || 0)
     })
 
-    const phaseTrigger = (trigger: string, start: string, enter: OrbPhase, back: OrbPhase) =>
-      ScrollTrigger.create({
-        trigger,
-        start,
-        onEnter: () => setPhase(enter),
-        onLeaveBack: () => setPhase(back),
-      })
-
     const triggers = [
-      // heroProgress 0..1 as the hero scrolls out; drives the cursor-follow fade (Step 5/8).
+      // heroProgress 0..1 as the hero scrolls out; drives the cursor-follow fade.
       ScrollTrigger.create({
         trigger: '#hero',
         start: 'top top',
@@ -48,9 +40,26 @@ export function useSmoothScroll() {
         scrub: true,
         onUpdate: (self) => setHeroProgress(self.progress),
       }),
-      phaseTrigger('#interlude', 'top 60%', 'interlude', 'hero'),
-      phaseTrigger('#about', 'top 60%', 'about', 'interlude'),
-      phaseTrigger('#projects', 'top 70%', 'past', 'about'),
+      // Interlude phase. The pin that makes it "harder to scroll" + interludeProgress is added next.
+      ScrollTrigger.create({
+        trigger: '#interlude',
+        start: 'top 60%',
+        onEnter: () => setPhase('interlude'),
+        onLeaveBack: () => setPhase('hero'),
+      }),
+      // About: drift the orb upward (scrub) and own the about <-> past transitions. driftProgress
+      // hits 1 as About's bottom reaches the top of the screen -> orb fully gone -> phase 'past'.
+      ScrollTrigger.create({
+        trigger: '#about',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+        onUpdate: (self) => setDriftProgress(self.progress),
+        onEnter: () => setPhase('about'),
+        onEnterBack: () => setPhase('about'),
+        onLeave: () => setPhase('past'),
+        onLeaveBack: () => setPhase('interlude'),
+      }),
     ]
 
     ScrollTrigger.refresh()

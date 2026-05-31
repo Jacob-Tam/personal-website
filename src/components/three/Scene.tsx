@@ -1,22 +1,21 @@
 import { useRef } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
 import { Leva, useControls } from 'leva'
 import * as THREE from 'three'
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
+import { useOrbChoreography } from './useOrbChoreography'
 import { useScrollStore } from '../../store/useScrollStore'
-import { BLOOM, CAMERA, CORE, CURSOR, FOG, GROUP, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
+import { BLOOM, CAMERA, CORE, CURSOR, FOG, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
 
 const isDev = import.meta.env.DEV
 
-// Core + particles as one group, slowly rotating overall (docs/04). useFrame must run inside
-// the Canvas, so this lives in its own component. Scroll choreography (Step 8) drives this
-// group's position later; for now it only idle-spins.
 type CursorTuning = { lerp: number; clampX: number; clampY: number }
 
+// Core + particles as one group, driven each frame by the scroll choreography (docs/05).
 function OrbSystem({
   core,
   particles,
@@ -27,22 +26,7 @@ function OrbSystem({
   cursor: CursorTuning
 }) {
   const groupRef = useRef<THREE.Group>(null!)
-  useFrame((_, delta) => {
-    const group = groupRef.current
-    group.rotation.y += delta * GROUP.idleSpinY
-
-    // Cursor-follow (hero only). Read the high-frequency mouse via getState(), never a reactive
-    // subscription (docs/09). Influence is full in the hero and fades to 0 as the user scrolls
-    // past it (heroProgress is driven in Step 8); reduced motion disables it entirely.
-    const { mouse, heroProgress, reducedMotion } = useScrollStore.getState()
-    const influence = reducedMotion ? 0 : 1 - heroProgress
-    const targetX = mouse.x * cursor.clampX * influence
-    const targetY = mouse.y * cursor.clampY * influence
-    // Frame-rate-independent easing, tuned to feel like `lerp` per frame at 60fps.
-    const alpha = 1 - Math.pow(1 - cursor.lerp, delta * 60)
-    group.position.x += (targetX - group.position.x) * alpha
-    group.position.y += (targetY - group.position.y) * alpha
-  })
+  useOrbChoreography(groupRef, cursor)
   return (
     <group ref={groupRef}>
       <Orb {...core} segments={CORE.segments} />
@@ -52,11 +36,14 @@ function OrbSystem({
 }
 
 /*
-  The single persistent <Canvas>, fixed behind all content (z-0) and non-interactive so it
-  never eats clicks. The orb lives here for its whole lifecycle. leva panels and r3f-perf are
-  DEV only. Tuned values get baked into lib/constants.ts. No scroll/cursor wiring yet (Step 5/8).
+  The single persistent <Canvas>, fixed behind all content (z-0) and non-interactive. The orb
+  lives here for its whole lifecycle. Once it has fully drifted off the top (phase 'past') the
+  frameloop is set to 'never' to stop rendering for Projects/Contact; it resumes if the user
+  scrolls back up into About. leva + r3f-perf are DEV only.
 */
 export function Scene() {
+  const phase = useScrollStore((state) => state.phase)
+
   const camera = useControls('camera', {
     fov: { value: CAMERA.fov, min: 35, max: 75, step: 1 },
     distance: { value: CAMERA.position[2], min: 3, max: 10, step: 0.1 },
@@ -132,7 +119,11 @@ export function Scene() {
         </div>
       )}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]}>
+        <Canvas
+          frameloop={phase === 'past' ? 'never' : 'always'}
+          gl={{ alpha: true, antialias: true }}
+          dpr={[1, 2]}
+        >
           {isDev && <Perf position="bottom-right" />}
           <PerspectiveCamera makeDefault fov={camera.fov} position={[0, 0, camera.distance]} />
           <fog attach="fog" args={[FOG.color, depth.fogNear, depth.fogFar]} />
@@ -147,11 +138,7 @@ export function Scene() {
               radius={bloom.radius}
               mipmapBlur
             />
-            <Vignette
-              darkness={vignette.enabled ? vignette.darkness : 0}
-              offset={vignette.offset}
-              eskil={false}
-            />
+            <Vignette darkness={vignette.enabled ? vignette.darkness : 0} offset={vignette.offset} eskil={false} />
           </EffectComposer>
         </Canvas>
       </div>
