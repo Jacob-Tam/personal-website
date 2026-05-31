@@ -83,10 +83,22 @@ export const coreFragmentShader = /* glsl */ `
   }
 
   void main() {
+    vec3 normal = normalize(vNormalV);
+    vec3 viewDir = normalize(vViewDir);
+    // Fixed light in view space gives the orb a lit side and a shadowed side, so it reads as a
+    // sphere with depth rather than a flat disc. It is still emissive (the shadow side never goes
+    // fully dark), so it keeps glowing.
+    const vec3 lightDir = normalize(vec3(0.45, 0.6, 0.65));
+
     float n = snoise(vLocalPos * uNoiseScale + vec3(0.0, 0.0, uTime * uNoiseSpeed));
-    float fresnel = pow(1.0 - max(dot(normalize(vNormalV), normalize(vViewDir)), 0.0), uFresnelPower);
+
+    float facing = max(dot(normal, viewDir), 0.0);     // 1 toward the camera, 0 at the limb
+    float fresnel = pow(1.0 - facing, uFresnelPower);   // blue rim at the limb
+    float diffuse = dot(normal, lightDir) * 0.5 + 0.5;  // 0 shadow side .. 1 lit side
+    float lit = mix(0.42, 1.0, diffuse);                // directional shading -> 3D form
+
     vec3 color = mix(uCoreColor, uRimColor, fresnel);
-    float brightness = uEmissive * (1.0 + uNoiseAmp * n);
+    float brightness = uEmissive * lit * (1.0 + uNoiseAmp * n);
     gl_FragColor = vec4(color * brightness, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

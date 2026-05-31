@@ -12,7 +12,8 @@ export const CAMERA = {
 export const CORE = {
   radius: 0.4,
   segments: 64,
-  emissive: 1.6, // brightness multiplier; > 1 so bloom (Step 4) catches it
+  emissive: 1.3, // brightness multiplier; > 1 so bloom catches the lit side (lower so the
+  // directional shading reads as a 3D sphere instead of a blown-out white disc)
   pulseAmplitude: 0.02, // breathing scale amplitude
   pulsePeriod: 3, // breathing period in seconds
   noiseAmp: 0.18, // strength of the internal turbulence
