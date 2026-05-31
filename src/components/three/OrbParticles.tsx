@@ -15,6 +15,9 @@ export type ParticleProps = {
   sizeMax: number
   hueMin: number
   hueMax: number
+  purpleFraction: number
+  purpleHueMin: number
+  purpleHueMax: number
   saturation: number
   lightnessMin: number
   lightnessMax: number
@@ -113,15 +116,22 @@ export function OrbParticles(props: ParticleProps) {
     const colors = new Float32Array(props.count * 3)
     const color = new THREE.Color()
     for (let i = 0; i < props.count; i++) {
-      const hue = THREE.MathUtils.lerp(props.hueMin, props.hueMax, rng()) / 360
+      // Most particles are steel-blue; a minority take a blue-violet hue for variety.
+      const purple = rng() < props.purpleFraction
+      const hueDegrees = purple
+        ? THREE.MathUtils.lerp(props.purpleHueMin, props.purpleHueMax, rng())
+        : THREE.MathUtils.lerp(props.hueMin, props.hueMax, rng())
       const lightness = THREE.MathUtils.lerp(props.lightnessMin, props.lightnessMax, rng())
-      color.setHSL(hue, props.saturation, lightness)
+      color.setHSL(hueDegrees / 360, props.saturation, lightness)
       color.toArray(colors, i * 3)
       mesh.setColorAt(i, color)
     }
     baseColors.current = colors
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-  }, [props.count, props.hueMin, props.hueMax, props.saturation, props.lightnessMin, props.lightnessMax])
+  }, [
+    props.count, props.hueMin, props.hueMax, props.purpleFraction, props.purpleHueMin,
+    props.purpleHueMax, props.saturation, props.lightnessMin, props.lightnessMax,
+  ])
 
   // Global brightness gain (material.color multiplies each instance colour) -> HDR for bloom.
   useEffect(() => {

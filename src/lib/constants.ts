@@ -33,8 +33,11 @@ export const PARTICLES = {
   speedMax: 0.4,
   sizeMin: 0.015,
   sizeMax: 0.04,
-  hueMin: 205, // steel-blue family; do NOT drift toward purple
+  hueMin: 205, // steel-blue family for most particles
   hueMax: 220,
+  purpleFraction: 0.3, // ~30% of particles take a blue-violet hue instead (Jacob's request)
+  purpleHueMin: 255,
+  purpleHueMax: 275,
   saturation: 0.7,
   lightnessMin: 0.55,
   lightnessMax: 0.7,
