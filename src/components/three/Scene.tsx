@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
@@ -9,24 +9,34 @@ import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
 import { useOrbChoreography } from './useOrbChoreography'
 import { useScrollStore } from '../../store/useScrollStore'
-import { BLOOM, CAMERA, CORE, CURSOR, FOG, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
+import { setInterludePin } from '../../lib/lenis'
+import { BLOOM, CAMERA, CHOREOGRAPHY, CORE, CURSOR, FOG, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
 
 const isDev = import.meta.env.DEV
 
 type CursorTuning = { lerp: number; clampX: number; clampY: number }
+type ChoreographyTuning = {
+  interludeRadius: number
+  driftDistance: number
+  positionLerp: number
+  pulseAmount: number
+  rotationStill: number
+}
 
 // Core + particles as one group, driven each frame by the scroll choreography (docs/05).
 function OrbSystem({
   core,
   particles,
   cursor,
+  choreo,
 }: {
   core: Omit<OrbProps, 'segments'>
   particles: ParticleProps
   cursor: CursorTuning
+  choreo: ChoreographyTuning
 }) {
   const groupRef = useRef<THREE.Group>(null!)
-  useOrbChoreography(groupRef, cursor)
+  useOrbChoreography(groupRef, cursor, choreo)
   return (
     <group ref={groupRef}>
       <Orb {...core} segments={CORE.segments} />
@@ -111,6 +121,20 @@ export function Scene() {
     clampY: { value: CURSOR.clampY, min: 0, max: 3, step: 0.05 },
   })
 
+  const choreography = useControls('choreography', {
+    interludeRadius: { value: CHOREOGRAPHY.interludeRadius, min: 0.5, max: 4, step: 0.05 },
+    driftDistance: { value: CHOREOGRAPHY.driftDistance, min: 3, max: 14, step: 0.5 },
+    positionLerp: { value: CHOREOGRAPHY.positionLerp, min: 0.02, max: 0.2, step: 0.005 },
+    pulseAmount: { value: CHOREOGRAPHY.pulseAmount, min: 0, max: 0.5, step: 0.01 },
+    rotationStill: { value: CHOREOGRAPHY.rotationStill, min: 0, max: 1, step: 0.05 },
+    pinVh: { value: CHOREOGRAPHY.interludePinVh, min: 0, max: 2, step: 0.05 },
+  })
+
+  // Live-tune the interlude pin length; setInterludePin re-refreshes ScrollTrigger.
+  useEffect(() => {
+    setInterludePin(choreography.pinVh)
+  }, [choreography.pinVh])
+
   return (
     <>
       {/* DEV-only orb controls, anchored top-center (narrow) - the nav is full-width so its
@@ -133,7 +157,7 @@ export function Scene() {
           <fog attach="fog" args={[FOG.color, depth.fogNear, depth.fogFar]} />
           <ambientLight intensity={lights.ambient} />
           <pointLight position={[0, 0, 0]} intensity={lights.pointIntensity} decay={2} color="#ffffff" />
-          <OrbSystem core={core} particles={particles} cursor={cursor} />
+          <OrbSystem core={core} particles={particles} cursor={cursor} choreo={choreography} />
           <EffectComposer multisampling={4} frameBufferType={THREE.HalfFloatType}>
             <Bloom
               intensity={bloom.intensity}

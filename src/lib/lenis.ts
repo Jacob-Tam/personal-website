@@ -11,6 +11,14 @@ gsap.registerPlugin(ScrollTrigger)
 // live Lenis instance without prop-drilling.
 export let lenis: Lenis | null = null
 
+// Interlude pin length (fraction of viewport height). Held here so the dev leva 'choreography'
+// folder can live-tune it: setting it re-refreshes ScrollTrigger so the pinned region resizes.
+export let interludePinVh = CHOREOGRAPHY.interludePinVh
+export function setInterludePin(value: number) {
+  interludePinVh = value
+  ScrollTrigger.refresh()
+}
+
 /*
   Single source of truth for scroll (docs/03, docs/09): Lenis drives GSAP's ticker and
   ScrollTrigger updates off Lenis, so smoothing and triggers never desync. One place writes the
@@ -48,7 +56,7 @@ export function useSmoothScroll() {
       ScrollTrigger.create({
         trigger: '#interlude',
         start: 'top top',
-        end: () => '+=' + window.innerHeight * CHOREOGRAPHY.interludePinVh,
+        end: () => '+=' + window.innerHeight * interludePinVh,
         pin: true,
         scrub: true,
         anticipatePin: 1,
