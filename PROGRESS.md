@@ -137,6 +137,14 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     refresh settles on load).
   - ~30% of particles are blue-violet (PARTICLES.purpleFraction / purpleHue*), rest steel-blue;
     leva controls added. This intentionally overrides the docs' blue-only rule per Jacob.
+  - leva panel moved BELOW the nav (top-left) so it stops covering the nav links (was top-center
+    over "resume").
+  - Interlude motion changed to a right -> left sideways-U sweep (CHOREOGRAPHY.interludeSweepX /
+    interludeLiftHigh / interludeUDepth), replacing the straight vertical lift. Stays above the
+    text; recenters as it drifts up.
+  - `shared/BackgroundWord` extracted; About ("ABOUT") + Contact ("CONTACT") now have the faint
+    giant background word like Projects. About's is subtler (behind the text column) - reposition
+    if Jacob wants it more prominent.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
