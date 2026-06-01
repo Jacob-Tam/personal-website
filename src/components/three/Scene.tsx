@@ -71,7 +71,7 @@ export function Scene() {
     fresnelPower: { value: CORE.fresnelPower, min: 0.5, max: 6, step: 0.1 },
     coreColor: CORE.coreColor,
     rimColor: CORE.rimColor,
-  })
+  }, { collapsed: true })
 
   const particles = useControls('particles', {
     count: { value: PARTICLES.count, min: 0, max: 120, step: 1 },
@@ -91,7 +91,7 @@ export function Scene() {
     lightnessMin: { value: PARTICLES.lightnessMin, min: 0, max: 1, step: 0.01 },
     lightnessMax: { value: PARTICLES.lightnessMax, min: 0, max: 1, step: 0.01 },
     brightness: { value: PARTICLES.brightness, min: 0.5, max: 3, step: 0.05 },
-  })
+  }, { collapsed: true })
 
   const depth = useControls('depth (fog)', {
     fogNear: { value: FOG.near, min: 0, max: 8, step: 0.1 },
@@ -129,7 +129,7 @@ export function Scene() {
     pulseAmount: { value: CHOREOGRAPHY.pulseAmount, min: 0, max: 0.5, step: 0.01 },
     rotationStill: { value: CHOREOGRAPHY.rotationStill, min: 0, max: 1, step: 0.05 },
     pinVh: { value: CHOREOGRAPHY.interludePinVh, min: 0, max: 2, step: 0.05 },
-  })
+  }, { collapsed: true })
 
   // Live-tune the interlude pin length; setInterludePin re-refreshes ScrollTrigger.
   useEffect(() => {

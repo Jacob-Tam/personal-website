@@ -96,3 +96,21 @@
     transform: translateY(-3px);
   }
 }
+
+/* DEV-only: a visible, grabbable scrollbar for the leva control panel (DevPanel). */
+.dev-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.dev-scroll::-webkit-scrollbar {
+  width: 9px;
+}
+.dev-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.dev-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
