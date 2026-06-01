@@ -71,3 +71,12 @@
     background-color: color-mix(in oklab, var(--color-accent) 30%, transparent);
   }
 }
+
+@layer components {
+  /* A project card "powered on" by the scroll trace (ProjectsTrace): its border glows the accent
+     and stays lit (latched). */
+  [data-lit='true'] .project-card-media {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 30px -8px color-mix(in oklab, var(--color-accent-hi) 55%, transparent);
+  }
+}

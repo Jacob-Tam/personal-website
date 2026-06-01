@@ -21,12 +21,13 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (pr
   return (
     <button
       type="button"
+      data-project-card
       onClick={() => onOpen(project)}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       className="group block w-full text-left transition-transform duration-300 ease-out hover:-translate-y-1"
     >
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2 transition-[transform,border-color] duration-300 ease-out group-hover:scale-[1.02] group-hover:border-accent/40">
+      <div className="project-card-media relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2 transition-[transform,border-color,box-shadow] duration-300 ease-out group-hover:scale-[1.02] group-hover:border-accent/40">
         {MEDIA_READY ? (
           project.media.kind === 'video' ? (
             <video
