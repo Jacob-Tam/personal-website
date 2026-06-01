@@ -4,24 +4,32 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 11: loading screen DONE (`e2d2d9a`).** JT logo + blue progress + white shooting stars,
-  completing on real readiness, fading out into the hero (name/tagline cascade in). Verified.
+- **Step 12: mobile / low-power fallback DONE (`ee6a337`).** store.lowPower (lib/gpuTier.ts:
+  max-width 768 or no WebGL, resolved once at load) gates the canvas: low-power skips `<Scene>`,
+  Hero shows a static orb, lenis skips choreography + the interlude pin, Parallax + hero pointer
+  no-op, and the loader stops waiting on canvasReady. Verified at a phone viewport; desktop 3D
+  unchanged. NOTE: still owed a real-device test (docs/08 asks for it) + a real `orbStill` image.
+- **Step 11: loading screen DONE (`e2d2d9a`).** JT logo + blue progress + white shooting stars.
 - **Step 10: scroll indicator DONE (`c6398e3`); clip-path expand DEFERRED** until the real smartbox
   video is in (it's the half that needs the clip; most cuttable per docs/08).
-- Steps 0-11 complete (10b deferred); plus Jacob refinements, the removed Projects particle trace,
-  and the nav-fade / dev-panel UX fixes. PROGRESS current.
+- Steps 0-12 complete (10b deferred); plus Jacob refinements (ambient stars + planets backdrop, a
+  horizontal-scrollbar fix), the removed Projects particle trace, nav-fade / dev-panel UX. Current.
 
 ## Next action on resume
-- Jacob reviews the loading screen (reload localhost to see it; it only shows ~1.2s then fades).
-- Otherwise on "continue": **Step 12 - Mobile / low-power fallback** (detect via store.lowPower:
-  swap the 3D hero for a static still `orbStill` + keep layout; gate parallax/heavy motion). Then
-  13 reduced-motion/a11y, 14 SEO/OG, 15 perf (strip leva + r3f-perf, lazy media, code-split three,
-  Lighthouse), 16 easter egg + deploy.
+- Jacob: verify the mobile fallback on a REAL phone (docs/08 Step 12 explicitly asks for it; only
+  emulated so far). Also owes a real static orb still for `/media/orb-fallback.jpg` (ASSETS.orbStill);
+  Hero uses a CSS glow placeholder until then.
+- On "continue": **Step 13 - Reduced motion + a11y floor** (prefers-reduced-motion: orb static/slow,
+  no choreography/parallax, opacity-only reveals - some already partly done; keyboard nav, alt text,
+  contrast, visible focus). Then 14 SEO/OG, 15 perf (strip leva + r3f-perf, lazy media, code-split
+  three, Lighthouse), 16 easter egg + deploy.
 - **Step 10b (clip-path expand) still DEFERRED** until the trimmed smartbox video is at
   `/public/media/smartbox.mp4` and MEDIA_READY is true. When ready: a pinned element expands from a
   small rounded rect to fullscreen via clip-path/scale as you scroll end-of-About -> Projects,
   settling into the first card; mobile/reduced shows the card normally. Mind the interplay with the
   interlude pin (ScrollTrigger order).
+- Note (Step 15): `overflow-x: clip` on html now kills a stray ~15px horizontal scrollbar from the
+  full-bleed fixed layers + GSAP pin-spacer rounding up to full viewport width incl. scrollbar.
 
 - Step 9 (parallax system):
   - `shared/Parallax.tsx`: reusable wrapper (GSAP + Lenis-synced ScrollTrigger; outer trigger +
@@ -227,6 +235,26 @@ was, for reference:
     (First pass was too big / too many / not glowing / drift imperceptible - Jacob feedback, fixed.)
   - Both kept deliberately subtle per docs/09 (no generic twinkly starfield); support the
     orb-in-space feel without competing with it.
+- Horizontal-scrollbar fix (`a991122`): `overflow-x: clip` on html (index.css base). Full-bleed
+  fixed layers + the GSAP pin-spacer round up to full viewport width incl. the scrollbar gutter,
+  leaving a ~15px h-scroll. clip (not hidden) doesn't create a scroll container, so vertical scroll
+  / Lenis stay untouched. Diagnose with innerHeight - clientHeight (NOT scrollWidth, which still
+  reports clipped overflow and misled the first pass).
+- Step 12 (mobile / low-power fallback, `ee6a337`):
+  - `lib/gpuTier.ts` detectLowPower(): max-width 768px OR no-WebGL, evaluated once; seeds
+    store.lowPower at store creation (right before first render + before lenis sets up triggers).
+  - App: `{!lowPower && <Scene />}` - no canvas on mobile. Planets + Starfield (cheap CSS) stay.
+  - `hero/Hero.tsx`: when lowPower, a static CSS glowing-orb disc behind the name (top 42%, clamp
+    220-340px, blue-white radial gradient + soft glow), fades in on isLoaded. Swap to an
+    `<img src={ASSETS.orbStill}>` once Jacob exports a real still.
+  - `lib/lenis.ts`: choreography triggers (hero scrub, interlude PIN, about scrub) only created
+    when !lowPower; Lenis + ScrollTrigger.update stay wired so scrollProgress + <Reveal> still work.
+  - `shared/Parallax.tsx` + `lib/useHeroPointer.ts`: no-op under lowPower.
+  - `loading/LoadingScreen.tsx`: readiness is `fontsReady && (lowPower || canvasReady) && minDur` -
+    without the lowPower branch the loader hangs forever on mobile (no canvas to fire onCreated).
+  - Verified at a phone viewport: lowPower true, 0 canvases, 0 pin-spacers, no h-scroll, loads at
+    top, reveals fire on scroll, hero/about/projects/contact render single-column. Desktop
+    re-checked: canvas + interlude pin + phase advance all intact.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
