@@ -58,7 +58,7 @@ export function Scene() {
   const camera = useControls('camera', {
     fov: { value: CAMERA.fov, min: 35, max: 75, step: 1 },
     distance: { value: CAMERA.position[2], min: 3, max: 10, step: 0.1 },
-  })
+  }, { collapsed: true })
 
   const core = useControls('core', {
     radius: { value: CORE.radius, min: 0.1, max: 1, step: 0.01 },
@@ -96,31 +96,31 @@ export function Scene() {
   const depth = useControls('depth (fog)', {
     fogNear: { value: FOG.near, min: 0, max: 8, step: 0.1 },
     fogFar: { value: FOG.far, min: 4, max: 16, step: 0.1 },
-  })
+  }, { collapsed: true })
 
   const lights = useControls('lights', {
     ambient: { value: LIGHTS.ambient, min: 0, max: 1, step: 0.01 },
     pointIntensity: { value: LIGHTS.pointIntensity, min: 0, max: 6, step: 0.1 },
-  })
+  }, { collapsed: true })
 
   const bloom = useControls('bloom', {
     intensity: { value: BLOOM.intensity, min: 0, max: 2, step: 0.01 },
     luminanceThreshold: { value: BLOOM.luminanceThreshold, min: 0, max: 1, step: 0.01 },
     luminanceSmoothing: { value: BLOOM.luminanceSmoothing, min: 0, max: 1, step: 0.01 },
     radius: { value: BLOOM.radius, min: 0, max: 1, step: 0.01 },
-  })
+  }, { collapsed: true })
 
   const vignette = useControls('vignette', {
     enabled: VIGNETTE.enabled,
     darkness: { value: VIGNETTE.darkness, min: 0, max: 1, step: 0.01 },
     offset: { value: VIGNETTE.offset, min: 0, max: 1, step: 0.01 },
-  })
+  }, { collapsed: true })
 
   const cursor = useControls('cursor', {
     lerp: { value: CURSOR.lerp, min: 0.01, max: 0.2, step: 0.005 },
     clampX: { value: CURSOR.clampX, min: 0, max: 3, step: 0.05 },
     clampY: { value: CURSOR.clampY, min: 0, max: 3, step: 0.05 },
-  })
+  }, { collapsed: true })
 
   const choreography = useControls('choreography', {
     interludeRadius: { value: CHOREOGRAPHY.interludeRadius, min: 0.5, max: 4, step: 0.05 },

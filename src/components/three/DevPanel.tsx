@@ -6,17 +6,17 @@ const PANEL_WIDTH = 256
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 
 /*
-  DEV-only wrapper around the leva panel. Own title bar with an open/close toggle (so it can be
-  closed after opening) + a drag handle to reposition it. The controls live in a height-capped,
-  scrollable area (visible scrollbar) so nothing runs off-screen. leva fills the area; its own
-  title bar is hidden in favour of this one. Never shipped (gated behind import.meta.env.DEV).
+  DEV-only wrapper around the leva panel. A drag handle repositions it; leva's own title bar is the
+  collapse toggle and starts collapsed (`collapsed`) so the whole panel is CLOSED by default. The
+  controls live in a height-capped, scrollable area (visible scrollbar). leva stays mounted and
+  visible (so `fill` measures correctly and leva doesn't spawn its own default panel). Folders are
+  collapsed by default too (see the useControls settings in Scene). Never shipped.
 */
 export function DevPanel() {
   const [pos, setPos] = useState(() => ({
     x: Math.max(8, Math.round(window.innerWidth / 2 - PANEL_WIDTH / 2)),
     y: 8,
   }))
-  const [open, setOpen] = useState(true)
   const grab = useRef({ x: 0, y: 0 })
 
   function handleDragStart(event: React.PointerEvent) {
@@ -42,23 +42,11 @@ export function DevPanel() {
           onPointerDown={handleDragStart}
           className="flex cursor-grab select-none items-center gap-2 px-2.5 py-1.5 font-mono text-[0.7rem] uppercase tracking-wider text-text-mute active:cursor-grabbing"
         >
-          <button
-            type="button"
-            aria-label={open ? 'Collapse controls' : 'Expand controls'}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => setOpen((value) => !value)}
-            className="text-text-mute transition-colors hover:text-accent-hi"
-          >
-            {open ? '▾' : '▸'}
-          </button>
-          <span className="flex-1">orb controls</span>
-          <span aria-hidden className="opacity-50">⠿ drag</span>
+          <span aria-hidden>⠿</span> drag
         </div>
-        {open && (
-          <div className="dev-scroll max-h-[78vh] overflow-y-auto">
-            <Leva fill flat titleBar={false} />
-          </div>
-        )}
+        <div className="dev-scroll max-h-[78vh] overflow-y-auto">
+          <Leva fill flat collapsed titleBar={{ drag: false, title: 'orb controls' }} />
+        </div>
       </div>
     </div>
   )
