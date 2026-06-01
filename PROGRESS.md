@@ -4,19 +4,34 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 9 (Parallax system): IN PROGRESS.**
-- Steps 0-8 complete + committed, plus several Jacob refinements and the Projects particle trace
-  (v3; one deferred revisit noted below). PROGRESS is current.
+- **Step 9 (Parallax system): COMPLETE.** Awaiting review.
+- **Step 10 (Projects scroll indicator + clip-path expand): NOT STARTED.**
+- Steps 0-8 complete; Step 9 done (commits `f1e26e9`, `688eaea`); plus Jacob refinements + the
+  Projects particle trace (v3, one deferred revisit below). PROGRESS current.
 
 ## Next action on resume
-- Step 8 + a batch of Jacob's refinements are done (see below). Jacob is tuning the orb via the
-  dev leva 'choreography' folder. **Do NOT start Step 9 until Jacob says go** (he asked to be
-  prompted first).
-- When Jacob says go: start **Step 9 - Parallax system**. Reusable `shared/Parallax.tsx` (GSAP,
-  reads the Lenis scroll) applied to: the faint giant PROJECTS/ABOUT/CONTACT bg words (slow), the
-  About photo vs text column (photo slightly slower), and project media vs its caption.
-  Subtle/restrained. Disabled under reduced-motion + mobile (fully wired in Steps 12/13). Orb
-  parallax is already handled (Step 8).
+- Jacob reviews Step 9 parallax (scroll: bg words lag, About photo lags its text, project media
+  drifts vs its caption). Subtle/restrained per docs/01.
+- On "continue": start **Step 10 - Projects scroll indicator + clip-path expand**:
+  (a) sui.io-style vertical scroll indicator (dots + a moving marker) anchored during the Projects
+      section, tracking progress through the projects; blue active marker; hidden on mobile/reduced.
+  (b) clip-path expanding smartbox video: small rounded rect that expands toward fullscreen while
+      pinned as you scroll from end-of-About into Projects, settling into the first card. Smartbox
+      media is a PLACEHOLDER (solid poster) now, so it works but is less dramatic. Pin + scrub,
+      invalidateOnRefresh. Mobile/reduced: skip the pin/expand, show the card normally.
+  Per docs/08 "if time short", these (esp. the clip-path) are the most cuttable - confirm priority.
+  NOTE: a particle trace + a pinned interlude already live near here; mind ScrollTrigger interplay.
+
+- Step 9 (parallax system):
+  - `shared/Parallax.tsx`: reusable wrapper (GSAP + Lenis-synced ScrollTrigger; outer trigger +
+    animated inner so it can't feed back; speed > 0 = scrolls slower/recedes; reduced-motion off).
+  - `shared/BackgroundWord`: optional `parallax` prop - animates a nested inner span so parallax
+    doesn't clobber the outer span's centering transform.
+  - Applied: PROJECTS/ABOUT/CONTACT words slower (0.4-0.5); About photo slower than its text (0.15);
+    project media slower than its caption (0.08, wrapped in ProjectCard - the button stays
+    untransformed so the circuit trace + border latch are unaffected).
+  - Verified: bg word inner span carries the parallax transform; cards render; trace still lights;
+    no console errors. Disabled under prefers-reduced-motion (mobile gating is Step 12).
 
 ## Feature: Projects circuit trace (Jacob's; NOT in the original build order) - BUILT (v3)
 - `projects/ProjectsTrace.tsx`: scroll-driven SVG PARTICLE STREAM down the CENTER of the Projects
