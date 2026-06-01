@@ -54,6 +54,11 @@
   html {
     background-color: var(--color-bg);
     color-scheme: dark;
+    /* Full-bleed fixed layers + a GSAP pin-spacer round up to the full viewport width (including the
+       vertical scrollbar gutter), which otherwise shows a stray ~15px horizontal scrollbar. Clip it.
+       overflow-x: clip (not hidden) doesn't create a scroll container, so vertical scroll / Lenis are
+       untouched. */
+    overflow-x: clip;
   }
 
   body {
