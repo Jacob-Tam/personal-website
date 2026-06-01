@@ -22,7 +22,6 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (pr
   return (
     <button
       type="button"
-      data-project-card
       onClick={() => onOpen(project)}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
@@ -30,7 +29,7 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (pr
     >
       {/* Media drifts a touch slower than the caption below it (docs/05 parallax). */}
       <Parallax speed={0.08}>
-        <div className="project-card-media relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2 transition-[transform,border-color,box-shadow] duration-300 ease-out group-hover:scale-[1.02] group-hover:border-accent/40">
+        <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2 transition-[transform,border-color] duration-300 ease-out group-hover:scale-[1.02] group-hover:border-accent/40">
           {MEDIA_READY ? (
             project.media.kind === 'video' ? (
               <video
