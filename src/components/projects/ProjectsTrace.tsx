@@ -9,15 +9,15 @@ type Geo = {
   width: number
   height: number
   spineX: number
-  cards: { cy: number; innerX: number }[]
+  cards: { cy: number }[]
 }
 
-// A particle on the trace: where it sits, the scroll-front depth at which it reveals, plus look.
 type Particle = { x: number; y: number; revealY: number; r: number; color: string; delay: number }
 
-const PARTICLE_SPACING = 40 // medium, consistent spacing for both spine + branch particles
-const BIG_PARTICLE_COUNT = 2 // larger "source" particles at the top of the spine
-const REVEAL_SPAN = 90 // px of scroll-front travel over which a particle fades in
+const PARTICLE_SPACING = 40 // medium, even spacing down the spine
+const BIG_PARTICLE_COUNT = 2 // larger "source" particles at the top
+const REVEAL_SPAN = 90 // px of scroll-front travel over which a particle fades + slides in
+const ENTER_FROM_RIGHT = 80 // px each particle slides in from the right as it reveals
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
@@ -33,13 +33,13 @@ function mulberry32(seed: number) {
 }
 
 /*
-  Projects "circuit" trace (Jacob's idea, v2). A stream of small glowing particles - the same
-  blue/blue-violet family as the orb's orbiting particles (docs/04) - runs down the center and
-  branches out to each card. As you scroll, the front descends and the particles FADE IN as it
-  passes them (so the line is made of particles, not a solid stroke); when the front reaches a card
-  its branch + border light up and STAY lit (latched). Built as an SVG overlay since the orb canvas
-  is off here; positions measured from the real (staggered) cards. Mounted only on wider screens
-  with motion allowed (see Projects). Kept restrained per docs/01.
+  Projects "circuit" trace (Jacob's idea, v3). A single vertical stream of small glowing particles
+  in the orb palette (steel-blue + ~30% blue-violet, docs/04) runs down the center. As the scroll
+  front descends, each particle SLIDES IN FROM THE RIGHT and fades in; when the front reaches a
+  card's level the card's border lights up and STAYS lit (latched). No horizontal connector lines.
+  The trace starts as the section comes into view - just after the orb has drifted off. Built as an
+  SVG overlay (orb canvas is off here); positions measured from the real (staggered) cards. Mounted
+  only on wider screens with motion allowed (see Projects). Restrained per docs/01.
 */
 export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDivElement | null> }) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -52,10 +52,7 @@ export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDi
       const base = container.getBoundingClientRect()
       const cards = Array.from(container.querySelectorAll<HTMLElement>('[data-project-card]')).map((card) => {
         const r = card.getBoundingClientRect()
-        const cy = r.top - base.top + r.height / 2
-        const center = r.left - base.left + r.width / 2
-        const innerX = center < base.width / 2 ? r.right - base.left : r.left - base.left
-        return { cy, innerX }
+        return { cy: r.top - base.top + r.height / 2 }
       })
       setGeo({ width: base.width, height: base.height, spineX: base.width / 2, cards })
     }
@@ -65,9 +62,8 @@ export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDi
     return () => observer.disconnect()
   }, [containerRef])
 
-  // Deterministic particle field: a column down the spine + a few along each branch. Colours match
-  // the orb (steel-blue with ~30% blue-violet). revealY = the scroll-front depth at which it appears
-  // (its own y on the spine; the card's cy for branch particles, so a branch lights with its card).
+  // Deterministic particle field: an even, medium-spaced column down the spine, plus 1-2 larger
+  // particles at the top. Colours match the orb (steel-blue with ~30% blue-violet).
   const particles = useMemo<Particle[]>(() => {
     if (!geo) return []
     const rng = mulberry32(SEED + 7)
@@ -78,74 +74,40 @@ export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDi
     }
     const list: Particle[] = []
 
-    // Spine particles at an even, medium spacing down the center.
     const spineCount = Math.max(2, Math.round(geo.height / PARTICLE_SPACING))
     for (let i = 0; i < spineCount; i++) {
       const y = (i / (spineCount - 1)) * geo.height
-      list.push({
-        x: geo.spineX + (rng() - 0.5) * 7,
-        y,
-        revealY: y,
-        r: lerp(1.6, 3.4, rng()),
-        color: pickColor(),
-        delay: rng() * 4,
-      })
+      list.push({ x: geo.spineX + (rng() - 0.5) * 7, y, revealY: y, r: lerp(1.6, 3.4, rng()), color: pickColor(), delay: rng() * 4 })
     }
 
-    // Branch particles at the SAME medium spacing (short branches end up with ~1 dot).
-    geo.cards.forEach((card) => {
-      const branchLength = Math.abs(card.innerX - geo.spineX)
-      const branchCount = Math.max(1, Math.round(branchLength / PARTICLE_SPACING))
-      for (let i = 0; i < branchCount; i++) {
-        const t = (i + 1) / (branchCount + 1)
-        list.push({
-          x: lerp(geo.spineX, card.innerX, t) + (rng() - 0.5) * 4,
-          y: card.cy + (rng() - 0.5) * 6,
-          revealY: card.cy,
-          r: lerp(1.6, 3.2, rng()),
-          color: pickColor(),
-          delay: rng() * 4,
-        })
-      }
-    })
-
-    // 1-2 larger "source" particles at the very top of the spine (pushed last so they render on top).
+    // Larger "source" particles at the very top (pushed last so they render on top).
     for (let i = 0; i < BIG_PARTICLE_COUNT; i++) {
       const y = i * 16
-      list.push({
-        x: geo.spineX + (rng() - 0.5) * 5,
-        y,
-        revealY: y,
-        r: lerp(5, 7, rng()),
-        color: pickColor(),
-        delay: rng() * 4,
-      })
+      list.push({ x: geo.spineX + (rng() - 0.5) * 5, y, revealY: y, r: lerp(5, 7, rng()), color: pickColor(), delay: rng() * 4 })
     }
-
     return list
   }, [geo])
 
-  // Scroll-driven reveal: the front descends, particles fade in as it passes, branch + border latch.
+  // Scroll-driven reveal: front descends -> particles slide in from the right + fade in; borders latch.
   useEffect(() => {
     const container = containerRef.current
     const svg = svgRef.current
     if (!container || !svg || !geo) return
 
-    const dots = Array.from(svg.querySelectorAll<SVGCircleElement>('[data-particle]'))
-    const branches = Array.from(svg.querySelectorAll<SVGPathElement>('[data-branch]'))
+    const groups = Array.from(svg.querySelectorAll<SVGGElement>('[data-particle]'))
     const cards = Array.from(container.querySelectorAll<HTMLElement>('[data-project-card]'))
     const lit = geo.cards.map(() => false)
 
     const draw = (progress: number) => {
       const frontY = progress * geo.height
-      dots.forEach((dot, i) => {
+      groups.forEach((group, i) => {
         const reveal = Math.min(Math.max((frontY - particles[i].revealY) / REVEAL_SPAN, 0), 1)
-        dot.style.opacity = `${reveal}`
+        group.style.opacity = `${reveal}`
+        group.style.transform = `translateX(${(1 - reveal) * ENTER_FROM_RIGHT}px)`
       })
       geo.cards.forEach((card, i) => {
         if (frontY >= card.cy && !lit[i]) {
           lit[i] = true
-          branches[i]?.classList.add('is-lit')
           cards[i]?.setAttribute('data-lit', 'true')
         }
       })
@@ -153,7 +115,7 @@ export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDi
 
     const trigger = ScrollTrigger.create({
       trigger: container,
-      start: 'top center',
+      start: 'top 70%', // begin as the section comes in - just after the orb has drifted off
       end: 'bottom center',
       scrub: true,
       onUpdate: (self) => draw(self.progress),
@@ -172,33 +134,20 @@ export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDi
       fill="none"
     >
       {geo && (
-        <>
-          {/* faint branch guides; brighten when their card lights */}
-          {geo.cards.map((card, i) => (
-            <path
-              key={i}
-              data-branch={i}
-              d={`M ${geo.spineX} ${card.cy} L ${card.innerX} ${card.cy}`}
-              className="stroke-border transition-[stroke] duration-500 [&.is-lit]:stroke-accent/50"
-              strokeWidth={1}
-            />
-          ))}
-          {/* the stream of glowing particles (orb palette) */}
-          <g style={{ filter: 'drop-shadow(0 0 4px var(--color-accent-hi))' }}>
-            {particles.map((p, i) => (
+        <g style={{ filter: 'drop-shadow(0 0 4px var(--color-accent-hi))' }}>
+          {particles.map((p, i) => (
+            <g key={i} data-particle={i} style={{ opacity: 0 }}>
               <circle
-                key={i}
-                data-particle={i}
                 className="trace-particle"
                 cx={p.x}
                 cy={p.y}
                 r={p.r}
                 fill={p.color}
-                style={{ opacity: 0, animationDelay: `${p.delay}s` }}
+                style={{ animationDelay: `${p.delay}s` }}
               />
-            ))}
-          </g>
-        </>
+            </g>
+          ))}
+        </g>
       )}
     </svg>
   )
