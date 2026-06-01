@@ -90,6 +90,35 @@
   background: transparent;
 }
 
+/* Ambient background starfield (Starfield.tsx): sparse faint white points behind the whole site.
+   A soft box-shadow gives each a gentle point-glow instead of a hard pixel; a subset breathes
+   slowly via star-twinkle (between 35% and 100% of its peak opacity), disabled for reduced motion. */
+.star {
+  position: absolute;
+  border-radius: 9999px;
+  background-color: #fff;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
+}
+.star-twinkle {
+  opacity: var(--peak);
+  animation: star-twinkle ease-in-out infinite;
+}
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: calc(var(--peak) * 0.35);
+  }
+  50% {
+    opacity: var(--peak);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star-twinkle {
+    animation: none;
+    opacity: var(--peak);
+  }
+}
+
 /* Loading-screen shooting stars: a short white streak with a fading trail, sweeping diagonally.
    The gradient puts the bright head at the leading (down-right) end; rotate+translateX sweeps it. */
 .shooting-star {
