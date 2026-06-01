@@ -177,6 +177,9 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     leva controls added. This intentionally overrides the docs' blue-only rule per Jacob.
   - leva panel: top-center at the very top, narrowed to w-64; nav is now full-width (no max-w-6xl)
     so its wordmark/links/icons sit at the screen edges, clear of the panel.
+  - (later) Nav now FADES out on scroll (transition-opacity 0.5s) instead of snapping. The dev leva
+    panel is now `three/DevPanel.tsx`: a draggable, max-h-[78vh] scrollable container around
+    `<Leva fill>` so every control is reachable (it had been running off the bottom of the screen).
   - Interlude motion (final): the orb arcs CLOCKWISE around the centered text - starts above it,
     swings through the right, ends below it at horizontal center; then the About drift lifts it
     from there up and off. Smoothstep-eased (no snappy start). CHOREOGRAPHY.interludeRadius +
