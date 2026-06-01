@@ -18,20 +18,22 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   Subtle/restrained. Disabled under reduced-motion + mobile (fully wired in Steps 12/13). Orb
   parallax is already handled (Step 8).
 
-## Feature: Projects circuit trace (Jacob's; NOT in the original build order) - BUILT
-- `projects/ProjectsTrace.tsx`: scroll-driven SVG circuit trace in the Projects section. A center
-  spine draws downward (scrubbed ScrollTrigger), glowing dots descend at the front, and a branch
-  reaches each card; when the front passes a card its branch + border light and STAY lit (latched).
-  Borders latch via `data-lit` on the card -> index.css `[data-lit] .project-card-media` (accent +
-  glow). Built in DOM/SVG (the orb canvas frameloop is 'never' here).
-- Card positions measured via getBoundingClientRect relative to the grid container (NOTE: offsetTop
-  was wrong - cards' offsetParent is their transformed Reveal wrapper, so all reported the same cy).
-  Re-measured on resize via ResizeObserver.
-- Gated: only renders at >=768px with motion allowed (matchMedia in Projects). Otherwise no trace,
-  borders stay muted. Step 12/13 will formalize lowPower/reduced-motion via the store.
-- Tunables (currently in-component constants): DOT_COUNT, DOT_SPACING; colours via accent tokens;
-  glow via the drop-shadow filter; ScrollTrigger start/end. Could expose in leva / lib/constants later.
-- Verified at 1200px: spine + descending dots, top cards lit blue, lower ones muted, no console errors.
+## Feature: Projects circuit trace (Jacob's; NOT in the original build order) - BUILT (v2)
+- `projects/ProjectsTrace.tsx`: scroll-driven SVG PARTICLE STREAM in the Projects section (v2
+  replaced the v1 solid drawn line). A field of small glowing particles in the ORB palette
+  (steel-blue + ~30% blue-violet, varied size, glow) runs down the center and out a branch to each
+  card. As the scroll front (scrubbed ScrollTrigger) descends, particles FADE IN as it passes them
+  (the trail is particles, not a stroke; the leading ones fade in on entry). When the front reaches
+  a card, its faint branch guide + border light and STAY lit (latched via `data-lit` -> index.css
+  `[data-lit] .project-card-media`). A CSS float (`trace-float` keyframes) gives gentle life. Built
+  in DOM/SVG (orb canvas is off here).
+- Card positions via getBoundingClientRect relative to the grid container (offsetTop was wrong:
+  cards' offsetParent is their transformed Reveal wrapper). Re-measured on resize (ResizeObserver).
+- Gated: renders at >=768px with motion allowed (matchMedia in Projects); else no trace, borders
+  muted. Step 12/13 formalize lowPower/reduced-motion via the store.
+- Tunables (in-component constants): SPINE_COUNT, BRANCH_COUNT, REVEAL_SPAN; particle size/hue/glow.
+  Could expose in leva / lib/constants later.
+- Verified at 1200px: blue/violet particle stream + branches, top borders lit, no console errors.
 
 ## Done so far
 - Step 0: Vite 8 + React 19 + TS 6 scaffold; full dep stack installed (see package.json).
