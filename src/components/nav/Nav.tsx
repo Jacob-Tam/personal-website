@@ -29,8 +29,8 @@ export function Nav() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-30 transition-[transform,opacity] duration-500 ease-out ${
-        atTop ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
+      className={`fixed inset-x-0 top-0 z-30 transition-opacity duration-500 ease-out ${
+        atTop ? 'opacity-100' : 'pointer-events-none opacity-0'
       }`}
     >
       <nav className="flex h-20 w-full items-center justify-between px-6 md:px-12">
