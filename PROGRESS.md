@@ -218,12 +218,13 @@ was, for reference:
   - `shared/Starfield.tsx` (z-[5]): seeded 48 small white stars, mostly 1px, low opacity with depth
     variation + soft box-shadow glow; ~1/3 breathe slowly (`.star-twinkle`, off under reduced
     motion). Tunables: STAR_COUNT, STAR_SEED, opacity range, twinkle fraction/speed.
-  - `shared/Planets.tsx` (z-[4], behind the stars): 5 small dim distant planets, soft CSS
-    radial-gradient spheres lit upper-left (`.planet` + `.planet-slate/-cool/-accent` in index.css;
-    near-monochrome + one faint accent-tinted world). Hand-placed (not seeded) toward edges/corners,
-    clear of the orb, hero name, and nav. Each drifts on a long eased alternating path (`planet-drift`,
-    ~110-196s/direction, minutes per cycle) so motion is barely-there; off under reduced motion.
-    Tunables: the PLANETS array (pos/size/palette/dx/dy/duration) + the palette gradients.
+  - `shared/Planets.tsx` (z-[4], behind the stars): 3 small (12-24px) dim distant planets, soft CSS
+    radial-gradient spheres lit upper-left with a faint glow (`.planet` + `.planet-slate/-cool/-accent`
+    in index.css; near-monochrome + one faint accent-tinted world). Hand-placed (not seeded) toward
+    edges/corners, clear of the orb, hero name, and nav. Each drifts on a slow circular orbit around
+    its spot (`planet-drift`, ~30-45s/orbit, ~6-11px/s) - gentle but visible; off under reduced motion.
+    Tunables: the PLANETS array (pos/size/palette/orbit/duration) + the palette gradients/glow.
+    (First pass was too big / too many / not glowing / drift imperceptible - Jacob feedback, fixed.)
   - Both kept deliberately subtle per docs/09 (no generic twinkly starfield); support the
     orb-in-space feel without competing with it.
 
