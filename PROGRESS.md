@@ -18,22 +18,22 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   Subtle/restrained. Disabled under reduced-motion + mobile (fully wired in Steps 12/13). Orb
   parallax is already handled (Step 8).
 
-## Feature: Projects circuit trace (Jacob's; NOT in the original build order) - BUILT (v2)
-- `projects/ProjectsTrace.tsx`: scroll-driven SVG PARTICLE STREAM in the Projects section (v2
-  replaced the v1 solid drawn line). A field of small glowing particles in the ORB palette
-  (steel-blue + ~30% blue-violet, varied size, glow) runs down the center and out a branch to each
-  card. As the scroll front (scrubbed ScrollTrigger) descends, particles FADE IN as it passes them
-  (the trail is particles, not a stroke; the leading ones fade in on entry). When the front reaches
-  a card, its faint branch guide + border light and STAY lit (latched via `data-lit` -> index.css
-  `[data-lit] .project-card-media`). A CSS float (`trace-float` keyframes) gives gentle life. Built
-  in DOM/SVG (orb canvas is off here).
+## Feature: Projects circuit trace (Jacob's; NOT in the original build order) - BUILT (v3)
+- `projects/ProjectsTrace.tsx`: scroll-driven SVG PARTICLE STREAM down the CENTER of the Projects
+  section (no horizontal connector lines as of v3). Small glowing particles in the ORB palette
+  (steel-blue + ~30% blue-violet, varied size, glow) at even medium spacing, plus 1-2 larger ones at
+  the top. As the scroll front (scrubbed ScrollTrigger, start 'top 70%' so it begins just after the
+  orb exits) descends, each particle SLIDES IN FROM THE RIGHT + fades in; when the front reaches a
+  card's level its border lights and STAYS lit (latched via `data-lit` -> index.css
+  `[data-lit] .project-card-media`). Slide = a wrapping `<g>` transform; a CSS float (`trace-float`)
+  on the circle adds gentle life. Built in DOM/SVG (orb canvas is off here).
 - Card positions via getBoundingClientRect relative to the grid container (offsetTop was wrong:
   cards' offsetParent is their transformed Reveal wrapper). Re-measured on resize (ResizeObserver).
 - Gated: renders at >=768px with motion allowed (matchMedia in Projects); else no trace, borders
   muted. Step 12/13 formalize lowPower/reduced-motion via the store.
-- Tunables (in-component constants): PARTICLE_SPACING (consistent spine+branch spacing),
-  BIG_PARTICLE_COUNT (larger dots at the top), REVEAL_SPAN; particle size/hue/glow. Could expose
-  in leva / lib/constants later.
+- Tunables (in-component constants): PARTICLE_SPACING, BIG_PARTICLE_COUNT, REVEAL_SPAN (fade/slide
+  speed), ENTER_FROM_RIGHT (right-side entry distance), the trigger start ('top 70%'); particle
+  size/hue/glow. Could expose in leva / lib/constants later.
 - Verified at 1200px: blue/violet particle stream + branches, top borders lit, no console errors.
 
 ## Done so far
