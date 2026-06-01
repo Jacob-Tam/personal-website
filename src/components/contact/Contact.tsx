@@ -6,7 +6,7 @@ import { LINKS } from '../../lib/assets'
 export function Contact() {
   return (
     <section id="contact" className="relative flex min-h-svh items-center justify-center overflow-hidden px-6 text-center">
-      <BackgroundWord className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">CONTACT</BackgroundWord>
+      <BackgroundWord className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" parallax={0.4}>CONTACT</BackgroundWord>
       <Reveal className="relative flex flex-col items-center gap-10" stagger={0.1}>
         <h2 className="text-h2 text-text">Get in touch</h2>
 

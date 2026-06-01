@@ -4,9 +4,9 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 8 (Orb scroll choreography): COMPLETE.** Awaiting review.
-- **Step 9 (Parallax system): NOT STARTED.**
-- Steps 0-7 complete and committed; Step 8 in 3 commits (latest `a1a1d65`).
+- **Step 9 (Parallax system): IN PROGRESS.**
+- Steps 0-8 complete + committed, plus several Jacob refinements and the Projects particle trace
+  (v3; one deferred revisit noted below). PROGRESS is current.
 
 ## Next action on resume
 - Step 8 + a batch of Jacob's refinements are done (see below). Jacob is tuning the orb via the
@@ -34,6 +34,10 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - Tunables (in-component constants): PARTICLE_SPACING, BIG_PARTICLE_COUNT, REVEAL_SPAN (fade/slide
   speed), ENTER_FROM_RIGHT (right-side entry distance), the trigger start ('top 70%'); particle
   size/hue/glow. Could expose in leva / lib/constants later.
+- REVISIT (Jacob, deferred): the v3 "slide in from the right" + "start just after the orb leaves"
+  did NOT visibly land for Jacob. Come back to it - likely make the right-side entry much more
+  pronounced (bigger ENTER_FROM_RIGHT, or give particles an off-screen-right origin that sweeps to
+  the spine) and clearly retime the start so it reads as following the orb's exit. Not done yet.
 - Verified at 1200px: blue/violet particle stream + branches, top borders lit, no console errors.
 
 ## Done so far
