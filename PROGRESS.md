@@ -4,22 +4,24 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
+- **Step 11: loading screen DONE (`e2d2d9a`).** JT logo + blue progress + white shooting stars,
+  completing on real readiness, fading out into the hero (name/tagline cascade in). Verified.
 - **Step 10: scroll indicator DONE (`c6398e3`); clip-path expand DEFERRED** until the real smartbox
   video is in (it's the half that needs the clip; most cuttable per docs/08).
-- Steps 0-9 complete; plus Jacob refinements, the Projects particle trace (v3, one deferred
-  revisit below), and the nav-fade / dev-panel UX fixes. PROGRESS current.
+- Steps 0-11 complete (10b deferred); plus Jacob refinements, the removed Projects particle trace,
+  and the nav-fade / dev-panel UX fixes. PROGRESS current.
 
 ## Next action on resume
-- Jacob reviews the Projects scroll indicator (right edge: 4 dots + blue marker + active number).
-- **Step 10b (clip-path expand) is DEFERRED** until the trimmed smartbox video is at
+- Jacob reviews the loading screen (reload localhost to see it; it only shows ~1.2s then fades).
+- Otherwise on "continue": **Step 12 - Mobile / low-power fallback** (detect via store.lowPower:
+  swap the 3D hero for a static still `orbStill` + keep layout; gate parallax/heavy motion). Then
+  13 reduced-motion/a11y, 14 SEO/OG, 15 perf (strip leva + r3f-perf, lazy media, code-split three,
+  Lighthouse), 16 easter egg + deploy.
+- **Step 10b (clip-path expand) still DEFERRED** until the trimmed smartbox video is at
   `/public/media/smartbox.mp4` and MEDIA_READY is true. When ready: a pinned element expands from a
   small rounded rect to fullscreen via clip-path/scale as you scroll end-of-About -> Projects,
   settling into the first card; mobile/reduced shows the card normally. Mind the interplay with the
-  interlude pin + the particle trace (ScrollTrigger order).
-- Otherwise on "continue": **Step 11 - Loading screen + hero entrance** (JT logo + blue progress
-  tracking real asset readiness, fade out into the hero with name/tagline + orb appearing).
-  Remaining after: 12 mobile fallback, 13 reduced-motion/a11y, 14 SEO/OG, 15 perf (strip leva +
-  r3f-perf, lazy media, Lighthouse), 16 easter egg + deploy.
+  interlude pin (ScrollTrigger order).
 
 - Step 9 (parallax system):
   - `shared/Parallax.tsx`: reusable wrapper (GSAP + Lenis-synced ScrollTrigger; outer trigger +
@@ -191,6 +193,24 @@ was, for reference:
   - `shared/BackgroundWord` extracted; About ("ABOUT") + Contact ("CONTACT") now have the faint
     giant background word like Projects. About's is subtler (behind the text column) - reposition
     if Jacob wants it more prominent.
+- Step 11 (loading screen + hero entrance):
+  - `loading/LoadingScreen.tsx`: full-viewport black, z-[100], on top in App and self-unmounting.
+    `/jt-logo.png` (the JT monogram, optimized to 600px/31K) centered + a thin blue progress line.
+    White shooting-star trails behind it (CSS `.shooting-star` + `@keyframes shooting-star` in
+    index.css: a short white->transparent gradient streak, rotate(45deg)+translateX sweep, 7 spans
+    with staggered delays/durations). Progress crawls honestly to 92% then completes on REAL
+    readiness: `document.fonts.ready` + `store.canvasReady` + a 1.2s minimum. On complete: fade out
+    (700ms) then unmount, `setLoaded(true)`, scroll reset to top.
+  - `store.canvasReady` + `setCanvasReady` added; set from the `<Canvas onCreated>` in Scene (the
+    orb's first-frame / GL-ready signal the loader waits on).
+  - Scroll locked while loading via `documentElement.style.overflow='hidden'` (restored on
+    complete + on unmount; lenis.scrollTo(0, immediate) on complete). Reliable regardless of when
+    lenis inits (its handle is null at the loader's mount, child-before-parent effect order).
+  - `hero/Hero.tsx`: name, tagline, scroll affordance now fade + rise in a cascade (delay-0/200/500)
+    keyed on `store.isLoaded`, landing as the loader fades and the orb appears behind them.
+  - Verified (dev :5175, font-stall initScript to hold the loader for a screenshot, then a clean
+    reload): logo + stars + progress render; full reveal works; isLoaded/canvasReady true, phase
+    'hero', html overflow reset to ''; console clean (only the benign THREE.Clock deprecation warn).
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
@@ -218,7 +238,8 @@ was, for reference:
   warns against and looked flat; concentric tilted rings read as a 3D Bohr atom. The strongest 3D
   cue still arrives with the Step 8 scroll motion (orb drifting up past the viewer).
 - Nav left uses the "Jacob Tam" wordmark as the JT-logo placeholder (docs/02 lists "Jacob Tam"
-  there; the JT logo replaces it when ready). The "JT" text monogram is for the loading screen.
+  there; the JT logo replaces it when ready). The loading screen uses the real `/jt-logo.png`
+  monogram (already in /public); the nav could adopt the same image later if Jacob wants.
 - MEDIA_READY (lib/assets.ts) gates ALL real media (project cards + About photo) behind one flag;
   flip to true once trimmed/compressed files are in /public/media. Can split per-asset if needed.
 - (Resolved in Step 8) The orb no longer floats behind every section: it drifts off by the end
