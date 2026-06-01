@@ -2,12 +2,13 @@ import { useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
-import { Leva, useControls } from 'leva'
+import { useControls } from 'leva'
 import * as THREE from 'three'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
 import { useOrbChoreography } from './useOrbChoreography'
+import { DevPanel } from './DevPanel'
 import { useScrollStore } from '../../store/useScrollStore'
 import { setInterludePin } from '../../lib/lenis'
 import { BLOOM, CAMERA, CHOREOGRAPHY, CORE, CURSOR, FOG, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
@@ -137,15 +138,8 @@ export function Scene() {
 
   return (
     <>
-      {/* DEV-only orb controls, anchored top-center (narrow) - the nav is full-width so its
-          links/icons sit at the screen edges, clear of this panel. */}
-      {isDev && (
-        <div className="pointer-events-none fixed left-1/2 top-1 z-50 w-64 -translate-x-1/2">
-          <div className="pointer-events-auto">
-            <Leva fill flat collapsed titleBar={{ drag: false, title: 'orb controls' }} />
-          </div>
-        </div>
-      )}
+      {/* DEV-only orb controls: draggable + height-capped + scrollable (see DevPanel). */}
+      {isDev && <DevPanel />}
       <div className="pointer-events-none fixed inset-0 z-0">
         <Canvas
           frameloop={phase === 'past' ? 'never' : 'always'}
