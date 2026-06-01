@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { Parallax } from '../shared/Parallax'
 import { MEDIA_READY } from '../../lib/assets'
 import type { Project, ProjectMediaKind } from './projectsData'
 
@@ -27,25 +28,28 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (pr
       onMouseLeave={handleLeave}
       className="group block w-full text-left transition-transform duration-300 ease-out hover:-translate-y-1"
     >
-      <div className="project-card-media relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2 transition-[transform,border-color,box-shadow] duration-300 ease-out group-hover:scale-[1.02] group-hover:border-accent/40">
-        {MEDIA_READY ? (
-          project.media.kind === 'video' ? (
-            <video
-              ref={videoRef}
-              src={project.media.src}
-              muted
-              loop
-              playsInline
-              preload="none"
-              className="h-full w-full object-cover"
-            />
+      {/* Media drifts a touch slower than the caption below it (docs/05 parallax). */}
+      <Parallax speed={0.08}>
+        <div className="project-card-media relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2 transition-[transform,border-color,box-shadow] duration-300 ease-out group-hover:scale-[1.02] group-hover:border-accent/40">
+          {MEDIA_READY ? (
+            project.media.kind === 'video' ? (
+              <video
+                ref={videoRef}
+                src={project.media.src}
+                muted
+                loop
+                playsInline
+                preload="none"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <img src={project.media.src} alt={project.media.alt} className="h-full w-full object-cover" />
+            )
           ) : (
-            <img src={project.media.src} alt={project.media.alt} className="h-full w-full object-cover" />
-          )
-        ) : (
-          <PlaceholderVisual kind={project.media.kind} />
-        )}
-      </div>
+            <PlaceholderVisual kind={project.media.kind} />
+          )}
+        </div>
+      </Parallax>
       <h3 className="mt-5 text-h3 text-text">{project.title}</h3>
       <p className="mt-2 text-body text-text-mute">{project.tagline}</p>
     </button>
