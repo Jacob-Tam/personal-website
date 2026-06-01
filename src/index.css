@@ -79,4 +79,20 @@
     border-color: var(--color-accent);
     box-shadow: 0 0 30px -8px color-mix(in oklab, var(--color-accent-hi) 55%, transparent);
   }
+
+  /* Gentle float on the ProjectsTrace particles so they feel alive, like the orb's particles.
+     Only transform is animated here; opacity is driven by the scroll reveal in JS. */
+  .trace-particle {
+    animation: trace-float 4.5s ease-in-out infinite;
+  }
+}
+
+@keyframes trace-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
 }
