@@ -212,6 +212,14 @@ was, for reference:
     reload): logo + stars + progress render; full reveal works; isLoaded/canvasReady true, phase
     'hero', html overflow reset to ''; console clean (only the benign THREE.Clock deprecation warn).
 
+- Jacob refinement (after Step 11): `shared/Starfield.tsx` - a faint ambient starfield behind the
+  whole site. Seeded ~34 small white stars, fixed full-viewport at `z-[5]` (above canvas, below
+  grain/content), mostly 1px, low opacity with depth variation + soft box-shadow glow; ~1/3 breathe
+  slowly (`.star-twinkle` in index.css, off under reduced-motion). Tunables in-component:
+  STAR_COUNT, STAR_SEED, the opacity range, twinkle fraction/speed. Kept subtle per docs/09.
+  Placed in front of the canvas (not behind) because the post-processed canvas is effectively
+  opaque, so a layer behind it wouldn't show; the few stars that fall over the bright orb self-mask.
+
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
   `@theme` in `index.css`. v4's CSS-variable model matches the "tokens as CSS variables"
