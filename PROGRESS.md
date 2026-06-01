@@ -212,13 +212,20 @@ was, for reference:
     reload): logo + stars + progress render; full reveal works; isLoaded/canvasReady true, phase
     'hero', html overflow reset to ''; console clean (only the benign THREE.Clock deprecation warn).
 
-- Jacob refinement (after Step 11): `shared/Starfield.tsx` - a faint ambient starfield behind the
-  whole site. Seeded ~34 small white stars, fixed full-viewport at `z-[5]` (above canvas, below
-  grain/content), mostly 1px, low opacity with depth variation + soft box-shadow glow; ~1/3 breathe
-  slowly (`.star-twinkle` in index.css, off under reduced-motion). Tunables in-component:
-  STAR_COUNT, STAR_SEED, the opacity range, twinkle fraction/speed. Kept subtle per docs/09.
-  Placed in front of the canvas (not behind) because the post-processed canvas is effectively
-  opaque, so a layer behind it wouldn't show; the few stars that fall over the bright orb self-mask.
+- Jacob refinement (after Step 11): ambient space backdrop behind the whole site, two fixed
+  full-viewport layers in front of the canvas (it's effectively opaque, so a layer behind it
+  wouldn't show) and below grain/content; the few elements over the bright orb self-mask.
+  - `shared/Starfield.tsx` (z-[5]): seeded 48 small white stars, mostly 1px, low opacity with depth
+    variation + soft box-shadow glow; ~1/3 breathe slowly (`.star-twinkle`, off under reduced
+    motion). Tunables: STAR_COUNT, STAR_SEED, opacity range, twinkle fraction/speed.
+  - `shared/Planets.tsx` (z-[4], behind the stars): 5 small dim distant planets, soft CSS
+    radial-gradient spheres lit upper-left (`.planet` + `.planet-slate/-cool/-accent` in index.css;
+    near-monochrome + one faint accent-tinted world). Hand-placed (not seeded) toward edges/corners,
+    clear of the orb, hero name, and nav. Each drifts on a long eased alternating path (`planet-drift`,
+    ~110-196s/direction, minutes per cycle) so motion is barely-there; off under reduced motion.
+    Tunables: the PLANETS array (pos/size/palette/dx/dy/duration) + the palette gradients.
+  - Both kept deliberately subtle per docs/09 (no generic twinkly starfield); support the
+    orb-in-space feel without competing with it.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
