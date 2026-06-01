@@ -4,7 +4,7 @@
 // stable across reloads; a subset breathes very slowly (see .star-twinkle in index.css, off under
 // reduced-motion). Kept deliberately subtle and sparse per docs/09 (no generic twinkly starfield).
 
-const STAR_COUNT = 34
+const STAR_COUNT = 48
 const STAR_SEED = 9921
 
 // Small seeded PRNG so the scatter is deterministic (no re-randomizing / jitter between mounts).

@@ -2,6 +2,7 @@ import { Scene } from './components/three/Scene'
 import { useSmoothScroll } from './lib/lenis'
 import { useHeroPointer } from './lib/useHeroPointer'
 import { LoadingScreen } from './components/loading/LoadingScreen'
+import { Planets } from './components/shared/Planets'
 import { Starfield } from './components/shared/Starfield'
 import { GrainOverlay } from './components/shared/GrainOverlay'
 import { Nav } from './components/nav/Nav'
@@ -21,7 +22,9 @@ function App() {
     <>
       {/* The persistent 3D <Canvas> lives here, fixed at z-0 behind all content. */}
       <Scene />
-      {/* Faint ambient stars behind everything (z-[5]: above the canvas, below grain + content). */}
+      {/* Faint ambient backdrop behind everything (above the canvas, below grain + content):
+          slow-drifting planets (z-[4]) with the starfield in front of them (z-[5]). */}
+      <Planets />
       <Starfield />
       <GrainOverlay />
       <Nav />

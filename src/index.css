@@ -117,6 +117,53 @@
     animation: none;
     opacity: var(--peak);
   }
+  .planet {
+    animation: none;
+  }
+}
+
+/* Ambient background planets (Planets.tsx): small, dim, distant spheres drifting very slowly far
+   behind the site. Soft radial-gradient bodies lit from the upper-left, near-monochrome with one
+   faint accent-tinted world. The long eased alternating drift is disabled under reduced motion. */
+.planet {
+  position: absolute;
+  border-radius: 9999px;
+  animation: planet-drift var(--dur, 150s) ease-in-out infinite alternate;
+}
+.planet-slate {
+  background: radial-gradient(
+    circle at 34% 30%,
+    rgba(156, 170, 190, 0.44) 0%,
+    rgba(52, 63, 78, 0.5) 42%,
+    rgba(10, 15, 22, 0.46) 78%,
+    transparent 100%
+  );
+}
+.planet-cool {
+  background: radial-gradient(
+    circle at 36% 32%,
+    rgba(126, 148, 178, 0.46) 0%,
+    rgba(36, 48, 66, 0.5) 45%,
+    rgba(8, 12, 18, 0.46) 80%,
+    transparent 100%
+  );
+}
+.planet-accent {
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(110, 180, 224, 0.42) 0%,
+    rgba(33, 74, 108, 0.48) 45%,
+    rgba(8, 14, 22, 0.46) 80%,
+    transparent 100%
+  );
+}
+@keyframes planet-drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(var(--dx, 0), var(--dy, 0));
+  }
 }
 
 /* Loading-screen shooting stars: a short white streak with a fading trail, sweeping diagonally.
