@@ -15,8 +15,8 @@ type Geo = {
 // A particle on the trace: where it sits, the scroll-front depth at which it reveals, plus look.
 type Particle = { x: number; y: number; revealY: number; r: number; color: string; delay: number }
 
-const SPINE_COUNT = 16
-const BRANCH_COUNT = 4
+const PARTICLE_SPACING = 40 // medium, consistent spacing for both spine + branch particles
+const BIG_PARTICLE_COUNT = 2 // larger "source" particles at the top of the spine
 const REVEAL_SPAN = 90 // px of scroll-front travel over which a particle fades in
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
@@ -77,8 +77,11 @@ export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDi
       return `hsl(${hue.toFixed(0)} 80% ${lerp(62, 74, rng()).toFixed(0)}%)`
     }
     const list: Particle[] = []
-    for (let i = 0; i < SPINE_COUNT; i++) {
-      const y = (i / (SPINE_COUNT - 1)) * geo.height
+
+    // Spine particles at an even, medium spacing down the center.
+    const spineCount = Math.max(2, Math.round(geo.height / PARTICLE_SPACING))
+    for (let i = 0; i < spineCount; i++) {
+      const y = (i / (spineCount - 1)) * geo.height
       list.push({
         x: geo.spineX + (rng() - 0.5) * 7,
         y,
@@ -88,9 +91,13 @@ export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDi
         delay: rng() * 4,
       })
     }
+
+    // Branch particles at the SAME medium spacing (short branches end up with ~1 dot).
     geo.cards.forEach((card) => {
-      for (let i = 0; i < BRANCH_COUNT; i++) {
-        const t = (i + 1) / (BRANCH_COUNT + 1)
+      const branchLength = Math.abs(card.innerX - geo.spineX)
+      const branchCount = Math.max(1, Math.round(branchLength / PARTICLE_SPACING))
+      for (let i = 0; i < branchCount; i++) {
+        const t = (i + 1) / (branchCount + 1)
         list.push({
           x: lerp(geo.spineX, card.innerX, t) + (rng() - 0.5) * 4,
           y: card.cy + (rng() - 0.5) * 6,
@@ -101,6 +108,20 @@ export function ProjectsTrace({ containerRef }: { containerRef: RefObject<HTMLDi
         })
       }
     })
+
+    // 1-2 larger "source" particles at the very top of the spine (pushed last so they render on top).
+    for (let i = 0; i < BIG_PARTICLE_COUNT; i++) {
+      const y = i * 16
+      list.push({
+        x: geo.spineX + (rng() - 0.5) * 5,
+        y,
+        revealY: y,
+        r: lerp(5, 7, rng()),
+        color: pickColor(),
+        delay: rng() * 4,
+      })
+    }
+
     return list
   }, [geo])
 
