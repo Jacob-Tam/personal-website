@@ -2,6 +2,7 @@ import { useRef, type ReactNode } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useScrollStore } from '../../store/useScrollStore'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 
@@ -16,7 +17,7 @@ type ParallaxProps = {
   inner content from -shift to +shift over its trip through the viewport: net it moves DOWN
   relative to normal, so it appears to scroll slower (a receding/background layer). The trigger is
   the (untransformed) outer div so the animated inner never feeds back into its own measurement.
-  Disabled under prefers-reduced-motion (mobile/low-power gating is formalized in Step 12).
+  Disabled under prefers-reduced-motion and on low-power/mobile (docs/03: no parallax there).
 */
 export function Parallax({ children, speed = 0.2, className }: ParallaxProps) {
   const triggerRef = useRef<HTMLDivElement>(null!)
@@ -24,7 +25,8 @@ export function Parallax({ children, speed = 0.2, className }: ParallaxProps) {
 
   useGSAP(
     () => {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      const { lowPower } = useScrollStore.getState()
+      if (lowPower || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
       const shift = speed * 100
       gsap.fromTo(
         innerRef.current,

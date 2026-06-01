@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { detectLowPower } from '../lib/gpuTier'
 
 export type OrbPhase = 'hero' | 'interlude' | 'about' | 'past'
 
@@ -21,7 +22,7 @@ interface ScrollState {
   isLoaded: boolean // loading screen finished -> hero revealed
   canvasReady: boolean // the 3D canvas has rendered its first frame (loading-readiness signal)
   reducedMotion: boolean // prefers-reduced-motion
-  lowPower: boolean // mobile / weak GPU -> 3D fallback
+  lowPower: boolean // mobile / weak GPU -> 3D fallback (no canvas, no choreography/parallax)
 
   setScrollProgress: (value: number) => void
   setHeroProgress: (value: number) => void
@@ -46,7 +47,7 @@ export const useScrollStore = create<ScrollState>((set) => ({
   isLoaded: false,
   canvasReady: false,
   reducedMotion: false,
-  lowPower: false,
+  lowPower: detectLowPower(), // resolved once at load; gates the canvas, choreography, and parallax
 
   setScrollProgress: (value) => set({ scrollProgress: value }),
   setHeroProgress: (value) => set({ heroProgress: value }),

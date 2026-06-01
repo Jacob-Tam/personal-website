@@ -40,7 +40,10 @@ export function LoadingScreen() {
     let value = 0
     let raf = requestAnimationFrame(function tick(now) {
       const elapsed = now - start
-      const ready = fontsReady && useScrollStore.getState().canvasReady && elapsed >= MIN_DURATION
+      // On low-power there's no canvas, so don't wait on canvasReady (it would never fire and the
+      // loader would hang forever); fonts + the minimum duration are enough.
+      const state = useScrollStore.getState()
+      const ready = fontsReady && (state.lowPower || state.canvasReady) && elapsed >= MIN_DURATION
       // Crawl honestly toward 92% until everything's actually ready, then complete to 100%.
       const target = ready ? 100 : Math.min(92, (elapsed / MIN_DURATION) * 92)
       value += (target - value) * 0.12

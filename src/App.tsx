@@ -1,6 +1,7 @@
 import { Scene } from './components/three/Scene'
 import { useSmoothScroll } from './lib/lenis'
 import { useHeroPointer } from './lib/useHeroPointer'
+import { useScrollStore } from './store/useScrollStore'
 import { LoadingScreen } from './components/loading/LoadingScreen'
 import { Planets } from './components/shared/Planets'
 import { Starfield } from './components/shared/Starfield'
@@ -17,11 +18,13 @@ function App() {
   useSmoothScroll()
   // Feeds the normalized hero pointer into the store (hero phase only); the orb reads it.
   useHeroPointer()
+  // Mobile / weak-GPU: skip the 3D canvas entirely (Hero shows a static orb instead, docs/03).
+  const lowPower = useScrollStore((state) => state.lowPower)
 
   return (
     <>
-      {/* The persistent 3D <Canvas> lives here, fixed at z-0 behind all content. */}
-      <Scene />
+      {/* The persistent 3D <Canvas>, fixed at z-0 behind all content. Omitted on low-power. */}
+      {!lowPower && <Scene />}
       {/* Faint ambient backdrop behind everything (above the canvas, below grain + content):
           slow-drifting planets (z-[4]) with the starfield in front of them (z-[5]). */}
       <Planets />

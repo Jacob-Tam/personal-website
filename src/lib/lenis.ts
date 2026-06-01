@@ -41,44 +41,51 @@ export function useSmoothScroll() {
       setScrollProgress(instance.progress || 0)
     })
 
-    const triggers = [
-      // heroProgress 0..1 as the hero scrolls out; drives the cursor-follow fade.
-      ScrollTrigger.create({
-        trigger: '#hero',
-        start: 'top top',
-        end: 'bottom top',
-        scrub: true,
-        onUpdate: (self) => setHeroProgress(self.progress),
-      }),
-      // Interlude: PINNED so the user must scroll extra to pass it ("harder to scroll", per
-      // Jacob's request) - the dwell where the orb slows almost to a stop and pulses once.
-      // interludeProgress scrubs 0..1 across the pin and drives that beat.
-      ScrollTrigger.create({
-        trigger: '#interlude',
-        start: 'top top',
-        end: () => '+=' + window.innerHeight * interludePinVh,
-        pin: true,
-        scrub: true,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => setInterludeProgress(self.progress),
-        onEnter: () => setPhase('interlude'),
-        onLeaveBack: () => setPhase('hero'),
-      }),
-      // About: drift the orb upward (scrub) and own the about <-> past transitions. driftProgress
-      // hits 1 as About's bottom reaches the top of the screen -> orb fully gone -> phase 'past'.
-      ScrollTrigger.create({
-        trigger: '#about',
-        start: 'top top',
-        end: 'bottom top',
-        scrub: true,
-        onUpdate: (self) => setDriftProgress(self.progress),
-        onEnter: () => setPhase('about'),
-        onEnterBack: () => setPhase('about'),
-        onLeave: () => setPhase('past'),
-        onLeaveBack: () => setPhase('interlude'),
-      }),
-    ]
+    // On mobile / weak-GPU there's no orb to drive, so skip the choreography AND the interlude pin
+    // (docs/03: disable scroll choreography, keep native-ish scroll). Lenis + ScrollTrigger.update
+    // stay wired above, so scrollProgress and the <Reveal> entrances still work.
+    const { lowPower } = useScrollStore.getState()
+    const triggers: ScrollTrigger[] = []
+    if (!lowPower) {
+      triggers.push(
+        // heroProgress 0..1 as the hero scrolls out; drives the cursor-follow fade.
+        ScrollTrigger.create({
+          trigger: '#hero',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+          onUpdate: (self) => setHeroProgress(self.progress),
+        }),
+        // Interlude: PINNED so the user must scroll extra to pass it ("harder to scroll", per
+        // Jacob's request) - the dwell where the orb slows almost to a stop and pulses once.
+        // interludeProgress scrubs 0..1 across the pin and drives that beat.
+        ScrollTrigger.create({
+          trigger: '#interlude',
+          start: 'top top',
+          end: () => '+=' + window.innerHeight * interludePinVh,
+          pin: true,
+          scrub: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => setInterludeProgress(self.progress),
+          onEnter: () => setPhase('interlude'),
+          onLeaveBack: () => setPhase('hero'),
+        }),
+        // About: drift the orb upward (scrub) and own the about <-> past transitions. driftProgress
+        // hits 1 as About's bottom reaches the top of the screen -> orb fully gone -> phase 'past'.
+        ScrollTrigger.create({
+          trigger: '#about',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+          onUpdate: (self) => setDriftProgress(self.progress),
+          onEnter: () => setPhase('about'),
+          onEnterBack: () => setPhase('about'),
+          onLeave: () => setPhase('past'),
+          onLeaveBack: () => setPhase('interlude'),
+        }),
+      )
+    }
 
     ScrollTrigger.refresh()
     // Fonts can shift layout after that first refresh; re-measure once they are ready so the pin
