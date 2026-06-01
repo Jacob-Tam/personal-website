@@ -189,11 +189,13 @@ was, for reference:
   - leva panel: top-center at the very top, narrowed to w-64; nav is now full-width (no max-w-6xl)
     so its wordmark/links/icons sit at the screen edges, clear of the panel.
   - (later) Nav now FADES out on scroll (transition-opacity 0.5s) instead of snapping. The dev leva
-    panel is `three/DevPanel.tsx`: draggable handle + a max-h-[78vh] scrollable area (`.dev-scroll`
-    visible scrollbar) around `<Leva fill collapsed>`. CLOSED by default and closable via leva's own
-    title-bar toggle (leva stays mounted, so it measures right and doesn't spawn a stray default
-    panel). ALL leva folders start collapsed (`useControls(name, schema, { collapsed: true })`), so
-    opening shows a compact list of folder titles (~423px), not a wall of controls.
+    panel is `three/DevPanel.tsx`: 360px wide (PANEL_WIDTH) so control labels aren't truncated to
+    "lum..."/"pur...", draggable handle + a `.dev-scroll` area whose max-height TRACKS the drag
+    position (caps ~82vh) so it always stays on-screen and scrolls internally, around
+    `<Leva fill collapsed theme>` (brighter labels + 12px font). CLOSED by default and closable via
+    leva's own title-bar toggle (leva stays mounted, so it measures right and doesn't spawn a stray
+    default panel). ALL leva folders start collapsed (`useControls(name, schema, { collapsed: true })`).
+    (Jacob feedback: labels were unreadable at 256px + the fixed max-h could run off-screen - fixed.)
   - Interlude motion (final): the orb arcs CLOCKWISE around the centered text - starts above it,
     swings through the right, ends below it at horizontal center; then the About drift lifts it
     from there up and off. Smoothstep-eased (no snappy start). CHOREOGRAPHY.interludeRadius +
