@@ -23,7 +23,7 @@ export function About() {
           ))}
         </Reveal>
         <Reveal className="flex justify-center md:justify-end">
-          <Parallax speed={0.15}>
+          <Parallax speed={0.15} className="w-full max-w-sm">
             <TiltPhoto />
           </Parallax>
         </Reveal>
