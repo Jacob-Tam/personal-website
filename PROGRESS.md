@@ -4,23 +4,22 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 9 (Parallax system): COMPLETE.** Awaiting review.
-- **Step 10 (Projects scroll indicator + clip-path expand): NOT STARTED.**
-- Steps 0-8 complete; Step 9 done (commits `f1e26e9`, `688eaea`); plus Jacob refinements + the
-  Projects particle trace (v3, one deferred revisit below). PROGRESS current.
+- **Step 10: scroll indicator DONE (`c6398e3`); clip-path expand DEFERRED** until the real smartbox
+  video is in (it's the half that needs the clip; most cuttable per docs/08).
+- Steps 0-9 complete; plus Jacob refinements, the Projects particle trace (v3, one deferred
+  revisit below), and the nav-fade / dev-panel UX fixes. PROGRESS current.
 
 ## Next action on resume
-- Jacob reviews Step 9 parallax (scroll: bg words lag, About photo lags its text, project media
-  drifts vs its caption). Subtle/restrained per docs/01.
-- On "continue": start **Step 10 - Projects scroll indicator + clip-path expand**:
-  (a) sui.io-style vertical scroll indicator (dots + a moving marker) anchored during the Projects
-      section, tracking progress through the projects; blue active marker; hidden on mobile/reduced.
-  (b) clip-path expanding smartbox video: small rounded rect that expands toward fullscreen while
-      pinned as you scroll from end-of-About into Projects, settling into the first card. Smartbox
-      media is a PLACEHOLDER (solid poster) now, so it works but is less dramatic. Pin + scrub,
-      invalidateOnRefresh. Mobile/reduced: skip the pin/expand, show the card normally.
-  Per docs/08 "if time short", these (esp. the clip-path) are the most cuttable - confirm priority.
-  NOTE: a particle trace + a pinned interlude already live near here; mind ScrollTrigger interplay.
+- Jacob reviews the Projects scroll indicator (right edge: 4 dots + blue marker + active number).
+- **Step 10b (clip-path expand) is DEFERRED** until the trimmed smartbox video is at
+  `/public/media/smartbox.mp4` and MEDIA_READY is true. When ready: a pinned element expands from a
+  small rounded rect to fullscreen via clip-path/scale as you scroll end-of-About -> Projects,
+  settling into the first card; mobile/reduced shows the card normally. Mind the interplay with the
+  interlude pin + the particle trace (ScrollTrigger order).
+- Otherwise on "continue": **Step 11 - Loading screen + hero entrance** (JT logo + blue progress
+  tracking real asset readiness, fade out into the hero with name/tagline + orb appearing).
+  Remaining after: 12 mobile fallback, 13 reduced-motion/a11y, 14 SEO/OG, 15 perf (strip leva +
+  r3f-perf, lazy media, Lighthouse), 16 easter egg + deploy.
 
 - Step 9 (parallax system):
   - `shared/Parallax.tsx`: reusable wrapper (GSAP + Lenis-synced ScrollTrigger; outer trigger +
