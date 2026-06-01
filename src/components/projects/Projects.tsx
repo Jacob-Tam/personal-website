@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Reveal } from '../shared/Reveal'
 import { BackgroundWord } from '../shared/BackgroundWord'
 import { ProjectsTrace } from './ProjectsTrace'
+import { ScrollIndicator } from './ScrollIndicator'
 import { PROJECTS, type Project } from './projectsData'
 import { ProjectCard } from './ProjectCard'
 import { ProjectExpanded } from './ProjectExpanded'
@@ -35,6 +36,7 @@ export function Projects() {
   return (
     <section id="projects" className="relative overflow-hidden px-6 py-32 md:px-12">
       <BackgroundWord className="left-1/2 top-20 -translate-x-1/2" parallax={0.5}>PROJECTS</BackgroundWord>
+      {traceEnabled && <ScrollIndicator />}
 
       <div className="relative mx-auto max-w-5xl">
         <Reveal>
