@@ -32,7 +32,11 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   - Verified: bg word inner span carries the parallax transform; cards render; trace still lights;
     no console errors. Disabled under prefers-reduced-motion (mobile gating is Step 12).
 
-## Feature: Projects circuit trace (Jacob's; NOT in the original build order) - BUILT (v3)
+## Feature: Projects circuit trace - REMOVED (commit `68fcac9`)
+Removed: it competed with the Step 10 right-edge scroll indicator. ProjectsTrace + its
+border-lighting + trace CSS are deleted. A standalone "cards light as you scroll to them" effect
+could be re-added later (per-card ScrollTrigger) without the center particles. History of what it
+was, for reference:
 - `projects/ProjectsTrace.tsx`: scroll-driven SVG PARTICLE STREAM down the CENTER of the Projects
   section (no horizontal connector lines as of v3). Small glowing particles in the ORB palette
   (steel-blue + ~30% blue-violet, varied size, glow) at even medium spacing, plus 1-2 larger ones at
@@ -48,10 +52,8 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - Tunables (in-component constants): PARTICLE_SPACING, BIG_PARTICLE_COUNT, REVEAL_SPAN (fade/slide
   speed), ENTER_FROM_RIGHT (right-side entry distance), the trigger start ('top 70%'); particle
   size/hue/glow. Could expose in leva / lib/constants later.
-- REVISIT (Jacob, deferred): the v3 "slide in from the right" + "start just after the orb leaves"
-  did NOT visibly land for Jacob. Come back to it - likely make the right-side entry much more
-  pronounced (bigger ENTER_FROM_RIGHT, or give particles an off-screen-right origin that sweeps to
-  the spine) and clearly retime the start so it reads as following the orb's exit. Not done yet.
+- (The earlier "slide-in from the right / start after the orb leaves" revisit is now moot - the
+  whole trace was removed.)
 - Verified at 1200px: blue/violet particle stream + branches, top borders lit, no console errors.
 
 ## Done so far
