@@ -89,3 +89,34 @@
 .dev-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Loading-screen shooting stars: a short white streak with a fading trail, sweeping diagonally.
+   The gradient puts the bright head at the leading (down-right) end; rotate+translateX sweeps it. */
+.shooting-star {
+  position: absolute;
+  width: 130px;
+  height: 1.5px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.9));
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+  opacity: 0;
+  animation-name: shooting-star;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes shooting-star {
+  0% {
+    transform: rotate(45deg) translateX(-30vmax);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(45deg) translateX(125vmax);
+    opacity: 0;
+  }
+}

@@ -1,6 +1,11 @@
-// Hero: name + tagline (verbatim, docs/02) centered over the orb. The coordinated fade-in on
-// load lands with the loading screen in Step 11; static here.
+import { useScrollStore } from '../../store/useScrollStore'
+
+// Hero: name + tagline (verbatim, docs/02) centered over the orb. Name, tagline, and the scroll
+// affordance fade + rise in a short cascade once the loading screen completes (store.isLoaded),
+// landing as the loader fades out and the orb becomes visible behind them.
 export function Hero() {
+  const isLoaded = useScrollStore((state) => state.isLoaded)
+
   return (
     <section
       id="hero"
@@ -18,14 +23,28 @@ export function Hero() {
       />
 
       <div className="relative">
-        <h1 className="text-display text-text">Jacob Tam</h1>
-        <p className="mx-auto mt-6 max-w-xl text-body-lg text-text-mute">
+        <h1
+          className={`text-display text-text transition-all duration-1000 ease-out ${
+            isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'
+          }`}
+        >
+          Jacob Tam
+        </h1>
+        <p
+          className={`mx-auto mt-6 max-w-xl text-body-lg text-text-mute transition-all delay-200 duration-1000 ease-out ${
+            isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'
+          }`}
+        >
           Electrical engineering and varsity tennis at Queen's. I build things that mix hardware,
           code, and the occasional bad idea.
         </p>
       </div>
 
-      <div className="absolute bottom-10 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3">
+      <div
+        className={`absolute bottom-10 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 transition-opacity delay-500 duration-700 ease-out ${
+          isLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         <span className="font-mono text-label uppercase text-text-mute">scroll</span>
         <span className="h-10 w-px bg-gradient-to-b from-text-mute/60 to-transparent" />
       </div>

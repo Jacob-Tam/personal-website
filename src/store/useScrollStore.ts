@@ -7,8 +7,8 @@ export type OrbPhase = 'hero' | 'interlude' | 'about' | 'past'
   High-frequency values (scrollProgress, heroProgress, interludeProgress, driftProgress, mouse)
   are updated from the Lenis RAF / ScrollTrigger scrubs and the hero mousemove listener. Read
   those with useScrollStore.getState() inside useFrame; do NOT subscribe to them reactively
-  inside the canvas. Low-frequency values (phase, isLoaded, reducedMotion, lowPower) are safe to
-  subscribe to (e.g. phase drives the canvas frameloop).
+  inside the canvas. Low-frequency values (phase, isLoaded, canvasReady, reducedMotion, lowPower)
+  are safe to subscribe to (e.g. phase drives the canvas frameloop; isLoaded drives the hero reveal).
 */
 interface ScrollState {
   scrollProgress: number // 0..1 across the whole page
@@ -18,7 +18,8 @@ interface ScrollState {
   mouse: { x: number; y: number } // normalized -1..1, hero cursor follow
 
   phase: OrbPhase // orb lifecycle phase
-  isLoaded: boolean // loading screen finished
+  isLoaded: boolean // loading screen finished -> hero revealed
+  canvasReady: boolean // the 3D canvas has rendered its first frame (loading-readiness signal)
   reducedMotion: boolean // prefers-reduced-motion
   lowPower: boolean // mobile / weak GPU -> 3D fallback
 
@@ -29,6 +30,7 @@ interface ScrollState {
   setMouse: (x: number, y: number) => void
   setPhase: (phase: OrbPhase) => void
   setLoaded: (value: boolean) => void
+  setCanvasReady: (value: boolean) => void
   setReducedMotion: (value: boolean) => void
   setLowPower: (value: boolean) => void
 }
@@ -42,6 +44,7 @@ export const useScrollStore = create<ScrollState>((set) => ({
 
   phase: 'hero',
   isLoaded: false,
+  canvasReady: false,
   reducedMotion: false,
   lowPower: false,
 
@@ -52,6 +55,7 @@ export const useScrollStore = create<ScrollState>((set) => ({
   setMouse: (x, y) => set({ mouse: { x, y } }),
   setPhase: (phase) => set({ phase }),
   setLoaded: (value) => set({ isLoaded: value }),
+  setCanvasReady: (value) => set({ canvasReady: value }),
   setReducedMotion: (value) => set({ reducedMotion: value }),
   setLowPower: (value) => set({ lowPower: value }),
 }))

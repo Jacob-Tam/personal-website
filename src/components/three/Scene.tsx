@@ -145,6 +145,7 @@ export function Scene() {
           frameloop={phase === 'past' ? 'never' : 'always'}
           gl={{ alpha: true, antialias: true }}
           dpr={[1, 2]}
+          onCreated={() => useScrollStore.getState().setCanvasReady(true)}
         >
           {isDev && <Perf position="bottom-right" />}
           <PerspectiveCamera makeDefault fov={camera.fov} position={[0, 0, camera.distance]} />

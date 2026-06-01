@@ -1,6 +1,7 @@
 import { Scene } from './components/three/Scene'
 import { useSmoothScroll } from './lib/lenis'
 import { useHeroPointer } from './lib/useHeroPointer'
+import { LoadingScreen } from './components/loading/LoadingScreen'
 import { GrainOverlay } from './components/shared/GrainOverlay'
 import { Nav } from './components/nav/Nav'
 import { Hero } from './components/hero/Hero'
@@ -29,6 +30,8 @@ function App() {
         <Contact />
       </main>
       {/* Analytics drop-in (docs/03): add <Analytics /> here later, no refactor needed. */}
+      {/* Loading screen sits on top (z-100) and unmounts itself once everything is ready. */}
+      <LoadingScreen />
     </>
   )
 }
