@@ -31,8 +31,9 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
   cards' offsetParent is their transformed Reveal wrapper). Re-measured on resize (ResizeObserver).
 - Gated: renders at >=768px with motion allowed (matchMedia in Projects); else no trace, borders
   muted. Step 12/13 formalize lowPower/reduced-motion via the store.
-- Tunables (in-component constants): SPINE_COUNT, BRANCH_COUNT, REVEAL_SPAN; particle size/hue/glow.
-  Could expose in leva / lib/constants later.
+- Tunables (in-component constants): PARTICLE_SPACING (consistent spine+branch spacing),
+  BIG_PARTICLE_COUNT (larger dots at the top), REVEAL_SPAN; particle size/hue/glow. Could expose
+  in leva / lib/constants later.
 - Verified at 1200px: blue/violet particle stream + branches, top borders lit, no console errors.
 
 ## Done so far
