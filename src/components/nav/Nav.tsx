@@ -33,16 +33,7 @@ export function Nav() {
         atTop ? 'opacity-100' : 'pointer-events-none opacity-0'
       }`}
     >
-      <nav className="flex h-20 w-full items-center justify-between px-6 md:px-12">
-        {/* Wordmark placeholder for the JT logo (docs/02). */}
-        <a
-          href="#hero"
-          onClick={(event) => smoothScrollTo(event, '#hero')}
-          className="font-medium tracking-tight text-text transition-colors hover:text-accent-hi"
-        >
-          Jacob Tam
-        </a>
-
+      <nav className="flex h-20 w-full items-center justify-end px-6 md:px-12">
         <div className="flex items-center gap-8">
           <ul className="hidden items-center gap-8 sm:flex">
             <li>
