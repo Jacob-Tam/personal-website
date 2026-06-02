@@ -290,11 +290,15 @@ was, for reference:
   - Both kept deliberately subtle per docs/09 (no generic twinkly starfield); support the
     orb-in-space feel without competing with it.
 - Space scene grew (later): the saucer easter egg (Step 16 notes) + `shared/MoonSurface.tsx`
-  (`5b4889c`) - a procedural grey lunar surface (public/moon-surface.webp, 26KB, numpy/PIL:
-  heightfield + craters lit upper-left, dimmed earthlit, horizon melted into the page) below Contact
-  in `<main>`. Stars/planets read as the sky above its horizon. Regenerate via the inline PIL script
-  in the commit / chat if tuning brightness/craters; cover + top-anchored keeps the horizon at all
-  widths. Tunables: MoonSurface height clamp, and the generator's diffuse/ambient (brightness).
+  (`1a62b1a`, redo of `5b4889c`) - a SUBTLE dark planet limb (a dome) that rotates slowly at the
+  BOTTOM OF the Contact section (rendered inside the `#contact` section, whose overflow-hidden clips
+  the sphere's lower half; NOT a band below it). A faint albedo (public/moon-surface.webp, 7KB,
+  numpy/PIL low-contrast mottling + soft maria, NO craters - Jacob said craters looked bad) rotates
+  inside a fixed circular clip (`.moon-rotate` 120s, off under reduced motion); a static gradient
+  gives sphere form + melts the limb into the page. (First try was a bright full-width cratered
+  ground band below Contact - rejected: "looks really bad", wanted subtle + a rotating semicircle.)
+  Tunables: MoonSurface width/bottom calc (dome size/curve) + the gradient; regen albedo via the
+  inline PIL script in chat.
 - Horizontal-scrollbar fix (`a991122`): `overflow-x: clip` on html (index.css base). Full-bleed
   fixed layers + the GSAP pin-spacer round up to full viewport width incl. the scrollbar gutter,
   leaving a ~15px h-scroll. clip (not hidden) doesn't create a scroll container, so vertical scroll
