@@ -57,6 +57,7 @@ function OrbSystem({
 */
 export function Scene() {
   const phase = useScrollStore((state) => state.phase)
+  const reducedMotion = useScrollStore((state) => state.reducedMotion)
 
   const camera = useControls('camera', {
     fov: { value: CAMERA.fov, min: 35, max: 75, step: 1 },
@@ -153,7 +154,7 @@ export function Scene() {
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700"
       >
         <Canvas
-          frameloop={phase === 'past' ? 'never' : 'always'}
+          frameloop={reducedMotion ? 'demand' : phase === 'past' ? 'never' : 'always'}
           gl={{ alpha: true, antialias: true }}
           dpr={[1, 2]}
           onCreated={() => useScrollStore.getState().setCanvasReady(true)}

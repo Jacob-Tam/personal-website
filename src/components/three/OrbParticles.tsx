@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
 import { SEED, SHED } from '../../lib/constants'
@@ -54,6 +54,9 @@ export function OrbParticles(props: ParticleProps) {
   const scratchColor = useMemo(() => new THREE.Color(), [])
   const baseColors = useRef<Float32Array>(new Float32Array(0))
   const wasShedding = useRef(false)
+  // Used to force a render after the colour/brightness effects when the canvas runs frameloop
+  // 'demand' (reduced motion) - otherwise the static frame can paint before the colours apply.
+  const invalidate = useThree((state) => state.invalidate)
 
   const { plane, radius, speed, phase, size, releaseAt, planeMatrices } = useMemo(() => {
     const rng = mulberry32(SEED)
@@ -128,6 +131,7 @@ export function OrbParticles(props: ParticleProps) {
     }
     baseColors.current = colors
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    invalidate() // paint the new colours even under frameloop 'demand'
   }, [
     props.count, props.hueMin, props.hueMax, props.purpleFraction, props.purpleHueMin,
     props.purpleHueMax, props.saturation, props.lightnessMin, props.lightnessMax,
@@ -136,7 +140,8 @@ export function OrbParticles(props: ParticleProps) {
   // Global brightness gain (material.color multiplies each instance colour) -> HDR for bloom.
   useEffect(() => {
     material.color.setScalar(props.brightness)
-  }, [material, props.brightness])
+    invalidate()
+  }, [material, props.brightness, invalidate])
 
   useFrame((state) => {
     const { driftProgress: drift, reducedMotion } = useScrollStore.getState()
