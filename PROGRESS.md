@@ -59,7 +59,12 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     request, not the docs/02 list. Tunables: CHANCE (0.1), INTERVAL_MS (10000), Saucer width (18px).
     NOTE at 3/4-planet size the saucer reads as a small blue blip in flight (detailed design only
     fully legible larger) - offer to size up if Jacob wants it more obviously a UFO.
-  - Jacob wants a SECOND easter egg (gave him a suggestion list; awaiting pick).
+  - Easter egg #2 DONE (`c4a3c80`): type "67" -> orb supernova (core flash + swell, particle burst
+    that eases back into orbit). lib/supernova.ts (envelope + SUPERNOVA tunables: duration 1.8,
+    burstDistance 2.2, flashEmissive 1.5, coreSwell 0.4), lib/useSupernova.ts (key listener, off
+    under reduced motion / text fields / modifier combos), applied in Orb.tsx + OrbParticles.tsx.
+    Verified the burst + re-form. burstDistance 2.2 throws particles ~off-screen at peak (dramatic);
+    dial down if Jacob wants it more contained.
   - Then: final timing/easing polish; deploy to Vercel + wire jacobtam.me + add a GitHub remote;
     run Lighthouse on the LIVE site and fix the worst. Step 15's media-dependent bits (lazy/
     compressed project videos) still wait on real media.
