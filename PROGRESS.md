@@ -4,22 +4,20 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
-- **Step 15: performance pass IN PROGRESS.**
-  - DONE (`7442934`): stripped leva + r3f-perf from the PROD bundle. `lib/devControls.ts` wraps
-    leva's useControls and dynamically imports leva only in dev (`import.meta.env.DEV` -> DCE'd in
-    prod), returning schema defaults in prod; Scene lazy-loads DevPanel in dev only. Verified 0
-    leva/r3f-perf occurrences in prod; main chunk 1,522 -> 1,318 kB (gzip 441 -> 375). Dev still
-    fine (leva panel lazy-loads, orb renders).
-  - DONE (`e2985f0`): code-split three.js. App React.lazy's `<Scene>` behind a Suspense, so three +
-    drei + postprocessing are a separate 965kB chunk; main chunk 1,318 -> 354 kB (gzip 375 -> 120).
-    Loader covers the lazy load (waits on canvasReady); low-power never loads three. Verified.
-  - TODO (rest of Step 15): (b) reduced-motion / faded canvas -> Canvas frameloop 'never' once the
-    orb is static or faded out (currently 'always'; CARE: frameloop 'demand' may skip the particle
-    instanceColor update unless you invalidate() after the color effect - test it); (c) lazy-load +
-    in-view-only play for project videos (moot until MEDIA_READY/real media - add the hook when
-    media lands); (d) compress/resize real media when it arrives; (e) run Lighthouse on the DEPLOYED
-    prod build (localhost metrics are noisy), fix the worst. NOTE: blocks are independent - safe to
-    stop after any. The two biggest wins (leva strip + code-split) are done.
+- **Step 15: performance pass DONE for everything not blocked on media/deploy.**
+  - `7442934`: stripped leva + r3f-perf from PROD. `lib/devControls.ts` wraps leva's useControls,
+    dynamically importing leva only in dev (DCE'd in prod, schema defaults in prod); Scene
+    lazy-loads DevPanel in dev only. 0 leva/r3f-perf in prod.
+  - `e2985f0`: code-split three.js. App React.lazy's `<Scene>` (Suspense); three+drei+postprocessing
+    = a separate 965kB chunk. Initial chunk 1,522 -> 354 kB (gzip 441 -> 120). Loader covers the
+    lazy load (waits on canvasReady); low-power never loads three.
+  - `068be9d`: Canvas frameloop 'demand' under reduced motion (static orb renders once then idles
+    instead of 60fps); OrbParticles invalidate() after colour/brightness effects so colours paint
+    under demand. Normal mode unchanged ('always' -> 'never' at phase 'past'). Verified colours OK.
+  - DEFERRED (blocked, not doable now): lazy-load + in-view play for project videos and
+    compress/resize media -> need real media (MEDIA_READY still false); add the in-view <video> hook
+    when media lands. Run Lighthouse (mobile) on the DEPLOYED prod build (localhost metrics noisy) ->
+    do it during/after Step 16 deploy, then fix the worst.
 - **Step 14: SEO + meta DONE (`6a623bf`).** index.html meta (description = verbatim tagline,
   theme-color, canonical, OG + Twitter card, Person JSON-LD). Favicon + OG assets generated from
   the JT logo (favicon.ico/-32/apple-touch + og-image.png with a blue glow). Scaffold favicon.svg
@@ -56,10 +54,10 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     idea - the name-fade-in covers the spirit, revisit if he still wants more.
 - HEADS-UP: Step 13 nudged `--color-text-mute` from the doc's #6D6E71 to #797B80 for WCAG AA
   contrast (4.1 -> 4.93:1). If Jacob prefers the exact doc grey, revert and accept the shortfall.
-- On "continue": **Step 15 - Performance pass** (strip leva + r3f-perf from the PROD bundle - they
-  currently ship; code-split three.js to cut the ~1.5MB chunk; lazy-load project videos / compress
-  media when real; reduced-motion + faded canvas -> frameloop 'never' to stop rendering a static
-  orb; run Lighthouse and fix the worst). Then 16 easter egg + deploy (jacobtam.me, GitHub remote).
+- On "continue": **Step 16 - Easter egg + polish + deploy** (the ONE easter egg from docs/02 -
+  confirm the choice with Jacob first, do it last/quietly; final timing/easing polish; deploy to
+  Vercel + wire jacobtam.me + add a GitHub remote; then run Lighthouse on the live site and fix the
+  worst). Step 15's media-dependent bits (lazy/compressed project videos) still wait on real media.
 - SEO follow-ups owed: real OG/share works once deployed to jacobtam.me (absolute URLs assume it);
   add real GitHub/LinkedIn/Instagram URLs to JSON-LD `sameAs` (+ lib/assets.ts LINKS). Optional:
   a more descriptive <title> (currently just "Jacob Tam"); would need new copy, so ask first.
