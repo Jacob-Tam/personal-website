@@ -10,13 +10,16 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     prod), returning schema defaults in prod; Scene lazy-loads DevPanel in dev only. Verified 0
     leva/r3f-perf occurrences in prod; main chunk 1,522 -> 1,318 kB (gzip 441 -> 375). Dev still
     fine (leva panel lazy-loads, orb renders).
-  - TODO (rest of Step 15): (a) code-split three.js out of the 1.3MB main chunk (manualChunks, or
-    React.lazy the Scene behind the loader) so initial parse is smaller; (b) reduced-motion / faded
-    canvas -> set Canvas frameloop to 'never' once the orb is static or faded (stop rendering a
-    still scene - currently 'always'); (c) lazy-load + in-view-only play for project videos (moot
-    until MEDIA_READY/real media - add the hook structure when media lands); (d) compress/resize
-    real media when it arrives; (e) run Lighthouse (mobile), fix the worst. NOTE: building blocks
-    are independent - safe to stop after any.
+  - DONE (`e2985f0`): code-split three.js. App React.lazy's `<Scene>` behind a Suspense, so three +
+    drei + postprocessing are a separate 965kB chunk; main chunk 1,318 -> 354 kB (gzip 375 -> 120).
+    Loader covers the lazy load (waits on canvasReady); low-power never loads three. Verified.
+  - TODO (rest of Step 15): (b) reduced-motion / faded canvas -> Canvas frameloop 'never' once the
+    orb is static or faded out (currently 'always'; CARE: frameloop 'demand' may skip the particle
+    instanceColor update unless you invalidate() after the color effect - test it); (c) lazy-load +
+    in-view-only play for project videos (moot until MEDIA_READY/real media - add the hook when
+    media lands); (d) compress/resize real media when it arrives; (e) run Lighthouse on the DEPLOYED
+    prod build (localhost metrics are noisy), fix the worst. NOTE: blocks are independent - safe to
+    stop after any. The two biggest wins (leva strip + code-split) are done.
 - **Step 14: SEO + meta DONE (`6a623bf`).** index.html meta (description = verbatim tagline,
   theme-color, canonical, OG + Twitter card, Person JSON-LD). Favicon + OG assets generated from
   the JT logo (favicon.ico/-32/apple-touch + og-image.png with a blue glow). Scaffold favicon.svg
