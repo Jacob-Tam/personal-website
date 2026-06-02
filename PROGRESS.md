@@ -54,10 +54,15 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     idea - the name-fade-in covers the spirit, revisit if he still wants more.
 - HEADS-UP: Step 13 nudged `--color-text-mute` from the doc's #6D6E71 to #797B80 for WCAG AA
   contrast (4.1 -> 4.93:1). If Jacob prefers the exact doc grey, revert and accept the shortfall.
-- On "continue": **Step 16 - Easter egg + polish + deploy** (the ONE easter egg from docs/02 -
-  confirm the choice with Jacob first, do it last/quietly; final timing/easing polish; deploy to
-  Vercel + wire jacobtam.me + add a GitHub remote; then run Lighthouse on the live site and fix the
-  worst). Step 15's media-dependent bits (lazy/compressed project videos) still wait on real media.
+- **Step 16 - Easter egg + polish + deploy** (in progress):
+  - Easter egg #1 DONE (`e47e2be`): off-list alien saucer fly-by (shared/Spaceship.tsx) - Jacob's
+    request, not the docs/02 list. Tunables: CHANCE (0.1), INTERVAL_MS (10000), Saucer width (18px).
+    NOTE at 3/4-planet size the saucer reads as a small blue blip in flight (detailed design only
+    fully legible larger) - offer to size up if Jacob wants it more obviously a UFO.
+  - Jacob wants a SECOND easter egg (gave him a suggestion list; awaiting pick).
+  - Then: final timing/easing polish; deploy to Vercel + wire jacobtam.me + add a GitHub remote;
+    run Lighthouse on the LIVE site and fix the worst. Step 15's media-dependent bits (lazy/
+    compressed project videos) still wait on real media.
 - SEO follow-ups owed: real OG/share works once deployed to jacobtam.me (absolute URLs assume it);
   add real GitHub/LinkedIn/Instagram URLs to JSON-LD `sameAs` (+ lib/assets.ts LINKS). Optional:
   a more descriptive <title> (currently just "Jacob Tam"); would need new copy, so ask first.
