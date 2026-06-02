@@ -25,6 +25,15 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - Jacob: verify the mobile fallback on a REAL phone (docs/08 Step 12 explicitly asks for it; only
   emulated so far). Also owes a real static orb still for `/media/orb-fallback.jpg` (ASSETS.orbStill);
   Hero uses a CSS glow placeholder until then.
+- **LOADING PAGE IS NOT FINAL** (Jacob wants to keep iterating). Open items:
+  - Progress-bar fill timing feels "too even"/linear and he liked it more BEFORE (the snappier feel
+    pre-MIN_DURATION-1800). Current fill is linear: `Math.min(92, elapsed/MIN_DURATION*92)` then a
+    lerp to 100 on ready. To explore: an ease-out fill (fast start, slow approach), a non-linear/
+    stepped curve, and/or dropping MIN_DURATION back down. Ask which "before" feel he means.
+  - DONE this round: hero name no longer shows during load - it fades in only AFTER the loader fully
+    fades out (reveal deferred to FADE_MS); white progress bar; ambient `<Starfield>` behind the
+    logo (seeded == page positions); MIN_DURATION 1800, FADE_MS 1200. He floated a "fully black page"
+    idea - the name-fade-in covers the spirit, revisit if he still wants more.
 - HEADS-UP: Step 13 nudged `--color-text-mute` from the doc's #6D6E71 to #797B80 for WCAG AA
   contrast (4.1 -> 4.93:1). If Jacob prefers the exact doc grey, revert and accept the shortfall.
 - On "continue": **Step 14 - SEO basics + meta** (favicon, title - done, meta description, Open Graph
