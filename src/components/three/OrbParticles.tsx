@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
 import { SEED, SHED } from '../../lib/constants'
+import { SUPERNOVA, supernovaEnvelope } from '../../lib/supernova'
 
 export type ParticleProps = {
   count: number
@@ -144,16 +145,20 @@ export function OrbParticles(props: ParticleProps) {
   }, [material, props.brightness, invalidate])
 
   useFrame((state) => {
-    const { driftProgress: drift, reducedMotion } = useScrollStore.getState()
+    const { driftProgress: drift, reducedMotion, supernovaAt } = useScrollStore.getState()
     // Under reduced motion the particles hold their positions (frozen orbit). drift stays 0 anyway
     // (choreography is off under reduced motion), so there's no shedding either (docs/01).
     const time = reducedMotion ? 0 : state.clock.elapsedTime
     const mesh = meshRef.current
     const shedding = drift > SHED.startFraction
+    // "67" supernova: every particle's orbit radius expands outward then eases back. Off under
+    // reduced motion.
+    const burst = reducedMotion ? 0 : supernovaEnvelope((performance.now() - supernovaAt) / 1000) * SUPERNOVA.burstDistance
 
     for (let i = 0; i < props.count; i++) {
       const angle = phase[i] + speed[i] * time
-      dummy.position.set(Math.cos(angle) * radius[i], Math.sin(angle) * radius[i], 0)
+      const orbitRadius = radius[i] + burst
+      dummy.position.set(Math.cos(angle) * orbitRadius, Math.sin(angle) * orbitRadius, 0)
       dummy.position.applyMatrix4(planeMatrices[plane[i]])
 
       let fade = 1

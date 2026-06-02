@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { useSmoothScroll } from './lib/lenis'
 import { useHeroPointer } from './lib/useHeroPointer'
 import { useReducedMotion } from './lib/useReducedMotion'
+import { useSupernova } from './lib/useSupernova'
 import { useScrollStore } from './store/useScrollStore'
 import { LoadingScreen } from './components/loading/LoadingScreen'
 import { Planets } from './components/shared/Planets'
@@ -27,6 +28,8 @@ function App() {
   useHeroPointer()
   // Keeps store.reducedMotion live with the OS setting (static orb + no choreography/parallax).
   useReducedMotion()
+  // Easter egg: typing "67" sets off the orb supernova.
+  useSupernova()
   // Mobile / weak-GPU: skip the 3D canvas entirely (Hero shows a static orb instead, docs/03).
   const lowPower = useScrollStore((state) => state.lowPower)
 
