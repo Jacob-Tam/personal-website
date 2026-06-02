@@ -25,6 +25,7 @@ const SHOOTING_STARS = [
 */
 export function LoadingScreen() {
   const setLoaded = useScrollStore((state) => state.setLoaded)
+  const reducedMotion = useScrollStore((state) => state.reducedMotion)
   const [progress, setProgress] = useState(0)
   const [done, setDone] = useState(false)
   const [gone, setGone] = useState(false)
@@ -76,20 +77,22 @@ export function LoadingScreen() {
         done ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {SHOOTING_STARS.map((star, i) => (
-          <span
-            key={i}
-            className="shooting-star"
-            style={{
-              top: `${star.top}%`,
-              left: `${star.left}%`,
-              animationDelay: `${star.delay}s`,
-              animationDuration: `${star.duration}s`,
-            }}
-          />
-        ))}
-      </div>
+      {!reducedMotion && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {SHOOTING_STARS.map((star, i) => (
+            <span
+              key={i}
+              className="shooting-star"
+              style={{
+                top: `${star.top}%`,
+                left: `${star.left}%`,
+                animationDelay: `${star.delay}s`,
+                animationDuration: `${star.duration}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="relative flex flex-col items-center">
         <img src={ASSETS.jtLogo} alt="Jacob Tam" className="w-44" />

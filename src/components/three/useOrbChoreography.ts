@@ -43,8 +43,10 @@ export function useOrbChoreography(
       useScrollStore.getState()
     const beat = reducedMotion ? 0 : beatEnvelope(interludeProgress)
 
-    // Idle spin, slowed almost to a stop at the interlude beat.
-    group.rotation.y += delta * GROUP.idleSpinY * (1 - choreo.rotationStill * beat)
+    // Idle spin, slowed almost to a stop at the interlude beat. Frozen entirely under reduced motion.
+    if (!reducedMotion) {
+      group.rotation.y += delta * GROUP.idleSpinY * (1 - choreo.rotationStill * beat)
+    }
 
     // Interlude: the orb arcs CLOCKWISE around the centered text - starts above it, swings through
     // the right, ends below it at horizontal center. Smoothstep eases the arc in/out so there is no

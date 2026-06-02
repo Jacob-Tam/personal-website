@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MEDIA_READY } from '../../lib/assets'
 import { lenis } from '../../lib/lenis'
 import type { Project } from './projectsData'
@@ -6,10 +6,13 @@ import type { Project } from './projectsData'
 /*
   Overlay-style expanded view (NOT a grid reflow, docs/06): larger media + title + full
   description + Geist Mono tech tags, over a dimmed backdrop. Closes on backdrop click, the X,
-  or Escape. Background scroll is locked while open (Step 7 will swap this for lenis.stop()).
+  or Escape. Background scroll is locked while open (lenis.stop). For the a11y floor: it's a
+  labelled modal dialog, focus moves to the close button on open and returns to the triggering
+  card on close.
 */
 export function ProjectExpanded({ project, onClose }: { project: Project; onClose: () => void }) {
   const [shown, setShown] = useState(false)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setShown(true)) // trigger the entrance transition
@@ -17,6 +20,10 @@ export function ProjectExpanded({ project, onClose }: { project: Project; onClos
       if (event.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handleKey)
+
+    // Move focus into the dialog, and restore it to whatever opened the overlay on close.
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    closeButtonRef.current?.focus()
 
     // Lock background scroll while open. Prefer Lenis (the scroll owner); fall back to overflow.
     const previousOverflow = document.body.style.overflow
@@ -28,6 +35,7 @@ export function ProjectExpanded({ project, onClose }: { project: Project; onClos
       window.removeEventListener('keydown', handleKey)
       if (lenis) lenis.start()
       else document.body.style.overflow = previousOverflow
+      previouslyFocused?.focus?.()
     }
   }, [onClose])
 
@@ -61,6 +69,7 @@ export function ProjectExpanded({ project, onClose }: { project: Project; onClos
           )}
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             aria-label="Close"

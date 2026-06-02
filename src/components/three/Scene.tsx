@@ -140,7 +140,11 @@ export function Scene() {
     <>
       {/* DEV-only orb controls: draggable + height-capped + scrollable (see DevPanel). */}
       {isDev && <DevPanel />}
-      <div className="pointer-events-none fixed inset-0 z-0">
+      <div
+        id="orb-canvas-layer"
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700"
+      >
         <Canvas
           frameloop={phase === 'past' ? 'never' : 'always'}
           gl={{ alpha: true, antialias: true }}

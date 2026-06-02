@@ -12,10 +12,11 @@ export function useHeroPointer() {
   const phase = useScrollStore((state) => state.phase)
 
   useEffect(() => {
-    const { setMouse, lowPower } = useScrollStore.getState()
+    const { setMouse, lowPower, reducedMotion } = useScrollStore.getState()
 
-    // No orb on low-power/mobile (and touch devices have no hovering pointer), so don't listen.
-    if (lowPower || phase !== 'hero') {
+    // No orb cursor-follow on low-power/mobile or under reduced motion (and touch devices have no
+    // hovering pointer anyway), so don't listen.
+    if (lowPower || reducedMotion || phase !== 'hero') {
       setMouse(0, 0)
       return
     }

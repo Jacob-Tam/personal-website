@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { detectLowPower } from '../lib/gpuTier'
+import { detectLowPower, detectReducedMotion } from '../lib/gpuTier'
 
 export type OrbPhase = 'hero' | 'interlude' | 'about' | 'past'
 
@@ -46,7 +46,7 @@ export const useScrollStore = create<ScrollState>((set) => ({
   phase: 'hero',
   isLoaded: false,
   canvasReady: false,
-  reducedMotion: false,
+  reducedMotion: detectReducedMotion(), // seeded at load; useReducedMotion keeps it live
   lowPower: detectLowPower(), // resolved once at load; gates the canvas, choreography, and parallax
 
   setScrollProgress: (value) => set({ scrollProgress: value }),

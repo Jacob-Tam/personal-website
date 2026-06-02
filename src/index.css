@@ -14,7 +14,7 @@
   --color-surface: #060a0f;
   --color-surface-2: #0b1118;
   --color-text: #fcfcfc;
-  --color-text-mute: #6d6e71;
+  --color-text-mute: #797b80;
   --color-border: #1a1e24;
   --color-accent: #4489b7;
   --color-accent-hi: #6bb0dc;
@@ -74,6 +74,13 @@
 
   ::selection {
     background-color: color-mix(in oklab, var(--color-accent) 30%, transparent);
+  }
+
+  /* Visible keyboard focus (a11y floor): an accent ring on :focus-visible only, so mouse clicks
+     don't show a ring but keyboard / AT users get a clear indicator. Outline follows element radius. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent-hi);
+    outline-offset: 2px;
   }
 }
 

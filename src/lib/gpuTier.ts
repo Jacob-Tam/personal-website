@@ -13,6 +13,13 @@ export function detectLowPower(): boolean {
   return smallScreen || !supportsWebGL()
 }
 
+// Whether the user asked the OS to minimize motion (docs/01). Drives the static-orb + no-choreography
+// + no-parallax path. Seeded into the store once at load; useReducedMotion keeps it live after.
+export function detectReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 function supportsWebGL(): boolean {
   try {
     const canvas = document.createElement('canvas')

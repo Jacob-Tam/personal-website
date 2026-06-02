@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { useScrollStore } from '../../store/useScrollStore'
 import { coreFragmentShader, coreVertexShader } from './coreShader'
 
 export type OrbProps = {
@@ -51,9 +52,11 @@ export function Orb(props: OrbProps) {
   useEffect(() => () => material.dispose(), [material])
 
   useFrame((state) => {
-    const time = state.clock.elapsedTime
+    const { reducedMotion } = useScrollStore.getState()
     const u = material.uniforms
-    u.uTime.value = time
+    // Under reduced motion the core holds still: its internal turbulence (uTime) and the breathing
+    // scale freeze, leaving a calm static glow (docs/01).
+    if (!reducedMotion) u.uTime.value = state.clock.elapsedTime
     u.uEmissive.value = props.emissive
     u.uNoiseAmp.value = props.noiseAmp
     u.uNoiseScale.value = props.noiseScale
@@ -62,8 +65,10 @@ export function Orb(props: OrbProps) {
     ;(u.uCoreColor.value as THREE.Color).set(props.coreColor)
     ;(u.uRimColor.value as THREE.Color).set(props.rimColor)
 
-    // Slow breathing: a small sinusoidal scale around 1 (docs/04).
-    const breathe = 1 + props.pulseAmplitude * Math.sin((time * Math.PI * 2) / props.pulsePeriod)
+    // Slow breathing: a small sinusoidal scale around 1 (docs/04). Held at 1 under reduced motion.
+    const breathe = reducedMotion
+      ? 1
+      : 1 + props.pulseAmplitude * Math.sin((state.clock.elapsedTime * Math.PI * 2) / props.pulsePeriod)
     meshRef.current.scale.setScalar(breathe)
   })
 

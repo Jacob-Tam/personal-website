@@ -44,9 +44,23 @@ export function useSmoothScroll() {
     // On mobile / weak-GPU there's no orb to drive, so skip the choreography AND the interlude pin
     // (docs/03: disable scroll choreography, keep native-ish scroll). Lenis + ScrollTrigger.update
     // stay wired above, so scrollProgress and the <Reveal> entrances still work.
-    const { lowPower } = useScrollStore.getState()
+    const { lowPower, reducedMotion } = useScrollStore.getState()
     const triggers: ScrollTrigger[] = []
-    if (!lowPower) {
+    if (lowPower) {
+      // No 3D canvas on mobile/low-power, so there are no orb triggers at all.
+    } else if (reducedMotion) {
+      // Orb stays STATIC (no choreography). Just fade the whole canvas out as the user leaves the
+      // hero so the static orb doesn't sit behind the lower sections - opacity only (docs/01).
+      const orbLayer = () => document.getElementById('orb-canvas-layer')
+      triggers.push(
+        ScrollTrigger.create({
+          trigger: '#interlude',
+          start: 'top 85%',
+          onEnter: () => orbLayer()?.classList.add('opacity-0'),
+          onLeaveBack: () => orbLayer()?.classList.remove('opacity-0'),
+        }),
+      )
+    } else {
       triggers.push(
         // heroProgress 0..1 as the hero scrolls out; drives the cursor-follow fade.
         ScrollTrigger.create({

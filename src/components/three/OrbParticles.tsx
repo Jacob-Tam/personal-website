@@ -139,9 +139,11 @@ export function OrbParticles(props: ParticleProps) {
   }, [material, props.brightness])
 
   useFrame((state) => {
-    const time = state.clock.elapsedTime
+    const { driftProgress: drift, reducedMotion } = useScrollStore.getState()
+    // Under reduced motion the particles hold their positions (frozen orbit). drift stays 0 anyway
+    // (choreography is off under reduced motion), so there's no shedding either (docs/01).
+    const time = reducedMotion ? 0 : state.clock.elapsedTime
     const mesh = meshRef.current
-    const drift = useScrollStore.getState().driftProgress
     const shedding = drift > SHED.startFraction
 
     for (let i = 0; i < props.count; i++) {
