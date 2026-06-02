@@ -5,11 +5,11 @@
   OrbParticles.tsx both read it (off under reduced motion, gated by the callers).
 */
 export const SUPERNOVA = {
-  duration: 1.8, // seconds, total
-  attack: 0.14, // seconds to the peak
-  burstDistance: 2.2, // units the particles expand outward at the peak
-  flashEmissive: 1.5, // added to the core emissive at the peak
-  coreSwell: 0.4, // added to the core scale at the peak
+  duration: 2.2, // seconds, total
+  attack: 0.1, // seconds to the peak (snappy detonation)
+  burstDistance: 3.8, // units the particles blast outward at the peak (well off-screen, then stream back)
+  flashEmissive: 3.2, // added to the core emissive at the peak (bright white flash via bloom)
+  coreSwell: 0.8, // added to the core scale at the peak (the core pops)
 }
 
 export function supernovaEnvelope(elapsed: number): number {
