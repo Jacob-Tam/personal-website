@@ -310,9 +310,9 @@ was, for reference:
   rather than a random per-particle scatter. The first pass read as the "fuzzy cloud" docs/04 C4
   warns against and looked flat; concentric tilted rings read as a 3D Bohr atom. The strongest 3D
   cue still arrives with the Step 8 scroll motion (orb drifting up past the viewer).
-- Nav left uses the "Jacob Tam" wordmark as the JT-logo placeholder (docs/02 lists "Jacob Tam"
-  there; the JT logo replaces it when ready). The loading screen uses the real `/jt-logo.png`
-  monogram (already in /public); the nav could adopt the same image later if Jacob wants.
+- Nav has NO left wordmark/logo anymore (Jacob removed "Jacob Tam" from the top-left, `d73b461`).
+  Nav is right-aligned only (justify-end): resume / work / about / contact + the three social icons.
+  The loading screen still uses the real `/jt-logo.png` monogram (the only place the JT logo lives).
 - MEDIA_READY (lib/assets.ts) gates ALL real media (project cards + About photo) behind one flag;
   flip to true once trimmed/compressed files are in /public/media. Can split per-asset if needed.
 - (Resolved in Step 8) The orb no longer floats behind every section: it drifts off by the end
