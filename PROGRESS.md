@@ -4,6 +4,10 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
+- **Step 14: SEO + meta DONE (`6a623bf`).** index.html meta (description = verbatim tagline,
+  theme-color, canonical, OG + Twitter card, Person JSON-LD). Favicon + OG assets generated from
+  the JT logo (favicon.ico/-32/apple-touch + og-image.png with a blue glow). Scaffold favicon.svg
+  removed. Absolute URLs assume jacobtam.me; sameAs omitted until real social URLs. Verified 200s.
 - **Step 13: reduced motion + a11y floor DONE (`bbe44d5`).** prefers-reduced-motion -> static orb
   (spin/breathing/orbit frozen), choreography + interlude pin skipped, canvas fades out (opacity)
   leaving the hero, no cursor/parallax, opacity-only reveals, no loader stars. a11y: accent
@@ -36,10 +40,15 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
     idea - the name-fade-in covers the spirit, revisit if he still wants more.
 - HEADS-UP: Step 13 nudged `--color-text-mute` from the doc's #6D6E71 to #797B80 for WCAG AA
   contrast (4.1 -> 4.93:1). If Jacob prefers the exact doc grey, revert and accept the shortfall.
-- On "continue": **Step 14 - SEO basics + meta** (favicon, title - done, meta description, Open Graph
-  card for LinkedIn shares using ASSETS.ogImage, structured metadata; leave the analytics spot, don't
-  add it). Then 15 perf (strip leva + r3f-perf from the prod bundle, lazy media, code-split three,
-  reduced-motion canvas -> frameloop off when faded, Lighthouse), 16 easter egg + deploy.
+- On "continue": **Step 15 - Performance pass** (strip leva + r3f-perf from the PROD bundle - they
+  currently ship; code-split three.js to cut the ~1.5MB chunk; lazy-load project videos / compress
+  media when real; reduced-motion + faded canvas -> frameloop 'never' to stop rendering a static
+  orb; run Lighthouse and fix the worst). Then 16 easter egg + deploy (jacobtam.me, GitHub remote).
+- SEO follow-ups owed: real OG/share works once deployed to jacobtam.me (absolute URLs assume it);
+  add real GitHub/LinkedIn/Instagram URLs to JSON-LD `sameAs` (+ lib/assets.ts LINKS). Optional:
+  a more descriptive <title> (currently just "Jacob Tam"); would need new copy, so ask first.
+  The 32px favicon is a small letterboxed JT (the wide monogram doesn't fill a square) - a dedicated
+  square mark would be crisper if Jacob wants.
 - **Step 10b (clip-path expand) still DEFERRED** until the trimmed smartbox video is at
   `/public/media/smartbox.mp4` and MEDIA_READY is true. When ready: a pinned element expands from a
   small rounded rect to fullscreen via clip-path/scale as you scroll end-of-About -> Projects,
@@ -295,6 +304,18 @@ was, for reference:
   - Verified via a matchMedia-stub initScript: reducedMotion true -> static orb, 0 pin-spacers,
     orb layer opacity 0 past the hero, About reveals opacity 1 + no parallax transform; normal mode
     unaffected (pin + phase advance intact); keyboard focus ring is the accent.
+- Step 14 (SEO + meta, `6a623bf`):
+  - `index.html`: `<title>Jacob Tam`, meta description = the tagline VERBATIM (docs/02 - no invented
+    copy), author, `theme-color #000102`, canonical `https://jacobtam.me/`. Open Graph (type, site_name,
+    title, description, url, image 1200x630 + dims + alt) + Twitter `summary_large_image` for LinkedIn.
+    Person JSON-LD (name, url, email, jobTitle, alumniOf Queen's; `sameAs` omitted - social URLs are
+    still placeholders).
+  - Assets generated from `public/jt-logo.png` via PIL (a one-off script, not committed):
+    `favicon.ico` (16/32/48), `favicon-32.png`, `apple-touch-icon.png` (180), `og-image.png`
+    (1200x630: logo on #000102 + a soft blue radial glow). Deleted the purple Vite scaffold
+    `favicon.svg`. Analytics drop-in spot (App.tsx comment) left untouched per docs/09.
+  - Absolute OG/canonical URLs hardcode `https://jacobtam.me` - update if the deploy domain differs.
+  - Verified: head tags present + correct, JSON-LD parses, og/favicon/apple/ico all serve 200.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
