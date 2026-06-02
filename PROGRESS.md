@@ -4,6 +4,19 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
+- **Step 15: performance pass IN PROGRESS.**
+  - DONE (`7442934`): stripped leva + r3f-perf from the PROD bundle. `lib/devControls.ts` wraps
+    leva's useControls and dynamically imports leva only in dev (`import.meta.env.DEV` -> DCE'd in
+    prod), returning schema defaults in prod; Scene lazy-loads DevPanel in dev only. Verified 0
+    leva/r3f-perf occurrences in prod; main chunk 1,522 -> 1,318 kB (gzip 441 -> 375). Dev still
+    fine (leva panel lazy-loads, orb renders).
+  - TODO (rest of Step 15): (a) code-split three.js out of the 1.3MB main chunk (manualChunks, or
+    React.lazy the Scene behind the loader) so initial parse is smaller; (b) reduced-motion / faded
+    canvas -> set Canvas frameloop to 'never' once the orb is static or faded (stop rendering a
+    still scene - currently 'always'); (c) lazy-load + in-view-only play for project videos (moot
+    until MEDIA_READY/real media - add the hook structure when media lands); (d) compress/resize
+    real media when it arrives; (e) run Lighthouse (mobile), fix the worst. NOTE: building blocks
+    are independent - safe to stop after any.
 - **Step 14: SEO + meta DONE (`6a623bf`).** index.html meta (description = verbatim tagline,
   theme-color, canonical, OG + Twitter card, Person JSON-LD). Favicon + OG assets generated from
   the JT logo (favicon.ico/-32/apple-touch + og-image.png with a blue glow). Scaffold favicon.svg
