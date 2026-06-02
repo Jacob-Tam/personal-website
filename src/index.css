@@ -183,6 +183,23 @@
   }
 }
 
+/* Easter egg: a tiny saucer that occasionally flies across the background (Spaceship.tsx). It
+   enters off one edge, crosses faster than the planets with a slight vertical drift, and despawns. */
+.spaceship-wrap {
+  position: absolute;
+  left: 0;
+  animation: spaceship-fly var(--dur, 7s) linear forwards;
+  will-change: transform;
+}
+@keyframes spaceship-fly {
+  from {
+    transform: translate(var(--from-x, -15vw), 0);
+  }
+  to {
+    transform: translate(var(--to-x, 115vw), var(--drift-y, 0));
+  }
+}
+
 /* Loading-screen shooting stars: a short white streak with a fading trail, sweeping diagonally.
    The gradient puts the bright head at the leading (down-right) end; rotate+translateX sweeps it. */
 .shooting-star {

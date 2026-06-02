@@ -5,6 +5,7 @@ import { useReducedMotion } from './lib/useReducedMotion'
 import { useScrollStore } from './store/useScrollStore'
 import { LoadingScreen } from './components/loading/LoadingScreen'
 import { Planets } from './components/shared/Planets'
+import { Spaceship } from './components/shared/Spaceship'
 import { Starfield } from './components/shared/Starfield'
 import { GrainOverlay } from './components/shared/GrainOverlay'
 import { Nav } from './components/nav/Nav'
@@ -40,6 +41,7 @@ function App() {
       {/* Faint ambient backdrop behind everything (above the canvas, below grain + content):
           slow-drifting planets (z-[4]) with the starfield in front of them (z-[5]). */}
       <Planets />
+      <Spaceship />
       <Starfield />
       <GrainOverlay />
       <Nav />
