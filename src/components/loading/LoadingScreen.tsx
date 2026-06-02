@@ -6,7 +6,7 @@ import { Starfield } from '../shared/Starfield'
 
 // Minimum time on screen so it doesn't flash + the logo/stars get a beat (docs/06).
 const MIN_DURATION = 1800
-// Fade-out duration; the loader unmounts just after, and the hero crossfades in underneath.
+// Fade-out duration; the site is revealed (hero name fades in) only after this completes.
 const FADE_MS = 1200
 
 // Hand-tuned so a few stars streak across during the load; positions spread, staggered delays.
@@ -24,8 +24,9 @@ const SHOOTING_STARS = [
   Full-viewport loading screen (docs/06): the JT logo on black over the SAME ambient starfield as
   the page (seeded -> identical star positions, so the field persists as the loader fades), with
   white shooting-star trails and a thin white progress line. It completes on REAL readiness -
-  webfonts + the 3D canvas's first frame (store.canvasReady) + a minimum - then crossfades into the
-  hero (which fades its name/tagline in via store.isLoaded). Scroll is locked while it's up.
+  webfonts + the 3D canvas's first frame (store.canvasReady) + a minimum. Then it fades out; only
+  ONCE IT'S GONE is the hero revealed (store.isLoaded) so the name fades in on the revealed page
+  rather than showing through the fade. Scroll is locked until then.
 */
 export function LoadingScreen() {
   const setLoaded = useScrollStore((state) => state.setLoaded)
@@ -43,6 +44,7 @@ export function LoadingScreen() {
     document.fonts?.ready.then(() => (fontsReady = true)).catch(() => (fontsReady = true))
 
     let value = 0
+    let revealTimer: number | undefined
     let raf = requestAnimationFrame(function tick(now) {
       const elapsed = now - start
       // On low-power there's no canvas, so don't wait on canvasReady (it would never fire and the
@@ -56,12 +58,17 @@ export function LoadingScreen() {
 
       if (ready && value > 99.3) {
         setProgress(100)
-        setDone(true) // begin fade-out
-        document.documentElement.style.overflow = previousOverflow
-        lenis?.scrollTo(0, { immediate: true })
-        lenis?.start()
-        setLoaded(true) // hero fades in as the loader fades out
-        window.setTimeout(() => setGone(true), FADE_MS + 60)
+        setDone(true) // begin the fade-out
+        // Reveal the site only AFTER the loader has finished fading, so the hero name doesn't show
+        // through the fade - it fades in cleanly on the already-revealed page. Scroll stays locked
+        // until then.
+        revealTimer = window.setTimeout(() => {
+          document.documentElement.style.overflow = previousOverflow
+          lenis?.scrollTo(0, { immediate: true })
+          lenis?.start()
+          setLoaded(true) // hero name/tagline fade in now, on the revealed page
+          setGone(true) // unmount the (now-invisible) loader
+        }, FADE_MS)
         return
       }
       raf = requestAnimationFrame(tick)
@@ -69,6 +76,7 @@ export function LoadingScreen() {
 
     return () => {
       cancelAnimationFrame(raf)
+      if (revealTimer) window.clearTimeout(revealTimer)
       document.documentElement.style.overflow = previousOverflow
     }
   }, [setLoaded])
