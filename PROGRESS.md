@@ -289,6 +289,12 @@ was, for reference:
     (First pass was too big / too many / not glowing / drift imperceptible - Jacob feedback, fixed.)
   - Both kept deliberately subtle per docs/09 (no generic twinkly starfield); support the
     orb-in-space feel without competing with it.
+- Space scene grew (later): the saucer easter egg (Step 16 notes) + `shared/MoonSurface.tsx`
+  (`5b4889c`) - a procedural grey lunar surface (public/moon-surface.webp, 26KB, numpy/PIL:
+  heightfield + craters lit upper-left, dimmed earthlit, horizon melted into the page) below Contact
+  in `<main>`. Stars/planets read as the sky above its horizon. Regenerate via the inline PIL script
+  in the commit / chat if tuning brightness/craters; cover + top-anchored keeps the horizon at all
+  widths. Tunables: MoonSurface height clamp, and the generator's diffuse/ambient (brightness).
 - Horizontal-scrollbar fix (`a991122`): `overflow-x: clip` on html (index.css base). Full-bleed
   fixed layers + the GSAP pin-spacer round up to full viewport width incl. the scrollbar gutter,
   leaving a ~15px h-scroll. clip (not hidden) doesn't create a scroll container, so vertical scroll
