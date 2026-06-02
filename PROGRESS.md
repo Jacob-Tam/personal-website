@@ -4,6 +4,11 @@ Single source of truth for resuming. Overwrite stale info; this is status, not a
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
 ## Current position
+- **Step 13: reduced motion + a11y floor DONE (`bbe44d5`).** prefers-reduced-motion -> static orb
+  (spin/breathing/orbit frozen), choreography + interlude pin skipped, canvas fades out (opacity)
+  leaving the hero, no cursor/parallax, opacity-only reveals, no loader stars. a11y: accent
+  :focus-visible ring, text-mute bumped to #797B80 for WCAG AA (4.93:1), decorative layers
+  aria-hidden, project overlay focus in/return. Verified across reduced/normal/keyboard.
 - **Step 12: mobile / low-power fallback DONE (`ee6a337`).** store.lowPower (lib/gpuTier.ts:
   max-width 768 or no WebGL, resolved once at load) gates the canvas: low-power skips `<Scene>`,
   Hero shows a static orb, lenis skips choreography + the interlude pin, Parallax + hero pointer
@@ -12,17 +17,20 @@ Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, com
 - **Step 11: loading screen DONE (`e2d2d9a`).** JT logo + blue progress + white shooting stars.
 - **Step 10: scroll indicator DONE (`c6398e3`); clip-path expand DEFERRED** until the real smartbox
   video is in (it's the half that needs the clip; most cuttable per docs/08).
-- Steps 0-12 complete (10b deferred); plus Jacob refinements (ambient stars + planets backdrop, a
-  horizontal-scrollbar fix), the removed Projects particle trace, nav-fade / dev-panel UX. Current.
+- Steps 0-13 complete (10b deferred); plus Jacob refinements (ambient stars + planets backdrop, a
+  horizontal-scrollbar fix, dev-panel readability), the removed Projects particle trace, nav-fade.
+  Current.
 
 ## Next action on resume
 - Jacob: verify the mobile fallback on a REAL phone (docs/08 Step 12 explicitly asks for it; only
   emulated so far). Also owes a real static orb still for `/media/orb-fallback.jpg` (ASSETS.orbStill);
   Hero uses a CSS glow placeholder until then.
-- On "continue": **Step 13 - Reduced motion + a11y floor** (prefers-reduced-motion: orb static/slow,
-  no choreography/parallax, opacity-only reveals - some already partly done; keyboard nav, alt text,
-  contrast, visible focus). Then 14 SEO/OG, 15 perf (strip leva + r3f-perf, lazy media, code-split
-  three, Lighthouse), 16 easter egg + deploy.
+- HEADS-UP: Step 13 nudged `--color-text-mute` from the doc's #6D6E71 to #797B80 for WCAG AA
+  contrast (4.1 -> 4.93:1). If Jacob prefers the exact doc grey, revert and accept the shortfall.
+- On "continue": **Step 14 - SEO basics + meta** (favicon, title - done, meta description, Open Graph
+  card for LinkedIn shares using ASSETS.ogImage, structured metadata; leave the analytics spot, don't
+  add it). Then 15 perf (strip leva + r3f-perf from the prod bundle, lazy media, code-split three,
+  reduced-motion canvas -> frameloop off when faded, Lighthouse), 16 easter egg + deploy.
 - **Step 10b (clip-path expand) still DEFERRED** until the trimmed smartbox video is at
   `/public/media/smartbox.mp4` and MEDIA_READY is true. When ready: a pinned element expands from a
   small rounded rect to fullscreen via clip-path/scale as you scroll end-of-About -> Projects,
@@ -257,6 +265,25 @@ was, for reference:
   - Verified at a phone viewport: lowPower true, 0 canvases, 0 pin-spacers, no h-scroll, loads at
     top, reveals fire on scroll, hero/about/projects/contact render single-column. Desktop
     re-checked: canvas + interlude pin + phase advance all intact.
+- Step 13 (reduced motion + a11y floor, `bbe44d5`):
+  - `gpuTier.detectReducedMotion()` seeds `store.reducedMotion` synchronously (flash-free);
+    `lib/useReducedMotion.ts` keeps it live (OS-toggle). Called in App.
+  - Orb static under reduced motion: `useOrbChoreography` skips the idle spin; `Orb.tsx` freezes
+    uTime + breathing; `OrbParticles` freezes the orbit (time=0). `useHeroPointer` no-ops.
+  - `lenis.ts` is now 3-way: lowPower -> no triggers; reducedMotion -> ONE trigger that toggles
+    `opacity-0` on `#orb-canvas-layer` (Scene's canvas wrapper, `transition-opacity duration-700`)
+    as #interlude enters, so the static orb fades out leaving the hero (opacity only); else the
+    full choreography. Reveal/Parallax/ScrollIndicator already handled reduced motion.
+  - LoadingScreen drops the shooting stars under reduced motion.
+  - a11y: `:focus-visible { outline: 2px solid accent-hi }` in index.css base (verified Tab ->
+    rgb(107,176,220)); canvas wrapper aria-hidden (grain/starfield/planets already were);
+    ProjectExpanded focuses the close button on open + returns focus on close (already a labelled
+    modal w/ Escape + scroll lock).
+  - Contrast: `--color-text-mute` #6D6E71 -> #797B80 (measured 4.93:1 vs the near-black bg; was
+    ~4.1:1, failed AA for normal-size text like the tagline). Deviation from docs/01 - see HEADS-UP.
+  - Verified via a matchMedia-stub initScript: reducedMotion true -> static orb, 0 pin-spacers,
+    orb layer opacity 0 past the hero, About reveals opacity 1 + no parallax transform; normal mode
+    unaffected (pin + phase advance intact); keyboard focus ring is the accent.
 
 ## Decisions made this session (not in docs)
 - **Tailwind v4** (not v3): wired via `@tailwindcss/vite`, no JS config; tokens live in
