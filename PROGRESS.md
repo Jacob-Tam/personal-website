@@ -213,12 +213,14 @@ was, for reference:
     if Jacob wants it more prominent.
 - Step 11 (loading screen + hero entrance):
   - `loading/LoadingScreen.tsx`: full-viewport black, z-[100], on top in App and self-unmounting.
-    `/jt-logo.png` (the JT monogram, optimized to 600px/31K) centered + a thin blue progress line.
-    White shooting-star trails behind it (CSS `.shooting-star` + `@keyframes shooting-star` in
-    index.css: a short white->transparent gradient streak, rotate(45deg)+translateX sweep, 7 spans
-    with staggered delays/durations). Progress crawls honestly to 92% then completes on REAL
-    readiness: `document.fonts.ready` + `store.canvasReady` + a 1.2s minimum. On complete: fade out
-    (700ms) then unmount, `setLoaded(true)`, scroll reset to top.
+    `/jt-logo.png` (the JT monogram, optimized to 600px/31K) centered + a thin WHITE progress line
+    (Jacob's call, overrides docs/06's accent). Behind it: the SAME ambient `<Starfield>` as the page
+    (seeded -> identical positions + twinkle phase, so the field persists through the fade), plus
+    white shooting-star trails (CSS `.shooting-star` + `@keyframes shooting-star`: a short
+    white->transparent gradient streak, rotate(45deg)+translateX sweep, 7 spans). Progress crawls to
+    92% then completes on REAL readiness: `document.fonts.ready` + (`store.canvasReady` || lowPower) +
+    a 1.8s minimum (MIN_DURATION). On complete: crossfade out (FADE_MS 1200ms) then unmount,
+    `setLoaded(true)`, scroll reset to top. Logo sits at z-10 above the starfield.
   - `store.canvasReady` + `setCanvasReady` added; set from the `<Canvas onCreated>` in Scene (the
     orb's first-frame / GL-ready signal the loader waits on).
   - Scroll locked while loading via `documentElement.style.overflow='hidden'` (restored on
