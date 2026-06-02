@@ -1,19 +1,22 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
-import { useControls } from 'leva'
+import { useControls } from '../../lib/devControls'
 import * as THREE from 'three'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
 import { useOrbChoreography } from './useOrbChoreography'
-import { DevPanel } from './DevPanel'
 import { useScrollStore } from '../../store/useScrollStore'
 import { setInterludePin } from '../../lib/lenis'
 import { BLOOM, CAMERA, CHOREOGRAPHY, CORE, CURSOR, FOG, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
 
 const isDev = import.meta.env.DEV
+
+// DEV-only: lazy-load the leva panel so leva (its only other static entry point) is dynamically
+// imported and therefore dropped from the production bundle.
+const DevPanel = isDev ? lazy(() => import('./DevPanel').then((m) => ({ default: m.DevPanel }))) : null
 
 type CursorTuning = { lerp: number; clampX: number; clampY: number }
 type ChoreographyTuning = {
@@ -139,7 +142,11 @@ export function Scene() {
   return (
     <>
       {/* DEV-only orb controls: draggable + height-capped + scrollable (see DevPanel). */}
-      {isDev && <DevPanel />}
+      {isDev && DevPanel && (
+        <Suspense fallback={null}>
+          <DevPanel />
+        </Suspense>
+      )}
       <div
         id="orb-canvas-layer"
         aria-hidden
