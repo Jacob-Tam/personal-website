@@ -132,6 +132,9 @@
   .planet {
     animation: none;
   }
+  .moon-rotate {
+    animation: none;
+  }
 }
 
 /* Ambient background planets (Planets.tsx): small, dim, distant spheres drifting very slowly far
@@ -197,6 +200,16 @@
   }
   to {
     transform: translate(var(--to-x, 115vw), var(--drift-y, 0));
+  }
+}
+
+/* The lunar limb's surface rotates slowly (MoonSurface); disabled under reduced motion. */
+.moon-rotate {
+  animation: moon-rotate 120s linear infinite;
+}
+@keyframes moon-rotate {
+  to {
+    transform: rotate(360deg);
   }
 }
 

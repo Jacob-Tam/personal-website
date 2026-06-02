@@ -8,7 +8,6 @@ import { LoadingScreen } from './components/loading/LoadingScreen'
 import { Planets } from './components/shared/Planets'
 import { Spaceship } from './components/shared/Spaceship'
 import { Starfield } from './components/shared/Starfield'
-import { MoonSurface } from './components/shared/MoonSurface'
 import { GrainOverlay } from './components/shared/GrainOverlay'
 import { Nav } from './components/nav/Nav'
 import { Hero } from './components/hero/Hero'
@@ -55,8 +54,6 @@ function App() {
         <About />
         <Projects />
         <Contact />
-        {/* The page comes to rest on a grey lunar surface below the contact section. */}
-        <MoonSurface />
       </main>
       {/* Analytics drop-in (docs/03): add <Analytics /> here later, no refactor needed. */}
       {/* Loading screen sits on top (z-100) and unmounts itself once everything is ready. */}
