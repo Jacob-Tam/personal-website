@@ -128,6 +128,33 @@ constants + r3f-perf pass. Checkpoint + commit after each; commit WIP sub-pieces
   scrubs the pin incrementally and releases fine (engage/release verified steps 1-3). To screenshot the
   hero cleanly, RELOAD (lands at top) rather than immediate-jumping out of the pin.
 
+### REFINEMENT — About->Projects scroll JOLT fixed (Jacob: "flicky/jolty" at that seam).
+About ends and the Projects pin starts at the SAME scrollY (2851; adjacent sections), so several
+things piled onto that one boundary frame and made it long -> Lenis lurched the scroll on the next
+tick (measured a ~15px/frame spike vs ~3 normal). Fixes (all in three/Scene + JourneyPlanet + lenis):
+- Don't mount/unmount the 3D at the seam. The orb AND the planets are now BOTH always mounted and
+  toggled by group VISIBILITY (`<group visible={!projectsActive}>` around OrbSystem; ProjectsScene
+  always mounted, its planets self-hide via opacity). Building/disposing the orb particles + 4 planets
+  on one frame was the biggest hit.
+- Don't toggle scene.fog. It's mounted the whole time now; the planets opt out with material
+  `fog={false}`. Adding/removing scene.fog recompiles every material mid-scroll.
+- `<Preload all />` precompiles all shaders up front, so a planet's material doesn't compile the first
+  frame it becomes visible at the seam.
+- Removed `anticipatePin` from the Projects pin: with Lenis already smoothing the wheel, ST's
+  velocity-based pre-pin lookahead just overshot and lurched. (Interlude pin left as-is - no complaint
+  there, and nothing swaps visually at that seam.)
+- The directional light stays on always (the orb is unlit - custom shader + MeshBasicMaterial - so it
+  has no effect outside the journey), keeping the light count constant so materials don't recompile.
+VERIFIED: dispatched real wheel events across the seam -> uniform ~10px/frame, NO spike (the residual
+spike only showed with programmatic lenis.scrollTo fighting the pin, not a user path). Hero orb
+centered, About drift+shed intact, journey + indicator intact, 60fps. Build green.
+- KNOWN minor edge case (pre-existing, NOT this change, self-heals on first scroll, did not fix):
+  reloading the page WHILE scrolled inside the Projects pin -> browser scroll restoration feeds that
+  position into ScrollTrigger before the loader resets to 0, leaving the #about scrub's driftProgress
+  stale (~0.36) so the hero orb sits high until the first scroll. Loading from the top is clean. If it
+  ever bugs Jacob: after the loader's scroll reset, call ScrollTrigger.refresh()/update() so the scrubs
+  recompute to 0.
+
 ### NEXT ON RESUME — STEP 4 (fallback polish), then 5 (bake leva + perf).
 - STEP 4: the flat fallback is already functional (ProjectsFlat: stacked media+text, no canvas/pin/
   indicator; Reveal opacity-only under reduced motion). Polish pass + re-verify on a real phone width

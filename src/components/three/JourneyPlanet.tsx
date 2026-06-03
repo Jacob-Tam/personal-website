@@ -45,7 +45,9 @@ export function JourneyPlanet({
   return (
     <mesh ref={meshRef} visible={false}>
       <sphereGeometry args={[radius, 48, 32]} />
-      <meshStandardMaterial ref={materialRef} color={color} roughness={0.9} metalness={0} transparent opacity={0} />
+      {/* fog={false}: the planets ignore the orb's scene fog (which we keep mounted the whole time so
+          it never toggles), so they read correctly in deep space whatever the camera distance. */}
+      <meshStandardMaterial ref={materialRef} color={color} roughness={0.9} metalness={0} transparent opacity={0} fog={false} />
     </mesh>
   )
 }

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { PerspectiveCamera } from '@react-three/drei'
+import { PerspectiveCamera, Preload } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
 import { useControls } from '../../lib/devControls'
 import * as THREE from 'three'
@@ -234,15 +234,26 @@ export function Scene() {
             orbDistance={camera.distance}
             journey={{ camZ: projects.camZ, camZTravel: projects.camZTravel, camYDrift: projects.camYDrift }}
           />
-          {/* No fog during the Projects journey - the planets live in deep space, not the orb's fog. */}
-          {!projectsActive && <fog attach="fog" args={[FOG.color, depth.fogNear, depth.fogFar]} />}
+          {/* Fog stays mounted the whole time (the orb particles dim into it for depth); the planets
+              opt OUT via material.fog=false. We never toggle scene.fog because adding/removing it
+              recompiles every material mid-scroll - one cause of the About->Projects scroll lurch. */}
+          <fog attach="fog" args={[FOG.color, depth.fogNear, depth.fogFar]} />
           <ambientLight intensity={lights.ambient} />
           <pointLight position={[0, 0, 0]} intensity={lights.pointIntensity} decay={2} color="#ffffff" />
-          {/* Orb for hero/interlude/about; swapped out for the planets during the Projects pin. */}
-          {!projectsActive && (
+          {/* Orb (hero/interlude/about) and the planets (Projects pin) are BOTH kept mounted and
+              toggled by group VISIBILITY rather than mounted/unmounted: building the orb particles +
+              4 planets (and changing the light count) on the single boundary frame made that frame
+              long enough that Lenis lurched the scroll on the next tick. ProjectsScene's light stays
+              on (the orb is unlit, so it's inert there) and its planets self-hide (opacity 0 outside
+              the journey), so nothing mounts or recompiles at the seam. */}
+          <group visible={!projectsActive}>
             <OrbSystem core={core} particles={particles} cursor={cursor} choreo={choreography} />
-          )}
-          {projectsActive && <ProjectsScene look={journeyLook} rotationSpeed={projects.rotationSpeed} />}
+          </group>
+          <ProjectsScene look={journeyLook} rotationSpeed={projects.rotationSpeed} />
+          {/* Precompile every material up front (incl. the hidden planets) so a shader doesn't compile
+              the first frame a planet becomes visible at the About->Projects seam - that lazy compile
+              was the last hitch lurching the scroll. */}
+          <Preload all />
           <EffectComposer multisampling={4} frameBufferType={THREE.HalfFloatType}>
             <Bloom
               intensity={bloom.intensity}

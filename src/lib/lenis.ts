@@ -123,7 +123,9 @@ export function useSmoothScroll() {
           end: () => '+=' + window.innerHeight * projectsPinVh,
           pin: true,
           scrub: true,
-          anticipatePin: 1,
+          // No anticipatePin here: Lenis already smooths the wheel input, so ScrollTrigger's
+          // velocity-based pre-pin lookahead just overshoots and lurches the scroll at the
+          // About->Projects seam. Without it the pin engages exactly at top/top, smoothly.
           invalidateOnRefresh: true,
           onUpdate: (self) => setProjectsProgress(self.progress),
           onToggle: (self) => setProjectsActive(self.isActive),
