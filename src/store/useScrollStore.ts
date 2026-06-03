@@ -24,6 +24,8 @@ interface ScrollState {
   reducedMotion: boolean // prefers-reduced-motion
   lowPower: boolean // mobile / weak GPU -> 3D fallback (no canvas, no choreography/parallax)
   supernovaAt: number // performance.now() of the last "67" supernova trigger (0 = never)
+  projectsActive: boolean // the Projects journey pin is engaged (canvas re-enabled; low-freq toggle)
+  projectsProgress: number // 0..1 across the whole pinned Projects journey (high-freq scrub)
 
   setScrollProgress: (value: number) => void
   setHeroProgress: (value: number) => void
@@ -36,6 +38,8 @@ interface ScrollState {
   setReducedMotion: (value: boolean) => void
   setLowPower: (value: boolean) => void
   triggerSupernova: () => void
+  setProjectsActive: (value: boolean) => void
+  setProjectsProgress: (value: number) => void
 }
 
 export const useScrollStore = create<ScrollState>((set) => ({
@@ -51,6 +55,8 @@ export const useScrollStore = create<ScrollState>((set) => ({
   reducedMotion: detectReducedMotion(), // seeded at load; useReducedMotion keeps it live
   lowPower: detectLowPower(), // resolved once at load; gates the canvas, choreography, and parallax
   supernovaAt: 0,
+  projectsActive: false,
+  projectsProgress: 0,
 
   setScrollProgress: (value) => set({ scrollProgress: value }),
   setHeroProgress: (value) => set({ heroProgress: value }),
@@ -63,4 +69,6 @@ export const useScrollStore = create<ScrollState>((set) => ({
   setReducedMotion: (value) => set({ reducedMotion: value }),
   setLowPower: (value) => set({ lowPower: value }),
   triggerSupernova: () => set({ supernovaAt: performance.now() }),
+  setProjectsActive: (value) => set({ projectsActive: value }),
+  setProjectsProgress: (value) => set({ projectsProgress: value }),
 }))

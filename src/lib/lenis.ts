@@ -3,7 +3,7 @@ import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useScrollStore } from '../store/useScrollStore'
-import { CHOREOGRAPHY } from './constants'
+import { CHOREOGRAPHY, PROJECTS_JOURNEY } from './constants'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -16,6 +16,14 @@ export let lenis: Lenis | null = null
 export let interludePinVh = CHOREOGRAPHY.interludePinVh
 export function setInterludePin(value: number) {
   interludePinVh = value
+  ScrollTrigger.refresh()
+}
+
+// Projects journey pin length (fraction of viewport height); the dev leva 'projects' folder
+// live-tunes it (re-refreshes ScrollTrigger so the pinned region resizes).
+export let projectsPinVh = PROJECTS_JOURNEY.pinVh
+export function setProjectsPin(value: number) {
+  projectsPinVh = value
   ScrollTrigger.refresh()
 }
 
@@ -34,8 +42,15 @@ export function useSmoothScroll() {
     const raf = (time: number) => instance.raf(time * 1000)
     gsap.ticker.add(raf)
     gsap.ticker.lagSmoothing(0)
-    const { setScrollProgress, setHeroProgress, setInterludeProgress, setDriftProgress, setPhase } =
-      useScrollStore.getState()
+    const {
+      setScrollProgress,
+      setHeroProgress,
+      setInterludeProgress,
+      setDriftProgress,
+      setPhase,
+      setProjectsActive,
+      setProjectsProgress,
+    } = useScrollStore.getState()
     instance.on('scroll', () => {
       ScrollTrigger.update()
       setScrollProgress(instance.progress || 0)
@@ -97,6 +112,21 @@ export function useSmoothScroll() {
           onEnterBack: () => setPhase('about'),
           onLeave: () => setPhase('past'),
           onLeaveBack: () => setPhase('interlude'),
+        }),
+        // Projects: PINNED solar-system journey. The scroll across the pin scrubs projectsProgress
+        // 0..1 (camera-through-space past the 4 planets); onToggle flags projectsActive so the
+        // canvas re-enables for it. Releases into Contact. Mirrors the interlude pin; trigger order
+        // stays top-to-bottom (hero, interlude, about, projects).
+        ScrollTrigger.create({
+          trigger: '#projects',
+          start: 'top top',
+          end: () => '+=' + window.innerHeight * projectsPinVh,
+          pin: true,
+          scrub: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => setProjectsProgress(self.progress),
+          onToggle: (self) => setProjectsActive(self.isActive),
         }),
       )
     }

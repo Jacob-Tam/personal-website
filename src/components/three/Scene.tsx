@@ -8,9 +8,10 @@ import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
 import { useOrbChoreography } from './useOrbChoreography'
+import { ProjectsScene } from './ProjectsScene'
 import { useScrollStore } from '../../store/useScrollStore'
-import { setInterludePin } from '../../lib/lenis'
-import { BLOOM, CAMERA, CHOREOGRAPHY, CORE, CURSOR, FOG, LIGHTS, PARTICLES, VIGNETTE } from '../../lib/constants'
+import { setInterludePin, setProjectsPin } from '../../lib/lenis'
+import { BLOOM, CAMERA, CHOREOGRAPHY, CORE, CURSOR, FOG, LIGHTS, PARTICLES, PROJECTS_JOURNEY, VIGNETTE } from '../../lib/constants'
 
 const isDev = import.meta.env.DEV
 
@@ -58,6 +59,7 @@ function OrbSystem({
 export function Scene() {
   const phase = useScrollStore((state) => state.phase)
   const reducedMotion = useScrollStore((state) => state.reducedMotion)
+  const projectsActive = useScrollStore((state) => state.projectsActive)
 
   const camera = useControls('camera', {
     fov: { value: CAMERA.fov, min: 35, max: 75, step: 1 },
@@ -135,10 +137,27 @@ export function Scene() {
     pinVh: { value: CHOREOGRAPHY.interludePinVh, min: 0, max: 2, step: 0.05 },
   }, { collapsed: true })
 
+  // DEV-only tuning for the Projects journey. Step 1 is one placeholder planet in the
+  // right-background; the camera path + the other 3 planets land in step 2.
+  const projects = useControls('projects', {
+    planetColor: PROJECTS_JOURNEY.planets[0].color,
+    planetRadius: { value: PROJECTS_JOURNEY.planets[0].radius, min: 0.3, max: 4, step: 0.05 },
+    posX: { value: PROJECTS_JOURNEY.planetPosition[0], min: -6, max: 6, step: 0.1 },
+    posY: { value: PROJECTS_JOURNEY.planetPosition[1], min: -4, max: 4, step: 0.1 },
+    posZ: { value: PROJECTS_JOURNEY.planetPosition[2], min: -12, max: 4, step: 0.1 },
+    rotationSpeed: { value: PROJECTS_JOURNEY.rotationSpeed, min: 0, max: 0.5, step: 0.01 },
+    pinVh: { value: PROJECTS_JOURNEY.pinVh, min: 1, max: 8, step: 0.25 },
+  }, { collapsed: true })
+
   // Live-tune the interlude pin length; setInterludePin re-refreshes ScrollTrigger.
   useEffect(() => {
     setInterludePin(choreography.pinVh)
   }, [choreography.pinVh])
+
+  // Live-tune the Projects journey pin length.
+  useEffect(() => {
+    setProjectsPin(projects.pinVh)
+  }, [projects.pinVh])
 
   return (
     <>
@@ -154,17 +173,31 @@ export function Scene() {
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700"
       >
         <Canvas
-          frameloop={reducedMotion ? 'demand' : phase === 'past' ? 'never' : 'always'}
+          frameloop={reducedMotion ? 'demand' : projectsActive || phase !== 'past' ? 'always' : 'never'}
           gl={{ alpha: true, antialias: true }}
           dpr={[1, 2]}
           onCreated={() => useScrollStore.getState().setCanvasReady(true)}
         >
           {isDev && <Perf position="bottom-right" />}
           <PerspectiveCamera makeDefault fov={camera.fov} position={[0, 0, camera.distance]} />
-          <fog attach="fog" args={[FOG.color, depth.fogNear, depth.fogFar]} />
+          {/* No fog during the Projects journey - the planets live in deep space, not the orb's fog. */}
+          {!projectsActive && <fog attach="fog" args={[FOG.color, depth.fogNear, depth.fogFar]} />}
           <ambientLight intensity={lights.ambient} />
           <pointLight position={[0, 0, 0]} intensity={lights.pointIntensity} decay={2} color="#ffffff" />
-          <OrbSystem core={core} particles={particles} cursor={cursor} choreo={choreography} />
+          {/* Orb for hero/interlude/about; swapped out for the planets during the Projects pin. */}
+          {!projectsActive && (
+            <OrbSystem core={core} particles={particles} cursor={cursor} choreo={choreography} />
+          )}
+          {projectsActive && (
+            <ProjectsScene
+              planet={{
+                color: projects.planetColor,
+                radius: projects.planetRadius,
+                position: [projects.posX, projects.posY, projects.posZ],
+                rotationSpeed: projects.rotationSpeed,
+              }}
+            />
+          )}
           <EffectComposer multisampling={4} frameBufferType={THREE.HalfFloatType}>
             <Bloom
               intensity={bloom.intensity}

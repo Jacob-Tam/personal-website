@@ -95,5 +95,22 @@ export const VIGNETTE = {
   offset: 0.35,
 }
 
+// Projects "solar system journey" (feat/projects-planets). A pinned section whose scroll drives a
+// camera-through-space trip past 4 planets (one per project). Camera path + per-planet pacing land
+// in step 2; these are the defaults the dev leva 'projects' folder seeds from. Bake leva back here.
+export const PROJECTS_JOURNEY = {
+  pinVh: 4, // pin length as a fraction of viewport height (~one viewport per planet); tune in leva
+  rotationSpeed: 0.06, // rad/s, gentle planet self-rotation
+  // Step-1 placeholder: ONE planet parked in the right-background (no camera travel yet).
+  planetPosition: [2.8, 0.5, -3] as [number, number, number],
+  // The 4 planets - visually DISTINCT (size + colour), cohesive in the dark space. Recolour here.
+  planets: [
+    { color: '#4f9ad1', radius: 1.25 }, // steel blue (leans on the accent)
+    { color: '#d68a4e', radius: 1.6 }, // warm amber
+    { color: '#5bbf9a', radius: 1.0 }, // teal
+    { color: '#9a7bd0', radius: 1.4 }, // violet
+  ],
+}
+
 // Fixed seed so the particle distribution is identical every load (not reshuffled).
 export const SEED = 1337
