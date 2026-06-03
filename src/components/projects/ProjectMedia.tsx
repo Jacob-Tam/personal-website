@@ -8,15 +8,17 @@ import type { Project, ProjectMediaKind } from './projectsData'
   placeholder poster; real files drop into /public/media with no code change. Only the ACTIVE project's
   clip plays (`isActive`, set by the journey as each planet arrives); the rest stay paused at the start
   (preload none -> the four never autoplay at once, docs/03). isActive is undefined in the flat
-  fallback, so nothing autoplays on mobile either.
+  fallback, so nothing autoplays on mobile - but `controls` is passed there so a visitor can play it.
 */
 export function ProjectMedia({
   project,
   isActive,
+  controls,
   className,
 }: {
   project: Project
   isActive?: boolean
+  controls?: boolean
   className?: string
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -44,6 +46,7 @@ export function ProjectMedia({
             muted
             loop
             playsInline
+            controls={controls}
             preload="none"
             className="h-full w-full object-cover"
           />

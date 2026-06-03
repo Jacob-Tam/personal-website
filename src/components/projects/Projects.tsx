@@ -111,7 +111,7 @@ function ProjectsFlat() {
         <div className="mt-16 flex flex-col gap-24">
           {PROJECTS.map((project) => (
             <Reveal key={project.id} className="grid items-center gap-8 md:grid-cols-2">
-              <ProjectMedia project={project} />
+              <ProjectMedia project={project} controls />
               <ProjectText project={project} />
             </Reveal>
           ))}

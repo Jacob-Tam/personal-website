@@ -166,12 +166,29 @@ noise so they differ. Params in `PROJECTS_JOURNEY.surface` (noiseScale 3.4, nois
 rimStrength 0.65, rimPower 2.6) - constants, tune by editing + reload. Verified bright (travel-in) and
 dimmed (arrive, still a clean readable backdrop), 60fps / <=19 calls.
 
-### NEXT ON RESUME — STEP 4 (fallback polish), then 5 (bake leva + perf).
-- STEP 4: the flat fallback is already functional (ProjectsFlat: stacked media+text, no canvas/pin/
-  indicator; Reveal opacity-only under reduced motion). Polish pass + re-verify on a real phone width
-  and under prefers-reduced-motion (the journey must NOT mount there). Keep it SUPER simple.
-- STEP 5: bake the leva 'projects' values Jacob lands on into PROJECTS_JOURNEY by hand; r3f-perf pass
-  (already ~60fps / <=19 calls); re-verify hero/interlude/about (prompt rule) after any change.
+### STEP 4 — DONE (mobile + reduced-motion flat fallback).
+- `ProjectsFlat` (built in step 1) is the fallback: the 4 projects stacked, each a ProjectMedia +
+  ProjectText inside a `<Reveal>` (grid md:grid-cols-2 -> 1 col on mobile), normal scroll, the faint
+  PROJECTS word as a static header backdrop, NO canvas/pin/scroll-indicator. Rendered whenever
+  `lowPower || reducedMotion` (the pin + planets are already gated off for those in lib/lenis + App).
+- Polish this step: ProjectMedia gained a `controls` prop; the flat fallback passes it so a visitor can
+  actually PLAY the video (the journey keeps its control-free auto-play showcase). No autoplay on mobile
+  (isActive undefined -> paused), matching docs/03. (No-op until MEDIA_READY, but the fallback is then
+  "fully usable" as required.)
+- VERIFIED (Chrome MCP): mobile width -> lowPower true, 0 canvases, 0 pin-spacers, single-column
+  media-over-text with wrapping Geist-Mono tags, clean spacing; desktop + forced
+  prefers-reduced-motion -> reducedMotion true, projects NOT pinned, calm 2-col media-left/text-right,
+  opacity-only reveals, canvas faded out (step 13). Same content both ways, fully readable. Build green.
+- Still owed (pre-existing, docs/08 Step 12): a REAL-device test + a real orbStill image - Jacob's.
+
+### NEXT ON RESUME — STEP 5 (bake leva + perf pass) = the last step.
+- Bake whatever Jacob lands on in the dev leva 'projects' folder into PROJECTS_JOURNEY by hand (camZ,
+  camZTravel, camYDrift, enter/arrive/exit XYZ, dim, recede, rotationSpeed, pinVh). Surface +
+  timing are already constants. Until he tunes, the current defaults look good.
+- r3f-perf pass: already ~60fps / <=19 draw calls / ~3-6k tris through the journey; both 3D systems are
+  mounted the whole time now (orb hidden during the journey) - confirm that didn't cost idle FPS
+  elsewhere. Re-verify hero/interlude/about (prompt rule) after any change.
+- Then the Projects-planets feature is complete on this branch -> review + merge to main when Jacob's happy.
 
 ## Current position (main branch — pre-feature; unchanged, still deployable)
 - **Step 15: performance pass DONE for everything not blocked on media/deploy.**
