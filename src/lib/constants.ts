@@ -133,6 +133,16 @@ export const PROJECTS_JOURNEY = {
   camZTravel: 1.2, // forward dolly across the journey (camZ -> camZ - camZTravel)
   camYDrift: 0.5, // vertical drift amplitude across the journey
 
+  // --- SURFACE: procedural object-space noise + a fresnel limb injected into the planet material
+  // (three/JourneyPlanet onBeforeCompile) for "soft noise" variation that rotates with the planet -
+  // not photoreal textures. Tune by editing here + reloading. ---
+  surface: {
+    noiseScale: 3.4, // spatial frequency of the surface mottling (relative to the unit sphere)
+    noiseStrength: 0.9, // brightness mottle amount (diffuse *= 1 + (n-0.5)*strength)
+    rimStrength: 0.65, // fresnel limb brightening on the lit edge (atmosphere-ish; dims with the planet)
+    rimPower: 2.6, // fresnel falloff; higher = thinner rim
+  },
+
   // --- LOOK (size + colour): visually DISTINCT, cohesive in dark space. Recolour trivially here. ---
   planets: [
     { color: '#4f9ad1', radius: 1.25 }, // steel blue (leans on the accent)

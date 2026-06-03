@@ -155,6 +155,17 @@ centered, About drift+shed intact, journey + indicator intact, 60fps. Build gree
   ever bugs Jacob: after the loader's scroll reset, call ScrollTrigger.refresh()/update() so the scrubs
   recompute to 0.
 
+### REFINEMENT — planet surface texture (Jacob asked for "more texture").
+Planets were flat shaded spheres. `three/JourneyPlanet.tsx` now patches MeshStandardMaterial via
+`onBeforeCompile` (patchPlanetMaterial): a 4-octave value-noise fbm sampled in OBJECT space
+(vObjPos = local position, so the mottling is painted on and rotates with the planet) modulates
+diffuse brightness, plus a fresnel limb brightens the lit edge (cheap atmosphere). Both ride on
+diffuseColor, so they auto-dim with the planet at arrive (no separate handling). No textures, no extra
+draw calls/geometry; all 4 planets share one program (identical GLSL), per-planet `uSeed` offsets the
+noise so they differ. Params in `PROJECTS_JOURNEY.surface` (noiseScale 3.4, noiseStrength 0.9,
+rimStrength 0.65, rimPower 2.6) - constants, tune by editing + reload. Verified bright (travel-in) and
+dimmed (arrive, still a clean readable backdrop), 60fps / <=19 calls.
+
 ### NEXT ON RESUME — STEP 4 (fallback polish), then 5 (bake leva + perf).
 - STEP 4: the flat fallback is already functional (ProjectsFlat: stacked media+text, no canvas/pin/
   indicator; Reveal opacity-only under reduced motion). Polish pass + re-verify on a real phone width
