@@ -137,6 +137,8 @@ export const PROJECTS_JOURNEY = {
   // (three/JourneyPlanet onBeforeCompile) for "soft noise" variation that rotates with the planet -
   // not photoreal textures. Tune by editing here + reloading. ---
   surface: {
+    dispScale: 1.9, // frequency of the geometry displacement (low = big lumps, not spiky)
+    dispAmp: 0.42, // displacement amplitude along the normal -> uneven silhouette + relief (not a perfect sphere)
     noiseScale: 3.4, // spatial frequency of the surface mottling (relative to the unit sphere)
     noiseStrength: 0.9, // brightness mottle amount (diffuse *= 1 + (n-0.5)*strength)
     rimStrength: 0.65, // fresnel limb brightening on the lit edge (atmosphere-ish; dims with the planet)

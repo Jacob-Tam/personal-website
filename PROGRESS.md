@@ -155,16 +155,20 @@ centered, About drift+shed intact, journey + indicator intact, 60fps. Build gree
   ever bugs Jacob: after the loader's scroll reset, call ScrollTrigger.refresh()/update() so the scrubs
   recompute to 0.
 
-### REFINEMENT — planet surface texture (Jacob asked for "more texture").
-Planets were flat shaded spheres. `three/JourneyPlanet.tsx` now patches MeshStandardMaterial via
-`onBeforeCompile` (patchPlanetMaterial): a 4-octave value-noise fbm sampled in OBJECT space
-(vObjPos = local position, so the mottling is painted on and rotates with the planet) modulates
-diffuse brightness, plus a fresnel limb brightens the lit edge (cheap atmosphere). Both ride on
-diffuseColor, so they auto-dim with the planet at arrive (no separate handling). No textures, no extra
-draw calls/geometry; all 4 planets share one program (identical GLSL), per-planet `uSeed` offsets the
-noise so they differ. Params in `PROJECTS_JOURNEY.surface` (noiseScale 3.4, noiseStrength 0.9,
-rimStrength 0.65, rimPower 2.6) - constants, tune by editing + reload. Verified bright (travel-in) and
-dimmed (arrive, still a clean readable backdrop), 60fps / <=19 calls.
+### REFINEMENT — planet surfaces: noise + fresnel, then VERTEX DISPLACEMENT (Jacob: "too perfect /
+not planet-like, no disformities"). `three/JourneyPlanet.tsx` patches MeshStandardMaterial via
+`onBeforeCompile` (patchPlanetMaterial), all object-space so it rotates with the planet:
+- VERTEX: displaces each vertex along its normal by fbm -> an UNEVEN silhouette + surface relief (no
+  longer a perfect sphere). The normal is recomputed from two displaced tangent neighbours (finite
+  differences) so the lumps catch the light. Geometry bumped to sphere 64x48 so the displacement reads
+  as smooth lumps, not facets.
+- FRAGMENT: fbm brightness mottling + a fresnel limb (cheap atmosphere). Both ride on diffuseColor, so
+  they auto-dim with the planet at arrive (no separate handling).
+No textures; all 4 planets share one program (identical GLSL), per-planet `uSeed` offsets the noise so
+they differ. ~6k tris/planet (was ~3k); only 1-2 visible at once -> still 60fps / <=19 calls. Params in
+`PROJECTS_JOURNEY.surface` (dispScale 1.9, dispAmp 0.42, noiseScale 3.4, noiseStrength 0.9, rimStrength
+0.65, rimPower 2.6) - constants, tune by editing + reload (dispAmp up = lumpier; too high = asteroid).
+Verified bright (travel-in: clearly irregular) and dimmed (arrive: clean readable backdrop).
 
 ### STEP 4 — DONE (mobile + reduced-motion flat fallback).
 - `ProjectsFlat` (built in step 1) is the fallback: the 4 projects stacked, each a ProjectMedia +

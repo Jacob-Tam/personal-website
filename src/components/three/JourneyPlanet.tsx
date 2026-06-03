@@ -7,21 +7,72 @@ import { PROJECTS_JOURNEY } from '../../lib/constants'
 
 const S = PROJECTS_JOURNEY.surface
 
-// Value-noise fbm + a fresnel limb injected into MeshStandardMaterial. The noise is sampled in
-// OBJECT space (vObjPos = the geometry's local position) so the mottling is painted on the surface
-// and rotates with the planet; the fresnel brightens the lit limb (a cheap atmosphere) and rides on
-// diffuseColor, so it dims along with the planet at arrive. No textures, no extra draw calls.
+// Shared value-noise fbm (used by both stages: vertex for displacement, fragment for mottling).
+const NOISE_GLSL = /* glsl */ `
+  float pHash(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+  float pNoise(vec3 x){
+    vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(pHash(i + vec3(0,0,0)), pHash(i + vec3(1,0,0)), f.x),
+                   mix(pHash(i + vec3(0,1,0)), pHash(i + vec3(1,1,0)), f.x), f.y),
+               mix(mix(pHash(i + vec3(0,0,1)), pHash(i + vec3(1,0,1)), f.x),
+                   mix(pHash(i + vec3(0,1,1)), pHash(i + vec3(1,1,1)), f.x), f.y), f.z);
+  }
+  float pFbm(vec3 p){ float v = 0.0, a = 0.5; for (int k = 0; k < 4; k++){ v += a * pNoise(p); p *= 2.0; a *= 0.5; } return v; }
+`
+
+/*
+  Patches MeshStandardMaterial (onBeforeCompile) so a planet is NOT a perfect sphere:
+  - Vertex: displaces each vertex along its normal by fbm (object space, so it rotates with the
+    planet), giving an uneven silhouette + surface relief. The normal is recomputed from two displaced
+    tangent neighbours (finite differences) so the bumps actually catch the light.
+  - Fragment: fbm brightness mottling + a fresnel limb. Both ride on diffuseColor, so they dim with the
+    planet at arrive.
+  No textures, no extra draw calls; all planets share one program (identical GLSL), a per-planet uSeed
+  offsets the noise so they differ.
+*/
 function patchPlanetMaterial(material: THREE.MeshStandardMaterial, seed: number) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uNoiseScale = { value: S.noiseScale }
     shader.uniforms.uNoiseStrength = { value: S.noiseStrength }
     shader.uniforms.uRimStrength = { value: S.rimStrength }
     shader.uniforms.uRimPower = { value: S.rimPower }
+    shader.uniforms.uDispScale = { value: S.dispScale }
+    shader.uniforms.uDispAmp = { value: S.dispAmp }
     shader.uniforms.uSeed = { value: seed }
 
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\n  vObjPos = position;')
+      .replace(
+        '#include <common>',
+        /* glsl */ `#include <common>
+        varying vec3 vObjPos;
+        uniform float uDispScale, uDispAmp, uSeed;
+        ${NOISE_GLSL}
+        float pDisp(vec3 p){ return (pFbm(p * uDispScale + uSeed) - 0.5) * uDispAmp; }`,
+      )
+      .replace(
+        '#include <beginnormal_vertex>',
+        /* glsl */ `#include <beginnormal_vertex>
+        float plR = length(position);
+        vec3 plN = plR > 1e-4 ? position / plR : objectNormal;
+        vec3 plRef = abs(plN.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+        vec3 plT = normalize(cross(plN, plRef));
+        vec3 plB = cross(plN, plT);
+        float plE = 0.06;
+        vec3 plPA = normalize(position + plT * plE) * plR;
+        vec3 plPB = normalize(position + plB * plE) * plR;
+        vec3 plQ0 = position + plN * pDisp(position);
+        vec3 plQA = plPA + normalize(plPA) * pDisp(plPA);
+        vec3 plQB = plPB + normalize(plPB) * pDisp(plPB);
+        objectNormal = normalize(cross(plQA - plQ0, plQB - plQ0));
+        if (dot(objectNormal, plN) < 0.0) objectNormal = -objectNormal;
+        vec3 plDisplaced = plQ0;`,
+      )
+      .replace(
+        '#include <begin_vertex>',
+        /* glsl */ `#include <begin_vertex>
+        transformed = plDisplaced;
+        vObjPos = position;`,
+      )
 
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -29,15 +80,7 @@ function patchPlanetMaterial(material: THREE.MeshStandardMaterial, seed: number)
         /* glsl */ `#include <common>
         varying vec3 vObjPos;
         uniform float uNoiseScale, uNoiseStrength, uRimStrength, uRimPower, uSeed;
-        float pHash(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
-        float pNoise(vec3 x){
-          vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
-          return mix(mix(mix(pHash(i + vec3(0,0,0)), pHash(i + vec3(1,0,0)), f.x),
-                         mix(pHash(i + vec3(0,1,0)), pHash(i + vec3(1,1,0)), f.x), f.y),
-                     mix(mix(pHash(i + vec3(0,0,1)), pHash(i + vec3(1,0,1)), f.x),
-                         mix(pHash(i + vec3(0,1,1)), pHash(i + vec3(1,1,1)), f.x), f.y), f.z);
-        }
-        float pFbm(vec3 p){ float v = 0.0, a = 0.5; for (int k = 0; k < 4; k++){ v += a * pNoise(p); p *= 2.0; a *= 0.5; } return v; }`,
+        ${NOISE_GLSL}`,
       )
       .replace(
         '#include <normal_fragment_begin>',
@@ -51,13 +94,12 @@ function patchPlanetMaterial(material: THREE.MeshStandardMaterial, seed: number)
 }
 
 /*
-  One planet in the Projects journey: a shaded sphere (lit by ProjectsScene's directional light so it
-  reads with a terminator) that flies the enter -> arrive -> exit path for its beat. Position, fade,
-  and the arrive recede+dim are all derived per frame from projectsProgress via planetMotion()
-  (getState, no reactive subscription). Surface variation (noise + limb) comes from
-  patchPlanetMaterial. Real Three.js object - a SEPARATE system from the ambient CSS
-  shared/Planets.tsx. Brightness multiplies the base colour, so dimming also pulls it below the bloom
-  threshold as it settles into the backdrop.
+  One planet in the Projects journey: a displaced/shaded sphere (lit by ProjectsScene's directional
+  light) that flies the enter -> arrive -> exit path for its beat. Position, fade, and the arrive
+  recede+dim are derived per frame from projectsProgress via planetMotion() (getState, no reactive
+  subscription). Surface relief + mottling come from patchPlanetMaterial. Real Three.js object - a
+  SEPARATE system from the ambient CSS shared/Planets.tsx. Brightness multiplies the base colour, so
+  dimming also pulls it below the bloom threshold as it settles into the backdrop.
 */
 export function JourneyPlanet({
   index,
@@ -96,10 +138,10 @@ export function JourneyPlanet({
 
   return (
     <mesh ref={meshRef} visible={false}>
-      <sphereGeometry args={[radius, 48, 32]} />
+      {/* 64x48 so the noise displacement reads as smooth lumps, not facets. */}
+      <sphereGeometry args={[radius, 64, 48]} />
       {/* fog={false}: the planets ignore the orb's scene fog (which we keep mounted the whole time so
-          it never toggles), so they read correctly in deep space whatever the camera distance.
-          onBeforeCompile adds the surface noise + limb (see patchPlanetMaterial). */}
+          it never toggles). onBeforeCompile adds the displacement + surface noise + limb. */}
       <meshStandardMaterial
         ref={materialRef}
         color={color}
