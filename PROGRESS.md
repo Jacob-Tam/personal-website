@@ -3,7 +3,86 @@
 Single source of truth for resuming. Overwrite stale info; this is status, not a log.
 Build sequence: `docs/08-build-order.md`. After each step: stop, show Jacob, commit.
 
-## Current position
+## ACTIVE WORK — branch `feat/projects-planets` (Projects "solar system journey")
+
+NEW FEATURE, off `main` (main stays deployable — do NOT touch it). Re-architects Projects from the
+2-col card grid into a PINNED 3D journey: scroll locks, the canvas re-enables, and the camera travels
+past 4 distinct planets in shared 3D space (one per project). Per project: planet travels in from the
+right-background, ARRIVES + recedes/dims, MEDIA fades in LEFT + TEXT fades in RIGHT (in front of the
+dimmed planet), then it drifts OFF LEFT as the next fades in. Faint giant "PROJECTS" word fixed behind
+the whole journey. Mobile/low-power + reduced-motion: NO pin/3D, flat stacked sections. Full spec is
+in Jacob's feature prompt (not in docs/); the 5-step build approach is below.
+
+Build approach: (1) static pinned section + canvas re-enable + ONE parked planet + project-1 panels.
+(2) camera travel + all 4 planets + travel-in/arrive(recede+dim)/travel-out rhythm + per-project panel
+fades. (3) 4-stop scroll indicator. (4) mobile/reduced-motion flat fallback polish. (5) bake leva ->
+constants + r3f-perf pass. Checkpoint + commit after each; commit WIP sub-pieces during step 2.
+
+### STEP 1 — DONE (static). Pin wiring, canvas re-enable, one placeholder planet, project-1 panels.
+- Store (`useScrollStore`): `projectsActive` (bool, low-freq, drives canvas) + `projectsProgress`
+  (0..1 high-freq scrub) + setters. Read high-freq via getState() in useFrame; subscribe to low-freq.
+- Scroll (`lib/lenis.ts`): Projects PIN ScrollTrigger — `#projects`, `start top top`,
+  `end '+= innerHeight * projectsPinVh'`, pin+scrub+anticipatePin+invalidateOnRefresh,
+  onUpdate->setProjectsProgress, onToggle->setProjectsActive. Created LAST (after interlude pin) so
+  pin order stays top-to-bottom. `setProjectsPin()` live-tunes length (re-refreshes ST). Only created
+  in the full-power branch (lowPower/reducedMotion get NO pin), so the fallback needs no extra gating.
+- Constants: `PROJECTS_JOURNEY` (pinVh 4, rotationSpeed 0.06, single `planetPosition` for step 1, and
+  a 4-entry `planets` color/radius array for step 2). Dev leva 'projects' folder seeds from it.
+- Canvas (`three/Scene.tsx`): swaps `OrbSystem` out for `<ProjectsScene>` while `projectsActive`;
+  disables fog during the journey (planets live in deep space, not the orb's fog).
+- `three/ProjectsScene.tsx` + `three/Planet.tsx`: a directional light + ONE shaded sphere
+  (meshStandardMaterial, gentle self-rotation) parked in the right-background. SEPARATE system from the
+  ambient CSS `shared/Planets.tsx` — no shared geometry, no orb connection.
+- `projects/Projects.tsx` REBUILT: `lowPower || reducedMotion ? <ProjectsFlat/> : <ProjectsJourney/>`.
+  Journey = a single `h-screen overflow-hidden` `#projects` (so the pin keeps vertical position fixed),
+  sr-only `<h2>`, BackgroundWord (centered, NO parallax — fixed backdrop), and project-1's media-left /
+  text-right panels (absolute inset-0, vertically centered, content z-20 in front of the canvas planet).
+  Flat = the 4 projects stacked single-column (ProjectMedia + ProjectText), normal scroll, <Reveal>
+  (opacity-only under reduced motion). Old card grid + ProjectExpanded overlay no longer used by
+  Projects (files left in place per the prompt; `ProjectCard.tsx`/`ProjectExpanded.tsx` now dead).
+- `projects/ProjectMedia.tsx` (LEFT, 2D/DOM, placeholder-aware, forwardRef <video> preload=none) +
+  `projects/ProjectText.tsx` (RIGHT, inline title/tagline/description/Geist-Mono tags) — created + wired.
+- TWO lifecycle fixes made this step (both needed once the canvas comes back for Projects):
+  - `Scene` frameloop terminal state `'never'` -> `'demand'`. 'never' RETAINS the last frame; the orb
+    used to drift fully off-screen before idling so its last frame was empty, but the parked planet does
+    NOT leave the screen, so 'never' froze it over Contact. 'demand' renders ONE settling frame on the
+    scene-graph change (ProjectsScene unmounts) -> clears the planet -> then idles at ~0 GPU (same as
+    'never' in spirit; honours docs/09's "stop rendering after exit"). Final expr:
+    `!reducedMotion && (projectsActive || phase !== 'past') ? 'always' : 'demand'`.
+  - `useOrbChoreography`: orb position is normally LERPED toward the scroll target; OrbSystem unmounts
+    during the journey and remounts at the origin after, so under 'demand' it rendered ONE frame mid-lerp
+    = a frozen centered orb over Contact. Fix: SNAP to target on the first frame after (re)mount
+    (`settled` ref; alpha=1 first frame, then normal lerp). Position is a pure fn of scroll state, so
+    snapping is always correct; lerp is only for in-motion smoothing. Hero/interlude/about unaffected
+    (no remount there — OrbSystem stays mounted whenever !projectsActive).
+- VERIFIED on desktop (1440-wide, dev :5175, Chrome DevTools MCP): pin engages (projectsActive true,
+  projectsProgress scrubs 0..1, #projects == 1 viewport tall), planet renders in the right-background,
+  project-1 media-left/text-right panels + fixed PROJECTS word render, 60fps / ~18 draw calls. Pin
+  releases into Contact with the canvas CLEAN (0 calls, no frozen planet, no centered orb). Hero
+  (orb centered + particles), About (orb drifting up + shedding) re-checked intact; phase chain
+  hero->interlude->about->past correct. Mobile (390-wide reload): lowPower true, 0 canvases, 0
+  pin-spacers, Projects renders as the tall stacked flat fallback. `npm run build` green.
+- KNOWN step-1-only (resolved by step 2, do NOT "fix" now): the planet sits static at full brightness
+  and the panels are static (no travel/recede/dim/fades yet); project-1 text overlaps the bright planet
+  a bit (step 2's arrive=recede+dim fixes readability). Indicator NOT mounted yet (step 3).
+- DEVIATION noted: the "PROJECTS" word lost its parallax (`parallax={0.5}` -> none). New spec wants it
+  FIXED in the deep background for the whole journey; the flat fallback is mobile/reduced where parallax
+  is off by policy anyway. (Supersedes docs/05 parallax item #2, which described the old scrolling grid.)
+
+### NEXT ON RESUME — STEP 2 (the hard part: camera choreography). Commit WIP sub-pieces.
+- Mount all 4 planets in `ProjectsScene` (use `PROJECTS_JOURNEY.planets`), arranged so each appears in
+  the distance in the right-background as the previous exits left. Drive the camera + per-planet
+  travel-in / arrive(recede+dim) / travel-out from `projectsProgress` via getState() in useFrame (NO
+  reactive subscriptions). Make recede-vs-fully-disappear a single tunable (DEFAULT recede+dim).
+- The 2D media/text panels (DOM) fade per the rhythm: drive their opacity/x from `projectsProgress`
+  with a small rAF hook reading getState() + writing refs (no 60fps React re-renders) — both DOM and
+  canvas read the SAME projectsProgress so they stay in sync. Only the active project's <video> plays.
+- Expose planet look (color/size/distance/pos) + camera path + per-planet pacing as DEV leva tunables
+  (projects folder), seeded from PROJECTS_JOURNEY. Bake whatever Jacob lands on back into constants.
+- Medium cinematic pacing; 4 discrete "arrived" beats across the pin. Watch draw calls/FPS (modest
+  geometry; the spheres are 48x32 — fine). Re-verify hero/interlude/about after changes (prompt rule).
+
+## Current position (main branch — pre-feature; unchanged, still deployable)
 - **Step 15: performance pass DONE for everything not blocked on media/deploy.**
   - `7442934`: stripped leva + r3f-perf from PROD. `lib/devControls.ts` wraps leva's useControls,
     dynamically importing leva only in dev (DCE'd in prod, schema defaults in prod); Scene

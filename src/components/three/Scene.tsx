@@ -173,7 +173,13 @@ export function Scene() {
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700"
       >
         <Canvas
-          frameloop={reducedMotion ? 'demand' : projectsActive || phase !== 'past' ? 'always' : 'never'}
+          // 'always' while something animates (orb in range, or the Projects journey is active);
+          // otherwise 'demand' - which renders one settling frame on the scene-graph change (so the
+          // parked planet is cleared when the journey ends, no stale frame) then idles at ~0 GPU.
+          // 'demand' (not 'never') because 'never' retains the last frame: the planet does not drift
+          // off-screen like the orb, so 'never' would freeze it over Contact. Reduced motion: static
+          // orb, also 'demand'.
+          frameloop={!reducedMotion && (projectsActive || phase !== 'past') ? 'always' : 'demand'}
           gl={{ alpha: true, antialias: true }}
           dpr={[1, 2]}
           onCreated={() => useScrollStore.getState().setCanvasReady(true)}

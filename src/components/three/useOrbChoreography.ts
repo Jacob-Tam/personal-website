@@ -1,4 +1,4 @@
-import { type RefObject } from 'react'
+import { useRef, type RefObject } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
@@ -35,6 +35,13 @@ export function useOrbChoreography(
   cursor: CursorTuning,
   choreo: ChoreographyTuning,
 ) {
+  // The orb group unmounts during the Projects journey and remounts at the origin afterward; the
+  // position below is normally lerped, so a fresh mount would ease in from center. Snap straight to
+  // the scroll-derived target on the first frame after (re)mount so it appears in the right place
+  // (e.g. already off-screen when phase is 'past'), then lerp as usual. The position is a pure
+  // function of scroll state, so snapping is always correct - the lerp is only for in-motion smoothing.
+  const settled = useRef(false)
+
   useFrame((_, delta) => {
     const group = groupRef.current
     if (!group) return
@@ -67,10 +74,12 @@ export function useOrbChoreography(
       mouse.y * cursor.clampY * cursorInfluence + interludeActive * orbitY + driftProgress * choreo.driftDistance
 
     // Frame-rate-independent easing: cursor rate for x, the choreography rate for the y drift.
-    const cursorAlpha = 1 - Math.pow(1 - cursor.lerp, delta * 60)
-    const driftAlpha = 1 - Math.pow(1 - choreo.positionLerp, delta * 60)
+    // First frame after (re)mount snaps (alpha 1) so the orb never eases in from the origin.
+    const cursorAlpha = settled.current ? 1 - Math.pow(1 - cursor.lerp, delta * 60) : 1
+    const driftAlpha = settled.current ? 1 - Math.pow(1 - choreo.positionLerp, delta * 60) : 1
     group.position.x += (targetX - group.position.x) * cursorAlpha
     group.position.y += (targetY - group.position.y) * driftAlpha
+    settled.current = true
 
     // The beat: a brief scale bump on the whole system.
     group.scale.setScalar(1 + choreo.pulseAmount * beat)
