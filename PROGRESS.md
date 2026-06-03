@@ -112,16 +112,28 @@ constants + r3f-perf pass. Checkpoint + commit after each; commit WIP sub-pieces
   exact planet colours/sizes (constants); whether to lean the camera harder into "through space"
   (camZTravel/camYDrift currently gentle so blocking stays predictable - the planets carry the motion).
 
-### NEXT ON RESUME — STEP 3 (4-stop scroll indicator), then 4 (fallback polish), 5 (bake + perf).
-- STEP 3: reuse `projects/ScrollIndicator.tsx` (do NOT build a second). Drive it from the store, not
-  its own ScrollTrigger (which won't track under the pin): visible = projectsActive (subscribe);
-  marker position + active dot from projectsProgress via a small rAF (DOM, write refs; setActive only
-  on integer change - same pattern as useJourneyPanels). 4 stops, active lit accent, hidden before/
-  after + on mobile/reduced. Mount it in ProjectsJourney. Confirm it coexists with the fixed PROJECTS
-  word. (journeyActiveIndex already exists if useful.)
-- STEP 4: polish the flat fallback (already functional: stacked media+text, no canvas/pin/indicator).
-- STEP 5: bake leva 'projects' values into PROJECTS_JOURNEY by hand; r3f-perf pass; re-verify
-  hero/interlude/about (prompt rule) after any change.
+### STEP 3 — DONE (4-stop scroll indicator).
+- Reworked `projects/ScrollIndicator.tsx` (reused, not a second component): dropped its own
+  ScrollTrigger (couldn't track under the pin) and now drives off the store. visible = projectsActive
+  (subscribe, low-freq); marker transform + active dot from projectsProgress via a rAF loop writing the
+  marker ref (setActive only on integer change). The marker maps the beat span
+  [FIRST_BEAT, LAST_BEAT] = [0.5/n, (n-0.5)/n] onto the full track, so it lands ON dot i exactly when
+  planet i arrives and slides between. Active dot lit accent, others muted; "01".."04" in Geist Mono.
+  Mounted in ProjectsJourney (so absent on mobile/reduced already); hidden (opacity-0) outside the pin.
+- VERIFIED: marker advances 01->03 across the beats with the right dot lit; hidden at hero
+  (opacity 0, projectsActive false); coexists with the fixed PROJECTS word. Build green.
+- TEST CAVEAT (not a bug): `lenis.scrollTo(0, {immediate:true})` from INSIDE the engaged pin doesn't
+  stick (the GSAP pin recaptures and snaps back) - it briefly flips the store to hero then returns to
+  the pin. Only happens with programmatic immediate jumps out of an active pin; real wheel scrolling
+  scrubs the pin incrementally and releases fine (engage/release verified steps 1-3). To screenshot the
+  hero cleanly, RELOAD (lands at top) rather than immediate-jumping out of the pin.
+
+### NEXT ON RESUME — STEP 4 (fallback polish), then 5 (bake leva + perf).
+- STEP 4: the flat fallback is already functional (ProjectsFlat: stacked media+text, no canvas/pin/
+  indicator; Reveal opacity-only under reduced motion). Polish pass + re-verify on a real phone width
+  and under prefers-reduced-motion (the journey must NOT mount there). Keep it SUPER simple.
+- STEP 5: bake the leva 'projects' values Jacob lands on into PROJECTS_JOURNEY by hand; r3f-perf pass
+  (already ~60fps / <=19 calls); re-verify hero/interlude/about (prompt rule) after any change.
 
 ## Current position (main branch — pre-feature; unchanged, still deployable)
 - **Step 15: performance pass DONE for everything not blocked on media/deploy.**

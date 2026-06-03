@@ -4,6 +4,7 @@ import { panelOpacity, journeyActiveIndex } from '../../lib/projectsJourney'
 import { PROJECTS_JOURNEY } from '../../lib/constants'
 import { Reveal } from '../shared/Reveal'
 import { BackgroundWord } from '../shared/BackgroundWord'
+import { ScrollIndicator } from './ScrollIndicator'
 import { ProjectMedia } from './ProjectMedia'
 import { ProjectText } from './ProjectText'
 import { PROJECTS } from './projectsData'
@@ -75,6 +76,7 @@ function ProjectsJourney() {
       {/* Real heading for the document outline; the giant word below is decorative (aria-hidden). */}
       <h2 className="sr-only">Projects</h2>
       <BackgroundWord className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">PROJECTS</BackgroundWord>
+      <ScrollIndicator />
 
       {PROJECTS.map((project, index) => (
         <div
