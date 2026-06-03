@@ -95,15 +95,45 @@ export const VIGNETTE = {
   offset: 0.35,
 }
 
-// Projects "solar system journey" (feat/projects-planets). A pinned section whose scroll drives a
-// camera-through-space trip past 4 planets (one per project). Camera path + per-planet pacing land
-// in step 2; these are the defaults the dev leva 'projects' folder seeds from. Bake leva back here.
+// Projects "solar system journey" (feat/projects-planets). A pinned section whose scroll
+// (projectsProgress 0..1) drives a trip past 4 planets (one per project). Each planet owns a beat and
+// flies a shared world-path enter(far, upper-right) -> arrive(near, right, behind the text) ->
+// exit(off-left), growing via depth then receding + dimming at arrive; neighbouring beats overlap so
+// the next fades in from the right as the current exits left. The camera dollies gently forward for a
+// through-space feel. TIMING lives here (shared by the 3D planets AND the 2D panels via
+// lib/projectsJourney, so they stay in lockstep); SPATIAL/look/camera are seeded into the dev leva
+// 'projects' folder. Bake whatever lands in leva back into the spatial defaults here.
 export const PROJECTS_JOURNEY = {
   pinVh: 4, // pin length as a fraction of viewport height (~one viewport per planet); tune in leva
   rotationSpeed: 0.06, // rad/s, gentle planet self-rotation
-  // Step-1 placeholder: ONE planet parked in the right-background (no camera travel yet).
-  planetPosition: [2.8, 0.5, -3] as [number, number, number],
-  // The 4 planets - visually DISTINCT (size + colour), cohesive in the dark space. Recolour here.
+
+  // --- TIMING (constants; shared by canvas + DOM; not in leva so the two layers can't desync) ---
+  count: 4, // number of planets/beats; beat i is centred at (i + 0.5) / count
+  life: 0.2, // half-width (progress units) of a planet's presence; > 0.5/count (=0.125) so beats overlap
+  fadeFrac: 0.32, // fraction of the leading/trailing edge used to fade the mesh in/out
+  introFade: 0.05, // the whole scene fades in over the first slice of the journey (planet 1 "arrives")
+  outroFade: 0.06, // and fades out over the last slice as the pin releases into Contact
+  panelHalf: 0.5, // |s| within which a project's 2D media/text panels are shown (around arrive)
+  panelFade: 0.34, // soft edge of that panel window
+  panelRise: 10, // px the panels translate up as they fade in (subtle life)
+  dimStart: -0.35, // local phase s at which a planet begins to dim (well before arrive, so it has
+  dimRange: 0.4, // settled into a quiet, readable backdrop by the time the text peaks over it)
+  disappearRange: 0.42, // (fully-disappear mode only) how fast a planet vanishes after arrive
+  planetY: [0.4, -0.3, 0.5, -0.2], // per-planet vertical offset on the shared path, for variety
+
+  // --- SPATIAL path (leva-tunable; a planet travels enter -> arrive -> exit in world units) ---
+  enter: [4.5, 1.6, -11] as [number, number, number], // far, upper-right -> small "right-background"
+  arrive: [2.7, 0, -4] as [number, number, number], //    near, right -> behind the right text column
+  exit: [-8.5, -0.6, -5.5] as [number, number, number], // off the left edge, drifting back
+  dim: 0.72, // how much a planet darkens at arrive (0 = none, 1 = black); strong so text reads over it
+  recede: true, // arrive = recede + dim (default) vs. fully disappear (the single tunable from the spec)
+
+  // --- CAMERA (leva-tunable): gentle forward dolly + slight vertical drift = "through space" ---
+  camZ: 7.5, // base journey camera distance (orb uses CAMERA.position[2])
+  camZTravel: 1.2, // forward dolly across the journey (camZ -> camZ - camZTravel)
+  camYDrift: 0.5, // vertical drift amplitude across the journey
+
+  // --- LOOK (size + colour): visually DISTINCT, cohesive in dark space. Recolour trivially here. ---
   planets: [
     { color: '#4f9ad1', radius: 1.25 }, // steel blue (leans on the accent)
     { color: '#d68a4e', radius: 1.6 }, // warm amber

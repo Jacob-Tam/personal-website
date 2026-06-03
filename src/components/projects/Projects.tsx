@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useScrollStore } from '../../store/useScrollStore'
+import { panelOpacity, journeyActiveIndex } from '../../lib/projectsJourney'
+import { PROJECTS_JOURNEY } from '../../lib/constants'
 import { Reveal } from '../shared/Reveal'
 import { BackgroundWord } from '../shared/BackgroundWord'
 import { ProjectMedia } from './ProjectMedia'
@@ -6,15 +9,15 @@ import { ProjectText } from './ProjectText'
 import { PROJECTS } from './projectsData'
 
 /*
-  Projects — the pinned "solar system journey" (feat/projects-planets). On desktop / full power the
+  Projects - the pinned "solar system journey" (feat/projects-planets). On desktop / full power the
   section pins (GSAP ScrollTrigger in lib/lenis), the canvas re-enables (store.projectsActive), and
-  scroll drives a camera trip past 4 planets in shared 3D space - one per project. Per project: the
-  MEDIA fades in on the LEFT and the TEXT on the RIGHT, in front of that project's (dimmed, receded)
-  planet. The faint giant "PROJECTS" word sits fixed in the deep background for the whole journey.
+  scroll (projectsProgress) drives a camera trip past 4 planets in shared 3D space - one per project.
+  Per project the planet travels in from the right-background, arrives + recedes/dims, and its MEDIA
+  fades in on the LEFT + TEXT on the RIGHT (in front of the dimmed planet), then it exits left as the
+  next fades in. The faint giant "PROJECTS" word sits fixed in the deep background the whole way.
 
-  STEP 1 (this commit): static only - the pin engages, the canvas comes back with ONE parked
-  placeholder planet, and project 1's media-left / text-right panels render. No camera travel and no
-  per-project fades yet (step 2); no scroll indicator yet (step 3).
+  The 3D planets live in the canvas (three/ProjectsScene); the 2D panels here are driven by the SAME
+  projectsProgress via lib/projectsJourney, so the two layers stay locked together.
 
   Mobile / low-power / reduced-motion: NO pin, NO 3D. The four projects render as plain stacked
   vertical sections - same content, normal scroll. The pin + canvas are already gated off for those
@@ -28,23 +31,65 @@ export function Projects() {
   return <ProjectsJourney />
 }
 
-// Desktop / full-power: a single viewport-height section the ScrollTrigger pins. The four planets
-// live in the canvas behind this (z-0); these panels are content (z-20) rendered in front.
+// Drives the four DOM panels each frame from projectsProgress: opacity (peaks while a project's planet
+// is arrived) + a subtle upward rise. Writes straight to refs (no per-frame React re-render, docs/09);
+// only activeIndex (which video should play) flips to React state, and that changes a handful of times.
+function useJourneyPanels(refs: RefObject<(HTMLDivElement | null)[]>) {
+  const projectsActive = useScrollStore((state) => state.projectsActive)
+  const [activeIndex, setActiveIndex] = useState(-1)
+
+  useEffect(() => {
+    if (!projectsActive) {
+      refs.current.forEach((element) => element && (element.style.opacity = '0'))
+      setActiveIndex(-1)
+      return
+    }
+    let raf = 0
+    const tick = () => {
+      const progress = useScrollStore.getState().projectsProgress
+      refs.current.forEach((element, index) => {
+        if (!element) return
+        const opacity = panelOpacity(progress, index)
+        element.style.opacity = String(opacity)
+        element.style.transform = `translateY(${(1 - opacity) * PROJECTS_JOURNEY.panelRise}px)`
+      })
+      const active = journeyActiveIndex(progress)
+      setActiveIndex((previous) => (previous === active ? previous : active))
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [projectsActive, refs])
+
+  return activeIndex
+}
+
+// Desktop / full-power: one viewport-height section the ScrollTrigger pins. The planets live in the
+// canvas behind this (z-0); the four media/text panels stack here (z-20) and cross-fade as you travel.
 function ProjectsJourney() {
+  const panelRefs = useRef<(HTMLDivElement | null)[]>([])
+  const activeIndex = useJourneyPanels(panelRefs)
+
   return (
     <section id="projects" className="relative h-screen overflow-hidden">
       {/* Real heading for the document outline; the giant word below is decorative (aria-hidden). */}
       <h2 className="sr-only">Projects</h2>
       <BackgroundWord className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">PROJECTS</BackgroundWord>
 
-      {/* STEP 1: project 1's panels, static. Step 2 mounts all four and drives their fades + the
-          camera travel from store.projectsProgress (read per-frame, no reactive subscriptions). */}
-      <div className="absolute inset-0 flex items-center">
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-2 items-center gap-12 px-12">
-          <ProjectMedia project={PROJECTS[0]} />
-          <ProjectText project={PROJECTS[0]} />
+      {PROJECTS.map((project, index) => (
+        <div
+          key={project.id}
+          ref={(element) => {
+            panelRefs.current[index] = element
+          }}
+          className="absolute inset-0 flex items-center opacity-0 will-change-[opacity,transform]"
+        >
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-2 items-center gap-12 px-12">
+            <ProjectMedia project={project} isActive={activeIndex === index} />
+            <ProjectText project={project} />
+          </div>
         </div>
-      </div>
+      ))}
     </section>
   )
 }

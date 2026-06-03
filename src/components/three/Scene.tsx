@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { Perf } from 'r3f-perf'
 import { useControls } from '../../lib/devControls'
@@ -9,6 +9,7 @@ import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
 import { useOrbChoreography } from './useOrbChoreography'
 import { ProjectsScene } from './ProjectsScene'
+import type { JourneyLook } from '../../lib/projectsJourney'
 import { useScrollStore } from '../../store/useScrollStore'
 import { setInterludePin, setProjectsPin } from '../../lib/lenis'
 import { BLOOM, CAMERA, CHOREOGRAPHY, CORE, CURSOR, FOG, LIGHTS, PARTICLES, PROJECTS_JOURNEY, VIGNETTE } from '../../lib/constants'
@@ -48,6 +49,33 @@ function OrbSystem({
       <OrbParticles {...particles} />
     </group>
   )
+}
+
+// Owns the default camera position every frame: the static orb spot when idle, and the journey path
+// (a gentle forward dolly + vertical drift, looking straight down -Z so the planet blocking is
+// predictable) while the Projects pin is engaged. Always mounted, so it also RESTORES the orb camera
+// after the journey - otherwise the camera would stay parked wherever the journey left it.
+function CameraRig({
+  orbDistance,
+  journey,
+}: {
+  orbDistance: number
+  journey: { camZ: number; camZTravel: number; camYDrift: number }
+}) {
+  const camera = useThree((state) => state.camera)
+  useFrame(() => {
+    const { projectsActive, projectsProgress } = useScrollStore.getState()
+    if (projectsActive) {
+      const z = journey.camZ - journey.camZTravel * projectsProgress
+      const y = journey.camYDrift * (0.5 - projectsProgress)
+      camera.position.set(0, y, z)
+      camera.lookAt(0, y, z - 1)
+    } else {
+      camera.position.set(0, 0, orbDistance)
+      camera.lookAt(0, 0, 0)
+    }
+  })
+  return null
 }
 
 /*
@@ -137,17 +165,33 @@ export function Scene() {
     pinVh: { value: CHOREOGRAPHY.interludePinVh, min: 0, max: 2, step: 0.05 },
   }, { collapsed: true })
 
-  // DEV-only tuning for the Projects journey. Step 1 is one placeholder planet in the
-  // right-background; the camera path + the other 3 planets land in step 2.
+  // DEV-only tuning for the Projects journey: the planet enter/arrive/exit world-path, the arrive
+  // recede+dim, the gentle camera dolly, and the pin length. Timing/pacing is in PROJECTS_JOURNEY
+  // (shared with the DOM panels). Bake whatever lands here back into PROJECTS_JOURNEY by hand.
   const projects = useControls('projects', {
-    planetColor: PROJECTS_JOURNEY.planets[0].color,
-    planetRadius: { value: PROJECTS_JOURNEY.planets[0].radius, min: 0.3, max: 4, step: 0.05 },
-    posX: { value: PROJECTS_JOURNEY.planetPosition[0], min: -6, max: 6, step: 0.1 },
-    posY: { value: PROJECTS_JOURNEY.planetPosition[1], min: -4, max: 4, step: 0.1 },
-    posZ: { value: PROJECTS_JOURNEY.planetPosition[2], min: -12, max: 4, step: 0.1 },
-    rotationSpeed: { value: PROJECTS_JOURNEY.rotationSpeed, min: 0, max: 0.5, step: 0.01 },
     pinVh: { value: PROJECTS_JOURNEY.pinVh, min: 1, max: 8, step: 0.25 },
+    rotationSpeed: { value: PROJECTS_JOURNEY.rotationSpeed, min: 0, max: 0.5, step: 0.01 },
+    camZ: { value: PROJECTS_JOURNEY.camZ, min: 4, max: 12, step: 0.1 },
+    camZTravel: { value: PROJECTS_JOURNEY.camZTravel, min: 0, max: 5, step: 0.1 },
+    camYDrift: { value: PROJECTS_JOURNEY.camYDrift, min: 0, max: 2, step: 0.05 },
+    enterX: { value: PROJECTS_JOURNEY.enter[0], min: 0, max: 9, step: 0.1 },
+    enterZ: { value: PROJECTS_JOURNEY.enter[2], min: -16, max: -2, step: 0.1 },
+    arriveX: { value: PROJECTS_JOURNEY.arrive[0], min: -2, max: 6, step: 0.1 },
+    arriveY: { value: PROJECTS_JOURNEY.arrive[1], min: -3, max: 3, step: 0.1 },
+    arriveZ: { value: PROJECTS_JOURNEY.arrive[2], min: -9, max: -1, step: 0.1 },
+    exitX: { value: PROJECTS_JOURNEY.exit[0], min: -14, max: 0, step: 0.1 },
+    exitZ: { value: PROJECTS_JOURNEY.exit[2], min: -12, max: 0, step: 0.1 },
+    dim: { value: PROJECTS_JOURNEY.dim, min: 0, max: 1, step: 0.02 },
+    recede: PROJECTS_JOURNEY.recede,
   }, { collapsed: true })
+
+  const journeyLook: JourneyLook = {
+    enter: [projects.enterX, PROJECTS_JOURNEY.enter[1], projects.enterZ],
+    arrive: [projects.arriveX, projects.arriveY, projects.arriveZ],
+    exit: [projects.exitX, PROJECTS_JOURNEY.exit[1], projects.exitZ],
+    dim: projects.dim,
+    recede: projects.recede,
+  }
 
   // Live-tune the interlude pin length; setInterludePin re-refreshes ScrollTrigger.
   useEffect(() => {
@@ -186,6 +230,10 @@ export function Scene() {
         >
           {isDev && <Perf position="bottom-right" />}
           <PerspectiveCamera makeDefault fov={camera.fov} position={[0, 0, camera.distance]} />
+          <CameraRig
+            orbDistance={camera.distance}
+            journey={{ camZ: projects.camZ, camZTravel: projects.camZTravel, camYDrift: projects.camYDrift }}
+          />
           {/* No fog during the Projects journey - the planets live in deep space, not the orb's fog. */}
           {!projectsActive && <fog attach="fog" args={[FOG.color, depth.fogNear, depth.fogFar]} />}
           <ambientLight intensity={lights.ambient} />
@@ -194,16 +242,7 @@ export function Scene() {
           {!projectsActive && (
             <OrbSystem core={core} particles={particles} cursor={cursor} choreo={choreography} />
           )}
-          {projectsActive && (
-            <ProjectsScene
-              planet={{
-                color: projects.planetColor,
-                radius: projects.planetRadius,
-                position: [projects.posX, projects.posY, projects.posZ],
-                rotationSpeed: projects.rotationSpeed,
-              }}
-            />
-          )}
+          {projectsActive && <ProjectsScene look={journeyLook} rotationSpeed={projects.rotationSpeed} />}
           <EffectComposer multisampling={4} frameBufferType={THREE.HalfFloatType}>
             <Bloom
               intensity={bloom.intensity}

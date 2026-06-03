@@ -69,18 +69,59 @@ constants + r3f-perf pass. Checkpoint + commit after each; commit WIP sub-pieces
   FIXED in the deep background for the whole journey; the flat fallback is mobile/reduced where parallax
   is off by policy anyway. (Supersedes docs/05 parallax item #2, which described the old scrolling grid.)
 
-### NEXT ON RESUME — STEP 2 (the hard part: camera choreography). Commit WIP sub-pieces.
-- Mount all 4 planets in `ProjectsScene` (use `PROJECTS_JOURNEY.planets`), arranged so each appears in
-  the distance in the right-background as the previous exits left. Drive the camera + per-planet
-  travel-in / arrive(recede+dim) / travel-out from `projectsProgress` via getState() in useFrame (NO
-  reactive subscriptions). Make recede-vs-fully-disappear a single tunable (DEFAULT recede+dim).
-- The 2D media/text panels (DOM) fade per the rhythm: drive their opacity/x from `projectsProgress`
-  with a small rAF hook reading getState() + writing refs (no 60fps React re-renders) — both DOM and
-  canvas read the SAME projectsProgress so they stay in sync. Only the active project's <video> plays.
-- Expose planet look (color/size/distance/pos) + camera path + per-planet pacing as DEV leva tunables
-  (projects folder), seeded from PROJECTS_JOURNEY. Bake whatever Jacob lands on back into constants.
-- Medium cinematic pacing; 4 discrete "arrived" beats across the pin. Watch draw calls/FPS (modest
-  geometry; the spheres are 48x32 — fine). Re-verify hero/interlude/about after changes (prompt rule).
+### STEP 2 — DONE (the core choreography: 4 planets + camera travel + panel fades).
+- MODEL: each planet owns a beat centred at (i+0.5)/count and flies a SHARED world-path
+  enter(far, upper-right) -> arrive(near, right, behind the text) -> exit(off-left), as a function of
+  its signed local phase s = (progress - center)/life. Depth (z) gives the grow/shrink; recede+dim at
+  arrive = the material colour multiplied toward black (also drops it below the bloom threshold) so it
+  settles into a quiet, readable backdrop. `life` (0.2) > half the beat spacing (0.125), so consecutive
+  beats overlap -> the next planet fades in from the right as the current exits left. Whole-scene
+  intro/outro fade so planet 1 fades in as the pin engages and the last clears as it releases.
+- `lib/projectsJourney.ts`: ONE pure module - planetMotion() (position/opacity/brightness/visible),
+  panelOpacity() (2D panel fade), journeyActiveIndex() (which video plays). Read by BOTH the canvas
+  (three/JourneyPlanet useFrame) and the DOM panels (projects/Projects rAF) off the SAME
+  projectsProgress, so 3D + 2D stay locked. Timing all from PROJECTS_JOURNEY -> the two layers can't
+  desync (positions can differ harmlessly while leva-tuning; panels depend only on timing).
+- `three/JourneyPlanet.tsx` (NEW, replaces Planet.tsx): shaded sphere, per-frame transform/opacity/
+  brightness from planetMotion; mesh.visible=false when faded (draw-call saver -> only 1-2 planets draw
+  at once). `three/ProjectsScene.tsx`: directional light + the 4 planets (colour/radius from
+  PROJECTS_JOURNEY.planets). `three/Scene.tsx`: NEW `CameraRig` (always mounted) owns the default
+  camera EVERY frame - journey path (gentle forward dolly camZ->camZ-camZTravel + vertical drift,
+  looking straight -Z so blocking is predictable) while projectsActive, else the orb spot
+  [0,0,distance]. It MUST stay mounted to restore the orb camera, or the camera stays parked where the
+  journey left it. New leva 'projects' folder = the SPATIAL/look knobs.
+- `projects/Projects.tsx`: journey renders all 4 media-left/text-right panels stacked (absolute
+  inset-0), opacity+rise driven by a rAF hook (useJourneyPanels) writing refs (no per-frame re-render);
+  activeIndex is the only React state (flips ~4x) and gates which video plays.
+  `projects/ProjectMedia.tsx`: takes `isActive`, plays/pauses its <video> (guarded; no-op until
+  MEDIA_READY, so nothing autoplays now or on mobile).
+- LEVA vs CONSTANTS split: TIMING/pacing (count, life, fades, panel window, dim ramp, planetY) =
+  CONSTANTS in PROJECTS_JOURNEY (shared with the DOM, baked, NOT leva). SPATIAL/look/camera = leva
+  'projects' folder (pinVh, rotationSpeed, camZ, camZTravel, camYDrift, enterX/Z, arriveX/Y/Z, exitX/Z,
+  dim, recede). Bake leva -> PROJECTS_JOURNEY by hand. Colours/radii stay constants (trivial recolour).
+- TUNED this step (from screenshots): dim 0.62->0.72, dimStart -0.05->-0.35, dimRange 0.55->0.4 so the
+  arrived planet is dim BEFORE the text peaks over it (first pass washed the tags out); arrive
+  [2.6,0,-3.6]->[2.7,0,-4] (a touch back/right); planetY magnitudes reduced so big planets don't sit on
+  the tag row. recede=true default (fully-disappear is the leva toggle).
+- VERIFIED (desktop 1440, dev :5175, Chrome MCP): all 4 beats - blue/amber/teal/violet, each a dim
+  readable backdrop behind media-left/text-right; smooth cross-fades mid-travel (planet exits left
+  dimmed as next enters right bright); intro/outro fades; clean release into Contact (0 calls, no
+  frozen frame); hero orb + About drift re-checked intact (CameraRig restores the orb camera). Steady
+  60fps, <=19 draw calls, ~3-6k tris. `npm run build` green.
+- STILL OPEN / for Jacob to tune in leva then bake: overall pacing (pinVh 4 = ~1 viewport/planet);
+  exact planet colours/sizes (constants); whether to lean the camera harder into "through space"
+  (camZTravel/camYDrift currently gentle so blocking stays predictable - the planets carry the motion).
+
+### NEXT ON RESUME — STEP 3 (4-stop scroll indicator), then 4 (fallback polish), 5 (bake + perf).
+- STEP 3: reuse `projects/ScrollIndicator.tsx` (do NOT build a second). Drive it from the store, not
+  its own ScrollTrigger (which won't track under the pin): visible = projectsActive (subscribe);
+  marker position + active dot from projectsProgress via a small rAF (DOM, write refs; setActive only
+  on integer change - same pattern as useJourneyPanels). 4 stops, active lit accent, hidden before/
+  after + on mobile/reduced. Mount it in ProjectsJourney. Confirm it coexists with the fixed PROJECTS
+  word. (journeyActiveIndex already exists if useful.)
+- STEP 4: polish the flat fallback (already functional: stacked media+text, no canvas/pin/indicator).
+- STEP 5: bake leva 'projects' values into PROJECTS_JOURNEY by hand; r3f-perf pass; re-verify
+  hero/interlude/about (prompt rule) after any change.
 
 ## Current position (main branch — pre-feature; unchanged, still deployable)
 - **Step 15: performance pass DONE for everything not blocked on media/deploy.**
