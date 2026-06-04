@@ -223,7 +223,7 @@ export function Scene() {
           <group visible={!projectsActive}>
             <OrbSystem core={core} particles={particles} cursor={cursor} choreo={choreography} />
           </group>
-          <ProjectsScene look={journeyLook} rotationSpeed={projects.rotationSpeed} />
+          <ProjectsScene look={journeyLook} rotationSpeed={projects.rotationSpeed} active={projectsActive} />
           {/* Precompile every material up front (incl. the hidden planets) so a shader doesn't compile
               the first frame a planet becomes visible at the About->Projects seam - that lazy compile
               was the last hitch lurching the scroll. */}

@@ -120,17 +120,13 @@ export const PROJECTS_JOURNEY = {
   dimStart: -0.35, // local phase s at which a planet begins to dim (well before arrive)
   dimRange: 0.4, // length of the dim ramp
   disappearRange: 0.42, // (fully-disappear mode only) how fast a planet vanishes after arrive
-  // Shared vertical BOW along the path (sin(s*pi): 0 at enter/arrive/exit, peaks between) so the planets
-  // swoop on a curved path instead of a flat horizontal slide. SAME for every planet - all of them
-  // start at the same spot and end at the same spot (no per-planet height variation).
-  arc: 1.3,
-
   // --- SPATIAL path (leva-tunable; every planet travels enter -> arrive -> exit in world units, the
-  // SAME path for all). Enters small far-upper-right (next-planet teaser); arrives LEFT, behind the
-  // media (fully blocked is fine) so it clears the right-hand text; exits off to the left. ---
-  enter: [10, 4, -20] as [number, number, number], //   far upper-RIGHT corner -> small "next planet" teaser, above the text
+  // SAME path for all). A flat HORIZONTAL sweep at one height (all y = 0): enters small far-RIGHT
+  // (next-planet teaser), arrives LEFT behind the media (fully blocked is fine) clearing the text,
+  // exits off to the left. Depth (z) still gives the grow as it approaches. ---
+  enter: [9, 0, -16] as [number, number, number], //   far RIGHT -> small "next planet" teaser
   arrive: [-2.5, 0, -5] as [number, number, number], // near, LEFT, behind the media (occluded is fine)
-  exit: [-8.5, 0, -7] as [number, number, number], //   continues off to the left + back
+  exit: [-9, 0, -7] as [number, number, number], //    continues off to the left (same height = horizontal)
   dim: 0.4, // gentle now (the planet sits on the LEFT, not over the text), so the current planet stays visible
   recede: true, // arrive = recede + dim (default) vs. fully disappear (the single tunable from the spec)
 

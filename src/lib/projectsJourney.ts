@@ -51,9 +51,7 @@ export function planetMotion(progress: number, index: number, look: JourneyLook)
     sc <= 0
       ? mix3(look.enter, look.arrive, smoothstep(0, 1, sc + 1)) // enter -> arrive
       : mix3(look.arrive, look.exit, smoothstep(0, 1, sc)) //        arrive -> exit
-  // Shared bow that curves the path (0 at enter/arrive/exit, peaks between) - same for every planet,
-  // so all of them start and end at the same spot.
-  position[1] += Math.sin(sc * Math.PI) * J.arc
+  // (Flat horizontal sweep - the path keeps a constant height, no vertical bow.)
 
   // Fade the mesh in over its leading edge and out over its trailing edge; nothing outside its beat.
   let opacity = 0

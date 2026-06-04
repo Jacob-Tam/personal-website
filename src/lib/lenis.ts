@@ -122,7 +122,11 @@ export function useSmoothScroll() {
           start: 'top top',
           end: () => '+=' + window.innerHeight * projectsPinVh,
           pin: true,
-          scrub: true,
+          // scrub: 1 (a ~1s catch-up) rather than `true` (instant) so the journey GLIDES instead of
+          // snapping directly to the scroll position. projectsActive (onToggle) still flips on the
+          // exact scroll boundary, so the planets are gated off at release even while this smoothed
+          // progress is still catching up (Scene gates the planet group on projectsActive).
+          scrub: 1,
           // No anticipatePin here: Lenis already smooths the wheel input, so ScrollTrigger's
           // velocity-based pre-pin lookahead just overshoots and lurches the scroll at the
           // About->Projects seam. Without it the pin engages exactly at top/top, smoothly.

@@ -233,6 +233,22 @@ movement. Changes (`PROJECTS_JOURNEY` + `lib/projectsJourney`):
   teaser upper-right, planets sweep the curved path; hero orb intact; bg-planet texture confirmed
   (temporarily enlarged one to inspect). Build green.
 
+### REFINEMENT — back to HORIZONTAL motion + fix snappiness (Jacob preferred the earlier feel).
+- HORIZONTAL: removed the vertical bow (the `arc` constant + its use); the path is now flat (enter/
+  arrive/exit all y=0) so planets sweep horizontally right->left at one height. enter [9,0,-16] (small
+  right teaser), arrive [-2.5,0,-5] (behind media), exit [-9,0,-7]. Depth (z) still gives the grow.
+- SNAPPINESS: the Projects pin was `scrub: true` (instant, follows scroll abruptly) -> now `scrub: 1`
+  (~1s catch-up) so the journey GLIDES. (Interlude pin left as scrub:true - no complaint there.) Tune
+  the 1 up/down if Jacob wants more/less glide.
+- FREEZE GUARD (needed because scrub:1 lets projectsProgress lag behind the scroll): the planets are
+  gated on `projectsActive` - ProjectsScene wraps them in `<group visible={active}>` (the directional
+  light stays OUTSIDE the group, always on, so the light count is constant and nothing recompiles at
+  the seam). When the pin releases, projectsActive flips on the exact scroll boundary (onToggle, not
+  the lagged progress), so the planets hide instantly -> no frozen planet over Contact (verified 0
+  calls / clean Contact even with progress still catching up).
+- Verified: arrive beat (planet behind media, horizontal sweep, small right teaser), clean Contact
+  release, hero orb intact. Build green.
+
 ### NEXT ON RESUME — STEP 5 (bake leva + perf pass) = the last step.
 - Bake whatever Jacob lands on in the dev leva 'projects' folder into PROJECTS_JOURNEY by hand (camZ,
   camZTravel, camYDrift, enter/arrive/exit XYZ, dim, recede, rotationSpeed, pinVh). Surface +
