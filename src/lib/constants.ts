@@ -104,7 +104,7 @@ export const VIGNETTE = {
 // lib/projectsJourney, so they stay in lockstep); SPATIAL/look/camera are seeded into the dev leva
 // 'projects' folder. Bake whatever lands in leva back into the spatial defaults here.
 export const PROJECTS_JOURNEY = {
-  pinVh: 4, // pin length as a fraction of viewport height (~one viewport per planet); tune in leva
+  pinVh: 5.5, // pin length (fraction of viewport height); larger = more scroll between each planet
   rotationSpeed: 0.06, // rad/s, gentle planet self-rotation
 
   // --- TIMING (constants; shared by canvas + DOM; not in leva so the two layers can't desync) ---
@@ -149,9 +149,9 @@ export const PROJECTS_JOURNEY = {
 
   // --- LOOK (size + colour): visually DISTINCT, cohesive in dark space. Recolour trivially here. ---
   planets: [
-    { color: '#4f9ad1', radius: 1.25 }, // steel blue (leans on the accent)
-    { color: '#d68a4e', radius: 1.6 }, // warm amber
-    { color: '#5bbf9a', radius: 1.0 }, // teal
+    { color: '#4f9ad1', radius: 1.4 }, // steel blue (leans on the accent)
+    { color: '#d68a4e', radius: 1.4 }, // warm amber
+    { color: '#5bbf9a', radius: 1.4 }, // teal
     { color: '#9a7bd0', radius: 1.4 }, // violet
   ],
 }

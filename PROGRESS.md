@@ -249,7 +249,16 @@ movement. Changes (`PROJECTS_JOURNEY` + `lib/projectsJourney`):
 - Verified: arrive beat (planet behind media, horizontal sweep, small right teaser), clean Contact
   release, hero orb intact. Build green.
 
-### NEXT ON RESUME — STEP 5 (bake leva + perf pass) = the last step.
+### STEP 5 (in progress) — look tuning + perf pass.
+- LOOK TUNING (baked into PROJECTS_JOURNEY as Jacob requests them): all 4 planets are now the SAME size
+  (radius 1.4); `pinVh` 4 -> 5.5 so the journey takes more scroll between beats (the beats were already
+  equally spaced at (i+0.5)/4 - pinVh just widens those equal intervals; positions unchanged so they
+  stay behind the media). Colours still blue/amber/teal/violet. More look tweaks may follow.
+- STILL TO DO: finish any look tweaks, then the perf pass (verify ~60fps / draw calls hold; the
+  Chrome-MCP tab caps rAF at ~30 so read CPU ms, ~1ms, not the FPS counter), re-verify
+  hero/interlude/about, then the feature is done on this branch -> review/merge to main.
+
+### (build-order reference) STEP 5 = bake leva + perf pass.
 - Bake whatever Jacob lands on in the dev leva 'projects' folder into PROJECTS_JOURNEY by hand (camZ,
   camZTravel, camYDrift, enter/arrive/exit XYZ, dim, recede, rotationSpeed, pinVh). Surface +
   timing are already constants. Until he tunes, the current defaults look good.
