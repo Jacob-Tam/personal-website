@@ -139,9 +139,8 @@ export const PROJECTS_JOURNEY = {
   surface: {
     dispScale: 1.9, // frequency of the geometry displacement (low = big lumps, not spiky)
     dispAmp: 0.42, // displacement amplitude along the normal -> uneven silhouette + relief (not a perfect sphere)
-    noiseScale: 3.4, // spatial frequency of the surface mottling (relative to the unit sphere)
-    noiseStrength: 0.9, // brightness mottle amount (diffuse *= 1 + (n-0.5)*strength)
-    rimStrength: 0.65, // fresnel limb brightening on the lit edge (atmosphere-ish; dims with the planet)
+    bumpScale: 0.45, // bumpMap strength -> fine surface relief that catches the light (textured feel)
+    rimStrength: 0.6, // fresnel limb brightening on the lit edge (atmosphere-ish; dims with the planet)
     rimPower: 2.6, // fresnel falloff; higher = thinner rim
   },
 
