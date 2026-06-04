@@ -212,6 +212,27 @@ movement. Changes (`PROJECTS_JOURNEY` + `lib/projectsJourney`):
 - PERF NOTE: the Chrome-MCP automation tab caps rAF at ~30fps even on the lightweight hero scene
   (CPU ~1ms/frame), so r3f-perf reads 30 here - NOT a regression; real focused machine = 60.
 
+### REFINEMENT — uniform paths, planet behind media, leva trimmed, textured bg planets (Jacob).
+- UNIFORM planet paths: every planet shares ONE enter/arrive/exit + one shared `arc` (removed the
+  per-planet `planetY`/`planetArc` arrays) - all start at the same spot, end at the same spot.
+- Arrive moved fully BEHIND the media: arrive [-2.5,0,-5] (the opaque media can fully block it - Jacob
+  said it needn't peek). Planets are seen sweeping in/out; hidden behind the media at the arrive beat.
+  enter [10,4,-20] (small next-planet teaser, upper-right), exit [-8.5,0,-7]. (Supersedes the prior
+  rework's arrive/arc values above.)
+- Orb leva TRIMMED from ~50 controls (9 folders) to ONE 'orb' folder of 9: distance, particleCount,
+  particleBrightness, purpleFraction, coreColor, rimColor, coreEmissive, coreRadius, bloomIntensity.
+  Everything else uses baked lib/constants - Scene builds the core/particles/cursor/choreography props
+  + the fog/lights/bloom/vignette JSX from constants. Removed the interlude-pin live-tune (uses
+  CHOREOGRAPHY.interludePinVh; setInterludePin import dropped). The 'projects' journey folder is KEPT
+  (active tuning surface) - trim it too if Jacob wants the whole panel smaller.
+- Background planets (CSS shared/Planets.tsx) now TEXTURED: `.planet::after` overlays a masked
+  feTurbulence fractal-noise (mix-blend overlay; isolation:isolate so it blends with the planet's own
+  gradient; radial mask fades it before the rim so the soft sphere shape holds) -> mottled surface, the
+  CSS echo of the 3D project planets. Tunables in index.css: baseFrequency 0.1, opacity 0.55.
+- VERIFIED arrive (0.375) + transition (0.25): planet behind media, text clear on the right, small
+  teaser upper-right, planets sweep the curved path; hero orb intact; bg-planet texture confirmed
+  (temporarily enlarged one to inspect). Build green.
+
 ### NEXT ON RESUME — STEP 5 (bake leva + perf pass) = the last step.
 - Bake whatever Jacob lands on in the dev leva 'projects' folder into PROJECTS_JOURNEY by hand (camZ,
   camZTravel, camYDrift, enter/arrive/exit XYZ, dim, recede, rotationSpeed, pinVh). Surface +

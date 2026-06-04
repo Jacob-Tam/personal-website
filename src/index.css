@@ -140,7 +140,22 @@
 .planet {
   position: absolute;
   border-radius: 9999px;
+  isolation: isolate; /* so the noise overlay blends with this planet's gradient, not the page */
   animation: planet-drift var(--dur, 40s) linear infinite;
+}
+/* Procedural fractal-noise overlay -> a mottled, textured surface instead of a smooth gradient (the
+   CSS echo of the 3D project planets). Masked to fade before the soft rim so the sphere shape holds. */
+.planet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.1' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)'/%3E%3C/svg%3E");
+  background-size: cover;
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+  -webkit-mask: radial-gradient(circle at 37% 33%, #000 0%, #000 50%, transparent 78%);
+  mask: radial-gradient(circle at 37% 33%, #000 0%, #000 50%, transparent 78%);
 }
 .planet-slate {
   background: radial-gradient(

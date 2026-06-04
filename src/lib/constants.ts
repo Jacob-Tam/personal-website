@@ -120,17 +120,17 @@ export const PROJECTS_JOURNEY = {
   dimStart: -0.35, // local phase s at which a planet begins to dim (well before arrive)
   dimRange: 0.4, // length of the dim ramp
   disappearRange: 0.42, // (fully-disappear mode only) how fast a planet vanishes after arrive
-  planetY: [0.4, -0.3, 0.5, -0.2], // per-planet vertical offset on the shared path, for variety
-  // Per-planet vertical BOW (world units) added along the path: 0 at enter/arrive/exit, peaking at the
-  // quarter points (sin(s*pi)) with varied sign/size -> each planet swoops on a different curved path
-  // instead of a flat horizontal slide. (Planet motion only; the page/camera never moves vertically.)
-  planetArc: [1, -1.3, 1.1, -0.8],
+  // Shared vertical BOW along the path (sin(s*pi): 0 at enter/arrive/exit, peaks between) so the planets
+  // swoop on a curved path instead of a flat horizontal slide. SAME for every planet - all of them
+  // start at the same spot and end at the same spot (no per-planet height variation).
+  arc: 1.3,
 
-  // --- SPATIAL path (leva-tunable; a planet travels enter -> arrive -> exit in world units). It now
-  // ends on the LEFT (behind the media) so it clears the right-hand text; enters small far-right. ---
-  enter: [10, 4, -20] as [number, number, number], //     far upper-RIGHT corner -> small "next planet" teaser, above the text
-  arrive: [-4.5, 1, -3.2] as [number, number, number], // near, upper-LEFT -> peeks prominently around the media, clear of the text
-  exit: [-8.5, -0.1, -7] as [number, number, number], //  continues off to the left + back
+  // --- SPATIAL path (leva-tunable; every planet travels enter -> arrive -> exit in world units, the
+  // SAME path for all). Enters small far-upper-right (next-planet teaser); arrives LEFT, behind the
+  // media (fully blocked is fine) so it clears the right-hand text; exits off to the left. ---
+  enter: [10, 4, -20] as [number, number, number], //   far upper-RIGHT corner -> small "next planet" teaser, above the text
+  arrive: [-2.5, 0, -5] as [number, number, number], // near, LEFT, behind the media (occluded is fine)
+  exit: [-8.5, 0, -7] as [number, number, number], //   continues off to the left + back
   dim: 0.4, // gentle now (the planet sits on the LEFT, not over the text), so the current planet stays visible
   recede: true, // arrive = recede + dim (default) vs. fully disappear (the single tunable from the spec)
 
