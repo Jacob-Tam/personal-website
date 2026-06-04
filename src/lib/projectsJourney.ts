@@ -51,7 +51,9 @@ export function planetMotion(progress: number, index: number, look: JourneyLook)
     sc <= 0
       ? mix3(look.enter, look.arrive, smoothstep(0, 1, sc + 1)) // enter -> arrive
       : mix3(look.arrive, look.exit, smoothstep(0, 1, sc)) //        arrive -> exit
-  position[1] += J.planetY[index] ?? 0
+  // Per-planet vertical placement + a bow that curves the path (0 at enter/arrive/exit, peaks between),
+  // so each planet swoops differently rather than sliding straight across.
+  position[1] += (J.planetY[index] ?? 0) + Math.sin(sc * Math.PI) * (J.planetArc[index] ?? 0)
 
   // Fade the mesh in over its leading edge and out over its trailing edge; nothing outside its beat.
   let opacity = 0

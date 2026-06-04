@@ -71,7 +71,8 @@ constants + r3f-perf pass. Checkpoint + commit after each; commit WIP sub-pieces
 
 ### STEP 2 — DONE (the core choreography: 4 planets + camera travel + panel fades).
 - MODEL: each planet owns a beat centred at (i+0.5)/count and flies a SHARED world-path
-  enter(far, upper-right) -> arrive(near, right, behind the text) -> exit(off-left), as a function of
+  enter -> arrive -> exit (positions + curve REWORKED later - see the choreography-rework refinement
+  below; now enter=far-upper-right, arrive=upper-LEFT behind the media, exit=off-left), as a function of
   its signed local phase s = (progress - center)/life. Depth (z) gives the grow/shrink; recede+dim at
   arrive = the material colour multiplied toward black (also drops it below the bloom threshold) so it
   settles into a quiet, readable backdrop. `life` (0.2) > half the beat spacing (0.125), so consecutive
@@ -187,6 +188,29 @@ Verified bright (detailed, irregular) and dimmed at arrive (clean readable backd
   prefers-reduced-motion -> reducedMotion true, projects NOT pinned, calm 2-col media-left/text-right,
   opacity-only reveals, canvas faded out (step 13). Same content both ways, fully readable. Build green.
 - Still owed (pre-existing, docs/08 Step 12): a REAL-device test + a real orbStill image - Jacob's.
+
+### REFINEMENT — choreography reworked per Jacob (planet LEFT, next-planet teaser, curved paths, static screen).
+Supersedes the STEP 2 spatial defaults. Jacob: the arrived planet was on the right blocking the text;
+wanted it on the left (behind the media), the next planet small in the right background, planets to
+move on varied (not flat-horizontal) paths but end up left behind the media, and NO vertical screen
+movement. Changes (`PROJECTS_JOURNEY` + `lib/projectsJourney`):
+- Positions: enter [10,4,-20] (far upper-RIGHT corner -> small "next planet" teaser above the text),
+  arrive [-4.5,1,-3.2] (near, upper-LEFT -> peeks around the media, clear of the right text),
+  exit [-8.5,-0.1,-7] (off left + back). The media (opaque, DOM, in front) partly occludes the arrived
+  planet so it "peeks" - intended.
+- life 0.2 -> 0.3: neighbours overlap more, so while a planet is arrived on the left the NEXT one is
+  already small in the right-background (and the previous fades off-left).
+- dim 0.72 -> 0.4: the planet no longer sits over the text, so it stays mostly visible (only lightly
+  dimmed at arrive).
+- Curved paths: a per-planet vertical BOW `planetArc` ([1,-1.3,1.1,-0.8], applied as sin(s*pi) so it's
+  0 at enter/arrive/exit and peaks between) makes each planet swoop differently instead of sliding
+  straight across. (Planet motion only.)
+- Camera STATIC: camZTravel=0, camYDrift=0 (CameraRig holds a fixed pos/lookAt during the journey) so
+  the screen never moves vertically. Grow/shrink comes from each planet's own z (enter far -> arrive near).
+- VERIFIED beats 0.125 / 0.375 / 0.875: planet peeks upper-left, text clear on the right, small teaser
+  in the upper-right (none after the last). All still leva-tunable (arriveX range widened to -8..4).
+- PERF NOTE: the Chrome-MCP automation tab caps rAF at ~30fps even on the lightweight hero scene
+  (CPU ~1ms/frame), so r3f-perf reads 30 here - NOT a regression; real focused machine = 60.
 
 ### NEXT ON RESUME — STEP 5 (bake leva + perf pass) = the last step.
 - Bake whatever Jacob lands on in the dev leva 'projects' folder into PROJECTS_JOURNEY by hand (camZ,

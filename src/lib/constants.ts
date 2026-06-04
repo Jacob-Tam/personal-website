@@ -109,29 +109,36 @@ export const PROJECTS_JOURNEY = {
 
   // --- TIMING (constants; shared by canvas + DOM; not in leva so the two layers can't desync) ---
   count: 4, // number of planets/beats; beat i is centred at (i + 0.5) / count
-  life: 0.2, // half-width (progress units) of a planet's presence; > 0.5/count (=0.125) so beats overlap
-  fadeFrac: 0.32, // fraction of the leading/trailing edge used to fade the mesh in/out
+  life: 0.3, // half-width (progress units) of a planet's presence; wide so neighbours overlap a lot ->
+  // the NEXT planet is already small in the right-background while the current sits arrived on the left
+  fadeFrac: 0.26, // fraction of the leading/trailing edge used to fade the mesh in/out
   introFade: 0.05, // the whole scene fades in over the first slice of the journey (planet 1 "arrives")
   outroFade: 0.06, // and fades out over the last slice as the pin releases into Contact
   panelHalf: 0.5, // |s| within which a project's 2D media/text panels are shown (around arrive)
   panelFade: 0.34, // soft edge of that panel window
   panelRise: 10, // px the panels translate up as they fade in (subtle life)
-  dimStart: -0.35, // local phase s at which a planet begins to dim (well before arrive, so it has
-  dimRange: 0.4, // settled into a quiet, readable backdrop by the time the text peaks over it)
+  dimStart: -0.35, // local phase s at which a planet begins to dim (well before arrive)
+  dimRange: 0.4, // length of the dim ramp
   disappearRange: 0.42, // (fully-disappear mode only) how fast a planet vanishes after arrive
   planetY: [0.4, -0.3, 0.5, -0.2], // per-planet vertical offset on the shared path, for variety
+  // Per-planet vertical BOW (world units) added along the path: 0 at enter/arrive/exit, peaking at the
+  // quarter points (sin(s*pi)) with varied sign/size -> each planet swoops on a different curved path
+  // instead of a flat horizontal slide. (Planet motion only; the page/camera never moves vertically.)
+  planetArc: [1, -1.3, 1.1, -0.8],
 
-  // --- SPATIAL path (leva-tunable; a planet travels enter -> arrive -> exit in world units) ---
-  enter: [4.5, 1.6, -11] as [number, number, number], // far, upper-right -> small "right-background"
-  arrive: [2.7, 0, -4] as [number, number, number], //    near, right -> behind the right text column
-  exit: [-8.5, -0.6, -5.5] as [number, number, number], // off the left edge, drifting back
-  dim: 0.72, // how much a planet darkens at arrive (0 = none, 1 = black); strong so text reads over it
+  // --- SPATIAL path (leva-tunable; a planet travels enter -> arrive -> exit in world units). It now
+  // ends on the LEFT (behind the media) so it clears the right-hand text; enters small far-right. ---
+  enter: [10, 4, -20] as [number, number, number], //     far upper-RIGHT corner -> small "next planet" teaser, above the text
+  arrive: [-4.5, 1, -3.2] as [number, number, number], // near, upper-LEFT -> peeks prominently around the media, clear of the text
+  exit: [-8.5, -0.1, -7] as [number, number, number], //  continues off to the left + back
+  dim: 0.4, // gentle now (the planet sits on the LEFT, not over the text), so the current planet stays visible
   recede: true, // arrive = recede + dim (default) vs. fully disappear (the single tunable from the spec)
 
-  // --- CAMERA (leva-tunable): gentle forward dolly + slight vertical drift = "through space" ---
-  camZ: 7.5, // base journey camera distance (orb uses CAMERA.position[2])
-  camZTravel: 1.2, // forward dolly across the journey (camZ -> camZ - camZTravel)
-  camYDrift: 0.5, // vertical drift amplitude across the journey
+  // --- CAMERA (leva-tunable): STATIC during the journey (the planets carry all the motion, and the
+  // screen must not move vertically). Keep the knobs at 0; raise only if a little drift is wanted. ---
+  camZ: 7.5, // journey camera distance (orb uses CAMERA.position[2])
+  camZTravel: 0, // forward dolly across the journey (0 = static)
+  camYDrift: 0, // vertical drift amplitude (0 = no vertical screen movement)
 
   // --- SURFACE: procedural object-space noise + a fresnel limb injected into the planet material
   // (three/JourneyPlanet onBeforeCompile) for "soft noise" variation that rotates with the planet -

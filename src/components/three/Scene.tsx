@@ -176,7 +176,7 @@ export function Scene() {
     camYDrift: { value: PROJECTS_JOURNEY.camYDrift, min: 0, max: 2, step: 0.05 },
     enterX: { value: PROJECTS_JOURNEY.enter[0], min: 0, max: 9, step: 0.1 },
     enterZ: { value: PROJECTS_JOURNEY.enter[2], min: -16, max: -2, step: 0.1 },
-    arriveX: { value: PROJECTS_JOURNEY.arrive[0], min: -2, max: 6, step: 0.1 },
+    arriveX: { value: PROJECTS_JOURNEY.arrive[0], min: -8, max: 4, step: 0.1 },
     arriveY: { value: PROJECTS_JOURNEY.arrive[1], min: -3, max: 3, step: 0.1 },
     arriveZ: { value: PROJECTS_JOURNEY.arrive[2], min: -9, max: -1, step: 0.1 },
     exitX: { value: PROJECTS_JOURNEY.exit[0], min: -14, max: 0, step: 0.1 },
