@@ -254,9 +254,12 @@ movement. Changes (`PROJECTS_JOURNEY` + `lib/projectsJourney`):
   (radius 1.4); `pinVh` 4 -> 5.5 so the journey takes more scroll between beats (the beats were already
   equally spaced at (i+0.5)/4 - pinVh just widens those equal intervals; positions unchanged so they
   stay behind the media). Colours still blue/amber/teal/violet. More look tweaks may follow.
-- STILL TO DO: finish any look tweaks, then the perf pass (verify ~60fps / draw calls hold; the
-  Chrome-MCP tab caps rAF at ~30 so read CPU ms, ~1ms, not the FPS counter), re-verify
-  hero/interlude/about, then the feature is done on this branch -> review/merge to main.
+- PERF PASS DONE: swept hero / interlude / about / journey / contact. Journey reads 60fps, ~20 draw
+  calls, ~18k tris, CPU ~0.6ms (3 planets visible); interlude orb arc/pulse intact after the leva trim
+  (reads CHOREOGRAPHY constants); contact idles to 0 calls. (The ~30 FPS seen in some MCP screenshots
+  is the automation tab throttling rAF - 60 reads fine when it's not; CPU ms confirms real headroom.)
+- STILL TO DO: final look sign-off from Jacob (more colour/size/texture tweaks if he wants), then the
+  feature is done on this branch -> review/merge to main. Nothing un-baked (constants are source of truth).
 
 ### (build-order reference) STEP 5 = bake leva + perf pass.
 - Bake whatever Jacob lands on in the dev leva 'projects' folder into PROJECTS_JOURNEY by hand (camZ,
