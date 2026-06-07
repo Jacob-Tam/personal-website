@@ -47,11 +47,13 @@ export function planetMotion(progress: number, index: number, look: JourneyLook)
   const s = localPhase(progress, index)
   const sc = clamp(s, -1, 1)
 
+  // Linear (constant-velocity) interpolation, NOT eased - with the equal-length enter->arrive and
+  // arrive->exit halves this keeps a constant world velocity, so simultaneously-visible planets stay
+  // an equal distance apart (no easing bunch-up). Flat horizontal sweep (constant height).
   const position =
     sc <= 0
-      ? mix3(look.enter, look.arrive, smoothstep(0, 1, sc + 1)) // enter -> arrive
-      : mix3(look.arrive, look.exit, smoothstep(0, 1, sc)) //        arrive -> exit
-  // (Flat horizontal sweep - the path keeps a constant height, no vertical bow.)
+      ? mix3(look.enter, look.arrive, sc + 1) // enter -> arrive
+      : mix3(look.arrive, look.exit, sc) //        arrive -> exit
 
   // Fade the mesh in over its leading edge and out over its trailing edge; nothing outside its beat.
   let opacity = 0

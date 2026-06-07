@@ -254,6 +254,17 @@ movement. Changes (`PROJECTS_JOURNEY` + `lib/projectsJourney`):
   (radius 1.4); `pinVh` 4 -> 5.5 so the journey takes more scroll between beats (the beats were already
   equally spaced at (i+0.5)/4 - pinVh just widens those equal intervals; positions unchanged so they
   stay behind the media). Colours still blue/amber/teal/violet. More look tweaks may follow.
+- EQUAL DISTANCE between planets: position interpolation is now LINEAR (constant velocity), not
+  smoothstep - and `exit` mirrors `enter` around `arrive` (enter [9,0,-16] / arrive [-2.5,0,-5] /
+  exit [-14,0,-16], equal-length halves) - so simultaneously-visible planets stay an equal gap apart
+  (smoothstep was bunching them at the endpoints). projectsJourney still uses smoothstep for the
+  opacity/panel fades, just not for position.
+- SMOOTHER About->Projects: the Projects pin scrub 1 -> 0.5 (1 lagged ~1s so the journey felt
+  disconnected as the pin engaged; 0.5 tracks the scroll more closely while still not snappy). Measured
+  frame times: general scroll is a clean 60fps (~16.7ms median through About), so the bg-planet
+  mix-blend isn't causing jank; there's a single ~56ms frame AT the pin engage (the projectsActive
+  React re-render + GSAP pin) - largely DEV-mode React overhead, will be materially smoother in a prod
+  build. Contact release still clean (0 calls; gate handles the scrub lag).
 - PERF PASS DONE: swept hero / interlude / about / journey / contact. Journey reads 60fps, ~20 draw
   calls, ~18k tris, CPU ~0.6ms (3 planets visible); interlude orb arc/pulse intact after the leva trim
   (reads CHOREOGRAPHY constants); contact idles to 0 calls. (The ~30 FPS seen in some MCP screenshots

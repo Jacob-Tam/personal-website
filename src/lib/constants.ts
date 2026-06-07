@@ -124,9 +124,10 @@ export const PROJECTS_JOURNEY = {
   // SAME path for all). A flat HORIZONTAL sweep at one height (all y = 0): enters small far-RIGHT
   // (next-planet teaser), arrives LEFT behind the media (fully blocked is fine) clearing the text,
   // exits off to the left. Depth (z) still gives the grow as it approaches. ---
-  enter: [9, 0, -16] as [number, number, number], //   far RIGHT -> small "next planet" teaser
-  arrive: [-2.5, 0, -5] as [number, number, number], // near, LEFT, behind the media (occluded is fine)
-  exit: [-9, 0, -7] as [number, number, number], //    continues off to the left (same height = horizontal)
+  enter: [9, 0, -16] as [number, number, number], //    far RIGHT -> small "next planet" teaser
+  arrive: [-2.5, 0, -5] as [number, number, number], //  near, LEFT, behind the media (occluded is fine)
+  exit: [-14, 0, -16] as [number, number, number], //   off far-left + recedes; mirrors enter around arrive
+  // (enter->arrive and arrive->exit are equal-length, traversed at constant velocity = even spacing)
   dim: 0.4, // gentle now (the planet sits on the LEFT, not over the text), so the current planet stays visible
   recede: true, // arrive = recede + dim (default) vs. fully disappear (the single tunable from the spec)
 
