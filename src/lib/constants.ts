@@ -114,8 +114,11 @@ export const PROJECTS_JOURNEY = {
   fadeFrac: 0.26, // fraction of the leading/trailing edge used to fade the mesh in/out
   introFade: 0.05, // the whole scene fades in over the first slice of the journey (planet 1 "arrives")
   outroFade: 0.06, // and fades out over the last slice as the pin releases into Contact
-  panelHalf: 0.5, // |s| within which a project's 2D media/text panels are shown (around arrive)
-  panelFade: 0.34, // soft edge of that panel window
+  panelHalf: 0.3, // |s| within which a project's 2D media/text panels are shown (around arrive). Kept
+  // BELOW the half-beat spacing (~0.42 in s units) so consecutive panels no longer overlap - that
+  // leaves a planet-only stretch (no text/media) as one project exits before the next fades in. Lower
+  // = longer gap between projects (but a shorter on-screen dwell per project).
+  panelFade: 0.2, // soft edge of that panel window; < panelHalf so the panel still reaches full opacity
   panelRise: 10, // px the panels translate up as they fade in (subtle life)
   dimStart: -0.35, // local phase s at which a planet begins to dim (well before arrive)
   dimRange: 0.4, // length of the dim ramp
