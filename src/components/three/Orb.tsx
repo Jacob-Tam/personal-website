@@ -68,13 +68,14 @@ export function Orb(props: OrbProps) {
     ;(u.uRimColor.value as THREE.Color).set(props.rimColor)
 
     // Slow breathing: a small sinusoidal scale around 1 (docs/04). Held at 1 under reduced motion.
-    // The supernova adds a brief swell on top.
-    const breathe =
-      (reducedMotion
-        ? 1
-        : 1 + props.pulseAmplitude * Math.sin((state.clock.elapsedTime * Math.PI * 2) / props.pulsePeriod)) +
-      nova * SUPERNOVA.coreSwell
-    meshRef.current.scale.setScalar(breathe)
+    const breathe = reducedMotion
+      ? 1
+      : 1 + props.pulseAmplitude * Math.sin((state.clock.elapsedTime * Math.PI * 2) / props.pulsePeriod)
+    // "67" supernova: the core COLLAPSES to a point at the peak (it blows apart into the shards) then
+    // reforms as they stream back. A scale dip is used (not the emissive flash, which the bloom/tone-
+    // mapping pipeline swallows) so the detonation reads reliably.
+    const novaScale = Math.max(0.06, 1 - nova * SUPERNOVA.coreCollapse)
+    meshRef.current.scale.setScalar(breathe * novaScale)
   })
 
   return <mesh ref={meshRef} geometry={geometry} material={material} />

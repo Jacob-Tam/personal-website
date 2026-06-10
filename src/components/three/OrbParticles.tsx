@@ -52,6 +52,7 @@ export function OrbParticles(props: ParticleProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null!)
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const outward = useMemo(() => new THREE.Vector3(), [])
+  const spinVec = useMemo(() => new THREE.Vector3(), [])
   const scratchColor = useMemo(() => new THREE.Color(), [])
   const baseColors = useRef<Float32Array>(new Float32Array(0))
   const wasShedding = useRef(false)
@@ -59,7 +60,7 @@ export function OrbParticles(props: ParticleProps) {
   // 'demand' (reduced motion) - otherwise the static frame can paint before the colours apply.
   const invalidate = useThree((state) => state.invalidate)
 
-  const { plane, radius, speed, phase, size, releaseAt, planeMatrices } = useMemo(() => {
+  const { plane, radius, speed, phase, size, releaseAt, planeMatrices, explodeDir, explodeSpeed, spinAxis, spinRate } = useMemo(() => {
     const rng = mulberry32(SEED)
     const planeCount = Math.max(1, props.planes)
 
@@ -103,7 +104,35 @@ export function OrbParticles(props: ParticleProps) {
       size[i] = THREE.MathUtils.lerp(props.sizeMin, props.sizeMax, rng())
       releaseAt[i] = THREE.MathUtils.lerp(SHED.startFraction, 0.95, rngShed())
     }
-    return { plane, radius, speed, phase, size, releaseAt, planeMatrices }
+
+    // Per-particle EXPLOSION vectors for the "67" supernova: a random 3D launch direction (uniform on
+    // the sphere) + a speed spread, plus a tumble axis/rate. A separate rng stream so it can't shift
+    // the orbit layout (or the colour stream) above.
+    const rngBoom = mulberry32(SEED + 3)
+    const randomUnit = () => {
+      const u = rngBoom() * 2 - 1
+      const t = rngBoom() * Math.PI * 2
+      const r = Math.sqrt(Math.max(0, 1 - u * u))
+      return [r * Math.cos(t), r * Math.sin(t), u] as const
+    }
+    const explodeDir = new Float32Array(props.count * 3)
+    const explodeSpeed = new Float32Array(props.count)
+    const spinAxis = new Float32Array(props.count * 3)
+    const spinRate = new Float32Array(props.count)
+    for (let i = 0; i < props.count; i++) {
+      const [dx, dy, dz] = randomUnit()
+      explodeDir[i * 3] = dx
+      explodeDir[i * 3 + 1] = dy
+      explodeDir[i * 3 + 2] = dz
+      explodeSpeed[i] = THREE.MathUtils.lerp(SUPERNOVA.speedMin, SUPERNOVA.speedMax, rngBoom())
+      const [sx, sy, sz] = randomUnit()
+      spinAxis[i * 3] = sx
+      spinAxis[i * 3 + 1] = sy
+      spinAxis[i * 3 + 2] = sz
+      spinRate[i] = (0.6 + 0.8 * rngBoom()) * SUPERNOVA.spin * (rngBoom() < 0.5 ? -1 : 1)
+    }
+
+    return { plane, radius, speed, phase, size, releaseAt, planeMatrices, explodeDir, explodeSpeed, spinAxis, spinRate }
   }, [
     props.count, props.planes, props.radiusMin, props.radiusMax,
     props.speedMin, props.speedMax, props.sizeMin, props.sizeMax,
@@ -151,14 +180,16 @@ export function OrbParticles(props: ParticleProps) {
     const time = reducedMotion ? 0 : state.clock.elapsedTime
     const mesh = meshRef.current
     const shedding = drift > SHED.startFraction
-    // "67" supernova: every particle's orbit radius expands outward then eases back. Off under
-    // reduced motion.
-    const burst = reducedMotion ? 0 : supernovaEnvelope((performance.now() - supernovaAt) / 1000) * SUPERNOVA.burstDistance
+    // "67" supernova: the orb detonates - each particle is flung along its own random 3D trajectory
+    // (shrapnel), tumbling and swelling, then streams back. Off under reduced motion.
+    const novaElapsed = (performance.now() - supernovaAt) / 1000
+    const nova = reducedMotion ? 0 : supernovaEnvelope(novaElapsed)
+    const burst = nova * SUPERNOVA.burstDistance
+    const exploding = burst > 0.0001
 
     for (let i = 0; i < props.count; i++) {
       const angle = phase[i] + speed[i] * time
-      const orbitRadius = radius[i] + burst
-      dummy.position.set(Math.cos(angle) * orbitRadius, Math.sin(angle) * orbitRadius, 0)
+      dummy.position.set(Math.cos(angle) * radius[i], Math.sin(angle) * radius[i], 0)
       dummy.position.applyMatrix4(planeMatrices[plane[i]])
 
       let fade = 1
@@ -170,7 +201,19 @@ export function OrbParticles(props: ParticleProps) {
         fade = 1 - release
       }
 
-      dummy.scale.setScalar(size[i])
+      // Blast each piece outward along its own direction/speed and tumble it; identity otherwise.
+      if (exploding) {
+        const reach = burst * explodeSpeed[i]
+        dummy.position.x += explodeDir[i * 3] * reach
+        dummy.position.y += explodeDir[i * 3 + 1] * reach
+        dummy.position.z += explodeDir[i * 3 + 2] * reach
+        spinVec.set(spinAxis[i * 3], spinAxis[i * 3 + 1], spinAxis[i * 3 + 2])
+        dummy.quaternion.setFromAxisAngle(spinVec, spinRate[i] * novaElapsed)
+      } else {
+        dummy.quaternion.identity()
+      }
+
+      dummy.scale.setScalar(size[i] * (1 + nova * (SUPERNOVA.pieceGrowth - 1)))
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
 
