@@ -150,7 +150,10 @@ export function JourneyPlanet({
     if (!motion.visible) return
 
     group.position.set(motion.position[0], motion.position[1], motion.position[2])
-    meshRef.current.rotation.y += delta * rotationSpeed
+    // Spin faster while flying in (phase ~-1) and decelerate to the idle rate by arrive (phase 0), so
+    // the planet visibly rotates as it comes into frame then settles. Idle spin continues on exit.
+    const spinRate = rotationSpeed + PROJECTS_JOURNEY.entrySpin * Math.max(0, -motion.phase)
+    meshRef.current.rotation.y += delta * spinRate
     materialRef.current.opacity = motion.opacity
     materialRef.current.color.setScalar(motion.brightness) // map carries the hue; this only dims
     if (ringMatRef.current && ring) {

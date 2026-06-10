@@ -39,6 +39,7 @@ export type PlanetMotion = {
   opacity: number // mesh fade: in from the distance, out as it exits (0 outside its beat)
   brightness: number // 1 while travelling in, dims toward (1 - dim) at/after arrive
   visible: boolean // false when fully faded, so the mesh can be skipped (draw-call saver)
+  phase: number // signed local phase s: ~-1 entering -> 0 arrived -> +1 exiting (drives the spin-in)
 }
 
 // Drives one 3D planet. `look` carries the leva spatial params (positions differ from the constants
@@ -69,7 +70,7 @@ export function planetMotion(progress: number, index: number, look: JourneyLook)
 
   const brightness = 1 - look.dim * smoothstep(J.dimStart, J.dimStart + J.dimRange, s)
 
-  return { position, opacity, brightness, visible: opacity > 0.001 }
+  return { position, opacity, brightness, visible: opacity > 0.001, phase: s }
 }
 
 // 2D panel opacity for project i: a smooth window around arrive (s = 0). Timing only, so it always

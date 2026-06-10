@@ -107,7 +107,9 @@ export const VIGNETTE = {
 // 'projects' folder. Bake whatever lands in leva back into the spatial defaults here.
 export const PROJECTS_JOURNEY = {
   pinVh: 5.5, // pin length (fraction of viewport height); larger = more scroll between each planet
-  rotationSpeed: 0.06, // rad/s, gentle planet self-rotation
+  rotationSpeed: 0.06, // rad/s, gentle planet self-rotation (idle rate, at/after arrive)
+  entrySpin: 0.7, // rad/s, EXTRA self-rotation while a planet flies in; ramps from this (far) down to
+  // 0 at arrive, so each planet visibly spins as it comes into frame then decelerates as it settles
 
   // --- TIMING (constants; shared by canvas + DOM; not in leva so the two layers can't desync) ---
   count: 4, // number of planets/beats; beat i is centred at (i + 0.5) / count
