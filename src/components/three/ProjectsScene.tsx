@@ -28,14 +28,7 @@ export function ProjectsScene({
           1, but the planets are already hidden, so nothing freezes over Contact. */}
       <group visible={active}>
         {PROJECTS_JOURNEY.planets.map((planet, index) => (
-          <JourneyPlanet
-            key={index}
-            index={index}
-            color={planet.color}
-            radius={planet.radius}
-            rotationSpeed={rotationSpeed}
-            look={look}
-          />
+          <JourneyPlanet key={index} index={index} planet={planet} rotationSpeed={rotationSpeed} look={look} />
         ))}
       </group>
     </>

@@ -4,6 +4,8 @@
   lifecycle (Step 8) will live here too. Keep magic numbers out of components and in here.
 */
 
+import type { PlanetStyle } from './planetTexture'
+
 export const CAMERA = {
   fov: 50,
   position: [0, 0, 6] as [number, number, number],
@@ -151,13 +153,48 @@ export const PROJECTS_JOURNEY = {
     rimPower: 2.6, // fresnel falloff; higher = thinner rim
   },
 
-  // --- LOOK (size + colour): visually DISTINCT, cohesive in dark space. Recolour trivially here. ---
+  // --- LOOK: each planet is a distinct ARCHETYPE, not the same planet recoloured. `style` selects the
+  // baked surface (lib/planetTexture); the surface overrides below tune relief + material response so
+  // the silhouettes and shading differ too (gas = smooth/glossy/ringed; ice = glossy/cracked; rocky =
+  // matte/rugged; terran = ocean + caps). Size stays uniform (keeps the even spacing dialed in). Any
+  // field left out falls back to the shared `surface` defaults above. ---
   planets: [
-    { color: '#4f9ad1', radius: 1.4 }, // steel blue (leans on the accent)
-    { color: '#d68a4e', radius: 1.4 }, // warm amber
-    { color: '#5bbf9a', radius: 1.4 }, // teal
-    { color: '#9a7bd0', radius: 1.4 }, // violet
-  ],
+    // Steel-blue ocean world (leans on the accent): continents + polar ice caps.
+    { color: '#4f9ad1', radius: 1.4, style: 'terran', dispAmp: 0.34, bumpScale: 0.45, roughness: 0.95, rimStrength: 0.7, rimPower: 2.6 },
+    // Amber gas giant: warped bands + a storm oval, smooth + glossy, wrapped in a tilted ring.
+    {
+      color: '#d68a4e', radius: 1.4, style: 'gas', dispScale: 1.4, dispAmp: 0.08, bumpScale: 0.12, roughness: 0.62, rimStrength: 1.1, rimPower: 1.9,
+      ring: { inner: 1.45, outer: 2.35, tilt: [1.18, 0.22], color: '#e7c79b', opacity: 0.55 },
+    },
+    // Teal ice world: pale frost veined with sharp cracks, glossy.
+    { color: '#5bbf9a', radius: 1.4, style: 'ice', dispScale: 2.1, dispAmp: 0.26, bumpScale: 0.55, roughness: 0.5, rimStrength: 0.85, rimPower: 3.0 },
+    // Violet rocky moon: matte, cratered, rugged silhouette.
+    { color: '#9a7bd0', radius: 1.4, style: 'rocky', dispScale: 2.4, dispAmp: 0.55, bumpScale: 0.75, roughness: 1.0, rimStrength: 0.35, rimPower: 3.2 },
+  ] as PlanetConfig[],
+}
+
+// A Saturn-style ring on a planet: radii in multiples of the planet radius, tilt [x, z] in radians.
+export type PlanetRing = {
+  inner: number
+  outer: number
+  tilt: [number, number]
+  color: string
+  opacity: number
+}
+
+// One journey planet. `color` + `style` pick the baked surface; the rest override the shared `surface`
+// material defaults per planet (all optional). `ring` is present only on planets that wear one.
+export type PlanetConfig = {
+  color: string
+  radius: number
+  style: PlanetStyle
+  dispScale?: number
+  dispAmp?: number
+  bumpScale?: number
+  roughness?: number
+  rimStrength?: number
+  rimPower?: number
+  ring?: PlanetRing
 }
 
 // Fixed seed so the particle distribution is identical every load (not reshuffled).

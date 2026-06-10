@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
 import { planetMotion, type JourneyLook } from '../../lib/projectsJourney'
 import { makePlanetSurface } from '../../lib/planetTexture'
-import { PROJECTS_JOURNEY } from '../../lib/constants'
+import { PROJECTS_JOURNEY, type PlanetConfig, type PlanetRing } from '../../lib/constants'
 
 const S = PROJECTS_JOURNEY.surface
 
@@ -27,14 +27,15 @@ const NOISE_GLSL = /* glsl */ `
     relief; the normal is recomputed from two displaced tangent neighbours so the lumps catch light.
   - FRAGMENT: a fresnel limb (cheap atmosphere) on the lit edge, riding on diffuseColor so it dims with
     the planet at arrive.
-  Surface COLOUR + fine bump come from the baked texture maps (lib/planetTexture), not the shader.
+  Per-planet `dispAmp`/`rim*` (constants) make a smooth gas giant vs. a rugged rocky moon from one
+  shader. Surface COLOUR + fine bump come from the baked texture maps (lib/planetTexture).
 */
-function patchPlanetMaterial(material: THREE.MeshStandardMaterial, seed: number) {
+function patchPlanetMaterial(material: THREE.MeshStandardMaterial, seed: number, planet: PlanetConfig) {
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.uRimStrength = { value: S.rimStrength }
-    shader.uniforms.uRimPower = { value: S.rimPower }
-    shader.uniforms.uDispScale = { value: S.dispScale }
-    shader.uniforms.uDispAmp = { value: S.dispAmp }
+    shader.uniforms.uRimStrength = { value: planet.rimStrength ?? S.rimStrength }
+    shader.uniforms.uRimPower = { value: planet.rimPower ?? S.rimPower }
+    shader.uniforms.uDispScale = { value: planet.dispScale ?? S.dispScale }
+    shader.uniforms.uDispAmp = { value: planet.dispAmp ?? S.dispAmp }
     shader.uniforms.uSeed = { value: seed }
 
     shader.vertexShader = shader.vertexShader
@@ -77,70 +78,129 @@ function patchPlanetMaterial(material: THREE.MeshStandardMaterial, seed: number)
 }
 
 /*
+  Patches the ring's MeshBasicMaterial so a flat RingGeometry annulus reads as a banded, dust-thin
+  Saturn ring: the radial coordinate (length of the local XY position) drives an alpha that fades at
+  both edges, ripples into fine bands, and carries one darker Cassini-style gap. No texture asset.
+*/
+function patchRingMaterial(material: THREE.MeshBasicMaterial, ring: PlanetRing, radius: number) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uInner = { value: radius * ring.inner }
+    shader.uniforms.uOuter = { value: radius * ring.outer }
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\n        varying float vRingR;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n        vRingR = length(position.xy);')
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\n        varying float vRingR;\n        uniform float uInner, uOuter;')
+      .replace(
+        '#include <map_fragment>',
+        /* glsl */ `#include <map_fragment>
+        float rt = clamp((vRingR - uInner) / (uOuter - uInner), 0.0, 1.0);
+        float edge = smoothstep(0.0, 0.1, rt) * (1.0 - smoothstep(0.86, 1.0, rt));
+        float bands = 0.6 + 0.4 * sin(rt * 44.0);
+        float gap = 1.0 - 0.7 * exp(-pow((rt - 0.52) / 0.05, 2.0));
+        diffuseColor.a *= edge * bands * gap;`,
+      )
+  }
+}
+
+/*
   One planet in the Projects journey: a displaced, textured sphere (lit by ProjectsScene's directional
-  light) that flies the enter -> arrive -> exit path for its beat. Position, fade, and the arrive
-  recede+dim are derived per frame from projectsProgress via planetMotion() (getState, no reactive
-  subscription). The colour map carries the hue, so dimming multiplies material.color (a grey scalar)
-  to darken it below the bloom threshold at arrive. Real Three.js object - a SEPARATE system from the
-  ambient CSS shared/Planets.tsx.
+  light) plus, on some planets, a tilted ring. Position, fade, and the arrive recede+dim are derived
+  per frame from projectsProgress via planetMotion() (getState, no reactive subscription). The colour
+  map carries the hue, so dimming multiplies material.color (a grey scalar) to darken it below the bloom
+  threshold at arrive. The group carries the position/visibility; the sphere alone takes the spin so the
+  ring keeps a fixed tilt (a ring co-rotating on the planet's axis would flip face-on/edge-on). Real
+  Three.js objects - a SEPARATE system from the ambient CSS shared/Planets.tsx.
 */
 export function JourneyPlanet({
   index,
-  color,
-  radius,
+  planet,
   rotationSpeed,
   look,
 }: {
   index: number
-  color: string
-  radius: number
+  planet: PlanetConfig
   rotationSpeed: number
   look: JourneyLook
 }) {
+  const groupRef = useRef<THREE.Group>(null!)
   const meshRef = useRef<THREE.Mesh>(null!)
   const materialRef = useRef<THREE.MeshStandardMaterial>(null!)
-  // Per-planet baked maps + a per-planet noise seed for the displacement. Stable across renders.
-  const surface = useMemo(() => makePlanetSurface(color, index * 17.3), [color, index])
+  const ringMatRef = useRef<THREE.MeshBasicMaterial>(null)
+
+  // Per-planet baked maps (hue + fine bump for this archetype) + per-planet seeds. Stable across renders.
+  const surface = useMemo(() => makePlanetSurface(planet.color, index * 17.3, planet.style), [planet.color, planet.style, index])
   const onBeforeCompile = useMemo(
-    () => (material: THREE.MeshStandardMaterial) => patchPlanetMaterial(material, index * 13.7),
-    [index],
+    () => (material: THREE.MeshStandardMaterial) => patchPlanetMaterial(material, index * 13.7, planet),
+    [index, planet],
   )
+  const ring = planet.ring
+  const ringOnBeforeCompile = useMemo(
+    () => (ring ? (material: THREE.MeshBasicMaterial) => patchRingMaterial(material, ring, planet.radius) : undefined),
+    [ring, planet.radius],
+  )
+  // Ring hue is held separately so per-frame dimming can multiply it down without losing the colour.
+  const ringBase = useMemo(() => (ring ? new THREE.Color(ring.color) : null), [ring])
+
   useEffect(() => () => {
     surface.map.dispose()
     surface.bump.dispose()
   }, [surface])
 
   useFrame((_, delta) => {
-    const mesh = meshRef.current
+    const group = groupRef.current
     const motion = planetMotion(useScrollStore.getState().projectsProgress, index, look)
 
-    mesh.visible = motion.visible
+    group.visible = motion.visible
     if (!motion.visible) return
 
-    mesh.position.set(motion.position[0], motion.position[1], motion.position[2])
-    mesh.rotation.y += delta * rotationSpeed
+    group.position.set(motion.position[0], motion.position[1], motion.position[2])
+    meshRef.current.rotation.y += delta * rotationSpeed
     materialRef.current.opacity = motion.opacity
     materialRef.current.color.setScalar(motion.brightness) // map carries the hue; this only dims
+    if (ringMatRef.current && ringBase && ring) {
+      ringMatRef.current.opacity = motion.opacity * ring.opacity
+      ringMatRef.current.color.copy(ringBase).multiplyScalar(motion.brightness)
+    }
   })
 
   return (
-    <mesh ref={meshRef} visible={false}>
-      {/* 64x48 so the displacement reads as smooth lumps, not facets. */}
-      <sphereGeometry args={[radius, 64, 48]} />
-      {/* Texture maps (lib/planetTexture) carry colour + fine bump; onBeforeCompile adds the big
-          displacement + the fresnel limb. fog={false}: the planets ignore the orb's scene fog. */}
-      <meshStandardMaterial
-        ref={materialRef}
-        map={surface.map}
-        bumpMap={surface.bump}
-        bumpScale={S.bumpScale}
-        roughness={0.92}
-        metalness={0}
-        transparent
-        opacity={0}
-        fog={false}
-        onBeforeCompile={onBeforeCompile}
-      />
-    </mesh>
+    <group ref={groupRef} visible={false}>
+      <mesh ref={meshRef}>
+        {/* 64x48 so the displacement reads as smooth lumps, not facets. */}
+        <sphereGeometry args={[planet.radius, 64, 48]} />
+        {/* Texture maps (lib/planetTexture) carry colour + fine bump; onBeforeCompile adds the big
+            displacement + the fresnel limb. fog={false}: the planets ignore the orb's scene fog. */}
+        <meshStandardMaterial
+          ref={materialRef}
+          map={surface.map}
+          bumpMap={surface.bump}
+          bumpScale={planet.bumpScale ?? S.bumpScale}
+          roughness={planet.roughness ?? 0.92}
+          metalness={0}
+          transparent
+          opacity={0}
+          fog={false}
+          onBeforeCompile={onBeforeCompile}
+        />
+      </mesh>
+      {ring && (
+        // Tilted ring. renderOrder after the sphere + depthWrite off so the sphere's depth occludes the
+        // far half while the near half blends over it (correct Saturn layering). depthTest stays on.
+        <mesh rotation={[ring.tilt[0], 0, ring.tilt[1]]} renderOrder={2}>
+          <ringGeometry args={[planet.radius * ring.inner, planet.radius * ring.outer, 128]} />
+          <meshBasicMaterial
+            ref={ringMatRef}
+            color={ring.color}
+            transparent
+            opacity={0}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+            fog={false}
+            onBeforeCompile={ringOnBeforeCompile}
+          />
+        </mesh>
+      )}
+    </group>
   )
 }
