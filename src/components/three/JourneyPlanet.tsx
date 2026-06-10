@@ -78,18 +78,21 @@ function patchPlanetMaterial(material: THREE.MeshStandardMaterial, seed: number,
 }
 
 /*
-  A flat ring annulus whose UVs are rebuilt RADIALLY: u runs 0 (inner edge) -> 1 (outer edge), so the
-  baked 1D radial strip (lib/planetTexture makeRingTexture) maps to concentric bands. RingGeometry's
-  default UVs are square-planar, which would smear the strip across the ring; recomputing them per
-  vertex from the radius is what makes the band texture land correctly.
+  A ring annulus whose UVs are rebuilt to match the baked ring map (lib/planetTexture makeRingTexture):
+  u = radius (inner 0 -> outer 1) for the bands, v = azimuth (0..1 around the ring) for the density that
+  makes the SPIN visible. v comes from the theta-segment index (not atan2) so it runs 0..1 cleanly with
+  no wrap seam. RingGeometry's default UVs are square-planar, which would smear the map.
 */
 function makeRingGeometry(inner: number, outer: number): THREE.RingGeometry {
-  const geometry = new THREE.RingGeometry(inner, outer, 180, 1)
+  const thetaSegments = 220
+  const phiSegments = 1
+  const geometry = new THREE.RingGeometry(inner, outer, thetaSegments, phiSegments)
   const position = geometry.attributes.position
   const uv = geometry.attributes.uv as THREE.BufferAttribute
-  for (let i = 0; i < position.count; i++) {
-    const radius = Math.hypot(position.getX(i), position.getY(i))
-    uv.setXY(i, (radius - inner) / (outer - inner), 0.5)
+  for (let idx = 0; idx < position.count; idx++) {
+    const radius = Math.hypot(position.getX(idx), position.getY(idx))
+    const theta = idx % (thetaSegments + 1) // vertices are theta-minor; index -> seam-free azimuth
+    uv.setXY(idx, (radius - inner) / (outer - inner), theta / thetaSegments)
   }
   uv.needsUpdate = true
   return geometry
@@ -100,9 +103,10 @@ function makeRingGeometry(inner: number, outer: number): THREE.RingGeometry {
   light) plus, on some planets, a tilted ring. Position, fade, and the arrive recede+dim are derived
   per frame from projectsProgress via planetMotion() (getState, no reactive subscription). The colour
   map carries the hue, so dimming multiplies material.color (a grey scalar) to darken it below the bloom
-  threshold at arrive. The group carries the position/visibility; the sphere alone takes the spin so the
-  ring keeps a fixed tilt (a ring co-rotating on the planet's axis would flip face-on/edge-on). Real
-  Three.js objects - a SEPARATE system from the ambient CSS shared/Planets.tsx.
+  threshold at arrive. The group carries the position/visibility; the sphere spins on its Y axis and the
+  ring spins in-plane on its own normal (the tilt sits on the ring's parent group, so the plane stays
+  fixed while the dust orbits). Both spin rates ramp with |phase|. Real Three.js objects - a SEPARATE
+  system from the ambient CSS shared/Planets.tsx.
 */
 export function JourneyPlanet({
   index,
@@ -118,6 +122,7 @@ export function JourneyPlanet({
   const groupRef = useRef<THREE.Group>(null!)
   const meshRef = useRef<THREE.Mesh>(null!)
   const materialRef = useRef<THREE.MeshStandardMaterial>(null!)
+  const ringMeshRef = useRef<THREE.Mesh>(null)
   const ringMatRef = useRef<THREE.MeshBasicMaterial>(null)
 
   // Per-planet baked maps (hue + fine bump for this archetype) + per-planet seeds. Stable across renders.
@@ -150,13 +155,14 @@ export function JourneyPlanet({
     if (!motion.visible) return
 
     group.position.set(motion.position[0], motion.position[1], motion.position[2])
-    // Spin faster while flying in (phase ~-1) and decelerate to the idle rate by arrive (phase 0), so
-    // the planet visibly rotates as it comes into frame then settles. Idle spin continues on exit.
-    const spinRate = rotationSpeed + PROJECTS_JOURNEY.entrySpin * Math.max(0, -motion.phase)
+    // Spin ramps with |phase|: fast at the beat edges (as one planet crosses out and the next crosses
+    // in - the transition) and decelerating to the idle rate at arrive, so it's calm while you read.
+    const spinRate = rotationSpeed + PROJECTS_JOURNEY.transitionSpin * Math.abs(motion.phase)
     meshRef.current.rotation.y += delta * spinRate
     materialRef.current.opacity = motion.opacity
     materialRef.current.color.setScalar(motion.brightness) // map carries the hue; this only dims
-    if (ringMatRef.current && ring) {
+    if (ringMeshRef.current && ringMatRef.current && ring) {
+      ringMeshRef.current.rotation.z += delta * spinRate * PROJECTS_JOURNEY.ringSpinFactor // orbits in-plane
       ringMatRef.current.opacity = motion.opacity * ring.opacity
       ringMatRef.current.color.setScalar(motion.brightness) // map carries the hue + bands; this only dims
     }
@@ -183,20 +189,23 @@ export function JourneyPlanet({
         />
       </mesh>
       {ring && ringGeometry && ringTexture && (
-        // Tilted ring. renderOrder after the sphere + depthWrite off so the sphere's depth occludes the
-        // far half while the near half blends over it (correct Saturn layering). depthTest stays on.
-        // The baked radial strip (map) carries the band colour + alpha; material.color is the dim scalar.
-        <mesh geometry={ringGeometry} rotation={[ring.tilt[0], 0, ring.tilt[1]]} renderOrder={2}>
-          <meshBasicMaterial
-            ref={ringMatRef}
-            map={ringTexture}
-            transparent
-            opacity={0}
-            depthWrite={false}
-            side={THREE.DoubleSide}
-            fog={false}
-          />
-        </mesh>
+        // The tilt lives on the GROUP so the inner mesh is free to spin on its own normal (local Z) -
+        // the dust orbiting in-plane - without the tilt fighting the spin. renderOrder after the sphere
+        // + depthWrite off so the sphere's depth occludes the far half while the near half blends over
+        // it (correct Saturn layering). The baked map carries band colour + alpha; material.color dims.
+        <group rotation={[ring.tilt[0], 0, ring.tilt[1]]}>
+          <mesh ref={ringMeshRef} geometry={ringGeometry} renderOrder={2}>
+            <meshBasicMaterial
+              ref={ringMatRef}
+              map={ringTexture}
+              transparent
+              opacity={0}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+              fog={false}
+            />
+          </mesh>
+        </group>
       )}
     </group>
   )
