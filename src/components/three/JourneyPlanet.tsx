@@ -95,9 +95,12 @@ function patchRingMaterial(material: THREE.MeshBasicMaterial, ring: PlanetRing, 
         '#include <map_fragment>',
         /* glsl */ `#include <map_fragment>
         float rt = clamp((vRingR - uInner) / (uOuter - uInner), 0.0, 1.0);
-        float edge = smoothstep(0.0, 0.1, rt) * (1.0 - smoothstep(0.86, 1.0, rt));
-        float bands = 0.6 + 0.4 * sin(rt * 44.0);
-        float gap = 1.0 - 0.7 * exp(-pow((rt - 0.52) / 0.05, 2.0));
+        // Feather both edges so the ring fades into dust rather than ending on a hard rim.
+        float edge = smoothstep(0.0, 0.16, rt) * (1.0 - smoothstep(0.8, 1.0, rt));
+        // Two overlaid sines -> fine, slightly irregular banding (not one regular ripple).
+        float bands = 0.74 + 0.15 * sin(rt * 38.0) + 0.11 * sin(rt * 97.0 + 1.3);
+        // Two soft Cassini-style gaps where the ring thins out.
+        float gap = 1.0 - 0.5 * exp(-pow((rt - 0.46) / 0.045, 2.0)) - 0.32 * exp(-pow((rt - 0.72) / 0.03, 2.0));
         diffuseColor.a *= edge * bands * gap;`,
       )
   }
