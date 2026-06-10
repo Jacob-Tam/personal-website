@@ -3,8 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
 import { planetMotion, type JourneyLook } from '../../lib/projectsJourney'
-import { makePlanetSurface } from '../../lib/planetTexture'
-import { PROJECTS_JOURNEY, type PlanetConfig, type PlanetRing } from '../../lib/constants'
+import { makePlanetSurface, makeRingTexture } from '../../lib/planetTexture'
+import { PROJECTS_JOURNEY, type PlanetConfig } from '../../lib/constants'
 
 const S = PROJECTS_JOURNEY.surface
 
@@ -78,42 +78,21 @@ function patchPlanetMaterial(material: THREE.MeshStandardMaterial, seed: number,
 }
 
 /*
-  Patches the ring's MeshBasicMaterial so a flat RingGeometry annulus reads as a banded, dust-thin
-  Saturn ring: the radial coordinate (length of the local XY position) drives an alpha that fades at
-  both edges, ripples into fine bands, and carries one darker Cassini-style gap. No texture asset.
+  A flat ring annulus whose UVs are rebuilt RADIALLY: u runs 0 (inner edge) -> 1 (outer edge), so the
+  baked 1D radial strip (lib/planetTexture makeRingTexture) maps to concentric bands. RingGeometry's
+  default UVs are square-planar, which would smear the strip across the ring; recomputing them per
+  vertex from the radius is what makes the band texture land correctly.
 */
-function patchRingMaterial(material: THREE.MeshBasicMaterial, ring: PlanetRing, radius: number) {
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uInner = { value: radius * ring.inner }
-    shader.uniforms.uOuter = { value: radius * ring.outer }
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n        varying float vRingR;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\n        vRingR = length(position.xy);')
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\n        varying float vRingR;\n        uniform float uInner, uOuter;')
-      .replace(
-        '#include <map_fragment>',
-        /* glsl */ `#include <map_fragment>
-        float rt = clamp((vRingR - uInner) / (uOuter - uInner), 0.0, 1.0);
-        // Feather the inner + outer edges into dust.
-        float edge = smoothstep(0.0, 0.06, rt) * (1.0 - smoothstep(0.94, 1.0, rt));
-        // A handful of distinct concentric bands (kept LOW frequency so they actually read at this
-        // on-screen size instead of aliasing to a flat tone); two incommensurate sines + a per-band
-        // brightness jitter give it irregular Saturn-ring texture rather than one regular ripple.
-        float fine = mix(0.5 + 0.5 * sin(rt * 23.0), 0.5 + 0.5 * sin(rt * 9.0 + 1.7), 0.5);
-        float bandId = floor(rt * 15.0);
-        float jitter = fract(sin(bandId * 78.233) * 43758.5453);
-        float bands = mix(0.25, 1.0, fine) * mix(0.55, 1.2, jitter);
-        // Major structure: a dimmer inner ring, a sharp Cassini gap, a fainter outer gap.
-        float innerFade = mix(0.5, 1.0, smoothstep(0.0, 0.26, rt));
-        float cassini = 1.0 - 0.92 * exp(-pow((rt - 0.5) / 0.025, 2.0));
-        float outerGap = 1.0 - 0.5 * exp(-pow((rt - 0.78) / 0.025, 2.0));
-        float profile = edge * innerFade * cassini * outerGap;
-        // Drive BRIGHTNESS (clear light/dark bands), not just alpha, so the ring has real texture.
-        diffuseColor.rgb *= 0.4 + 0.9 * bands;
-        diffuseColor.a *= profile * (0.4 + 0.6 * bands);`,
-      )
+function makeRingGeometry(inner: number, outer: number): THREE.RingGeometry {
+  const geometry = new THREE.RingGeometry(inner, outer, 180, 1)
+  const position = geometry.attributes.position
+  const uv = geometry.attributes.uv as THREE.BufferAttribute
+  for (let i = 0; i < position.count; i++) {
+    const radius = Math.hypot(position.getX(i), position.getY(i))
+    uv.setXY(i, (radius - inner) / (outer - inner), 0.5)
   }
+  uv.needsUpdate = true
+  return geometry
 }
 
 /*
@@ -148,17 +127,20 @@ export function JourneyPlanet({
     [index, planet],
   )
   const ring = planet.ring
-  const ringOnBeforeCompile = useMemo(
-    () => (ring ? (material: THREE.MeshBasicMaterial) => patchRingMaterial(material, ring, planet.radius) : undefined),
+  // Baked radial band strip + a ring annulus with radial UVs, so the bands actually map on. The map
+  // carries the ring's hue + bands; material.color stays a grey scalar used only for the per-frame dim.
+  const ringTexture = useMemo(() => (ring ? makeRingTexture(ring.color) : null), [ring])
+  const ringGeometry = useMemo(
+    () => (ring ? makeRingGeometry(planet.radius * ring.inner, planet.radius * ring.outer) : null),
     [ring, planet.radius],
   )
-  // Ring hue is held separately so per-frame dimming can multiply it down without losing the colour.
-  const ringBase = useMemo(() => (ring ? new THREE.Color(ring.color) : null), [ring])
 
   useEffect(() => () => {
     surface.map.dispose()
     surface.bump.dispose()
-  }, [surface])
+    ringTexture?.dispose()
+    ringGeometry?.dispose()
+  }, [surface, ringTexture, ringGeometry])
 
   useFrame((_, delta) => {
     const group = groupRef.current
@@ -171,9 +153,9 @@ export function JourneyPlanet({
     meshRef.current.rotation.y += delta * rotationSpeed
     materialRef.current.opacity = motion.opacity
     materialRef.current.color.setScalar(motion.brightness) // map carries the hue; this only dims
-    if (ringMatRef.current && ringBase && ring) {
+    if (ringMatRef.current && ring) {
       ringMatRef.current.opacity = motion.opacity * ring.opacity
-      ringMatRef.current.color.copy(ringBase).multiplyScalar(motion.brightness)
+      ringMatRef.current.color.setScalar(motion.brightness) // map carries the hue + bands; this only dims
     }
   })
 
@@ -197,20 +179,19 @@ export function JourneyPlanet({
           onBeforeCompile={onBeforeCompile}
         />
       </mesh>
-      {ring && (
+      {ring && ringGeometry && ringTexture && (
         // Tilted ring. renderOrder after the sphere + depthWrite off so the sphere's depth occludes the
         // far half while the near half blends over it (correct Saturn layering). depthTest stays on.
-        <mesh rotation={[ring.tilt[0], 0, ring.tilt[1]]} renderOrder={2}>
-          <ringGeometry args={[planet.radius * ring.inner, planet.radius * ring.outer, 128]} />
+        // The baked radial strip (map) carries the band colour + alpha; material.color is the dim scalar.
+        <mesh geometry={ringGeometry} rotation={[ring.tilt[0], 0, ring.tilt[1]]} renderOrder={2}>
           <meshBasicMaterial
             ref={ringMatRef}
-            color={ring.color}
+            map={ringTexture}
             transparent
             opacity={0}
             depthWrite={false}
             side={THREE.DoubleSide}
             fog={false}
-            onBeforeCompile={ringOnBeforeCompile}
           />
         </mesh>
       )}

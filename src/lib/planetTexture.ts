@@ -103,7 +103,7 @@ export function makePlanetSurface(baseHex: string, seed: number, style: PlanetSt
       const px = sinLat * Math.cos(lon)
       const pz = sinLat * Math.sin(lon)
 
-      let height = 0
+      let height: number // set by every style branch below
 
       if (style === 'gas') {
         // Latitude bands warped by low-freq noise so they wave; fine streaks ride along them.
@@ -189,4 +189,62 @@ function configure(texture: THREE.DataTexture) {
   texture.generateMipmaps = true
   texture.anisotropy = 4
   texture.needsUpdate = true
+}
+
+/*
+  Bakes a 1D RADIAL strip for a planet's ring (used as the ring material's `map`): width runs from the
+  inner edge (u=0) to the outer edge (u=1). The ring geometry's UVs are rebuilt radially (JourneyPlanet)
+  so this strip maps to concentric bands. Each band gets a distinct brightness + a touch of hue/sat
+  shift (dark brown -> bright cream), with a soft inner fade, a sharp Cassini gap and a fainter outer
+  gap baked into the ALPHA. Baking the bands as a real texture (instead of a procedural shader) is what
+  finally makes the ring read as textured. RGB is sRGB-encoded; alpha is raw.
+*/
+export function makeRingTexture(baseHex: string): THREE.DataTexture {
+  const RW = 512
+  const RH = 4
+  const base = new THREE.Color(baseHex)
+  const hsl = { h: 0, s: 0, l: 0 }
+  base.getHSL(hsl)
+
+  const row = new Uint8Array(RW * 4)
+  const c = new THREE.Color()
+  const bandCount = 11
+
+  for (let x = 0; x < RW; x++) {
+    const t = (x + 0.5) / RW // 0 inner .. 1 outer
+    const bi = Math.floor(t * bandCount)
+    const rnd = hash3(bi, 7, 13) // distinct brightness per band
+    const fine = 0.86 + 0.14 * Math.sin(t * 120) // subtle ripple within a band
+    const bright = (0.32 + 0.68 * rnd) * fine
+
+    // Dark bands lean brown/saturated; bright bands lean cream/desaturated.
+    c.setHSL(hsl.h, clamp(hsl.s * (1.05 - 0.5 * bright), 0, 1), clamp(0.14 + 0.82 * bright, 0.08, 0.93))
+    c.convertLinearToSRGB()
+
+    const edge = smoothstep(0, 0.04, t) * (1 - smoothstep(0.96, 1, t))
+    const cassini = 1 - 0.9 * Math.exp(-(((t - 0.5) / 0.025) ** 2))
+    const outerGap = 1 - 0.55 * Math.exp(-(((t - 0.8) / 0.02) ** 2))
+    const innerDim = mix(0.5, 1, smoothstep(0, 0.22, t))
+    const alpha = clamp(edge * cassini * outerGap * innerDim * (0.5 + 0.5 * bright), 0, 1)
+
+    const i = x * 4
+    row[i] = toByte(c.r)
+    row[i + 1] = toByte(c.g)
+    row[i + 2] = toByte(c.b)
+    row[i + 3] = toByte(alpha)
+  }
+
+  // Repeat the single computed row down the texture height (radial-only pattern).
+  const bytes = new Uint8Array(RW * RH * 4)
+  for (let y = 0; y < RH; y++) bytes.set(row, y * RW * 4)
+
+  const tex = new THREE.DataTexture(bytes, RW, RH, THREE.RGBAFormat)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.wrapS = THREE.ClampToEdgeWrapping
+  tex.wrapT = THREE.ClampToEdgeWrapping
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearFilter
+  tex.anisotropy = 4
+  tex.needsUpdate = true
+  return tex
 }
