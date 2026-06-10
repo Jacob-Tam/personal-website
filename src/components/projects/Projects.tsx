@@ -7,7 +7,8 @@ import { BackgroundWord } from '../shared/BackgroundWord'
 import { ScrollIndicator } from './ScrollIndicator'
 import { ProjectMedia } from './ProjectMedia'
 import { ProjectText } from './ProjectText'
-import { PROJECTS } from './projectsData'
+import { ProjectExpanded } from './ProjectExpanded'
+import { PROJECTS, type Project } from './projectsData'
 
 /*
   Projects - the pinned "solar system journey" (feat/projects-planets). On desktop / full power the
@@ -41,7 +42,11 @@ function useJourneyPanels(refs: RefObject<(HTMLDivElement | null)[]>) {
 
   useEffect(() => {
     if (!projectsActive) {
-      refs.current.forEach((element) => element && (element.style.opacity = '0'))
+      refs.current.forEach((element) => {
+        if (!element) return
+        element.style.opacity = '0'
+        element.style.pointerEvents = 'none'
+      })
       setActiveIndex(-1)
       return
     }
@@ -53,6 +58,8 @@ function useJourneyPanels(refs: RefObject<(HTMLDivElement | null)[]>) {
         const opacity = panelOpacity(progress, index)
         element.style.opacity = String(opacity)
         element.style.transform = `translateY(${(1 - opacity) * PROJECTS_JOURNEY.panelRise}px)`
+        // Only the (mostly) visible panel takes clicks; the stacked, faded ones must not intercept.
+        element.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none'
       })
       const active = journeyActiveIndex(progress)
       setActiveIndex((previous) => (previous === active ? previous : active))
@@ -70,6 +77,9 @@ function useJourneyPanels(refs: RefObject<(HTMLDivElement | null)[]>) {
 function ProjectsJourney() {
   const panelRefs = useRef<(HTMLDivElement | null)[]>([])
   const activeIndex = useJourneyPanels(panelRefs)
+  // The project whose media was clicked, plus the media's on-screen rect, so the overlay can spin +
+  // expand out of exactly that card (and shrink back into it on close).
+  const [expanded, setExpanded] = useState<{ project: Project; rect: DOMRect } | null>(null)
 
   return (
     <section id="projects" className="relative h-screen overflow-hidden">
@@ -87,12 +97,46 @@ function ProjectsJourney() {
           className="absolute inset-0 flex items-center opacity-0 will-change-[opacity,transform]"
         >
           <div className="mx-auto grid w-full max-w-6xl grid-cols-2 items-center gap-12 px-12">
-            <ProjectMedia project={project} isActive={activeIndex === index} />
+            <button
+              type="button"
+              aria-label={`Expand ${project.title}`}
+              onClick={(event) => setExpanded({ project, rect: event.currentTarget.getBoundingClientRect() })}
+              className="group relative block w-full cursor-pointer text-left"
+            >
+              <ProjectMedia
+                project={project}
+                isActive={activeIndex === index}
+                className="transition-[transform,border-color] duration-300 ease-out group-hover:scale-[1.01] group-hover:border-accent/40"
+              />
+              <ExpandHint />
+            </button>
             <ProjectText project={project} />
           </div>
         </div>
       ))}
+
+      {expanded && (
+        <ProjectExpanded
+          project={expanded.project}
+          originRect={expanded.rect}
+          onClose={() => setExpanded(null)}
+        />
+      )}
     </section>
+  )
+}
+
+// Hover affordance on a journey media card: a small "expand" glyph that fades in, hinting it opens.
+function ExpandHint() {
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-bg/50 text-text-mute opacity-0 backdrop-blur transition-[opacity,color,border-color] duration-300 group-hover:border-accent/50 group-hover:text-accent-hi group-hover:opacity-100"
+    >
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M9 4H5a1 1 0 00-1 1v4M15 4h4a1 1 0 011 1v4M9 20H5a1 1 0 01-1-1v-4M15 20h4a1 1 0 001-1v-4" />
+      </svg>
+    </span>
   )
 }
 
