@@ -6,16 +6,21 @@ import type { Project } from './projectsData'
 
 /*
   Full-screen expanded project view, opened by clicking a journey project's MEDIA. The media card
-  SPINS + EXPANDS out of its in-place rect into a full-screen takeover with the media on TOP and the
-  project text (title, tagline, description, tech) BELOW. The morph is a manual FLIP: measure the
-  media's natural (final) rect, derive the single transform that drops it back onto the originating
-  card (uniform scale + center-pivot translate, since both are aspect-video), then tween that away
-  while spinning a full turn. Backdrop + text fade in behind it; closing reverses the whole thing back
-  into the originating card. Background scroll is locked while open (lenis.stop); Escape / the X / the
-  backdrop close it. Labelled modal dialog; focus moves to the close button and returns to the opener.
+  SPINS around its VERTICAL axis (a 3D rotateY, with perspective) and EXPANDS out of its in-place rect
+  into a full-screen takeover with the media on TOP and the project text (title, tagline, description,
+  tech) BELOW. Everything fits in the viewport without scrolling: the media occupies the leftover height
+  above the text (flex-1, sized by aspect ratio), so the whole composition is one screen.
+
+  The morph is a manual FLIP: measure the media's natural (final) rect, derive the single transform that
+  drops it back onto the originating card (uniform scale + center-pivot translate, since both are
+  aspect-video), then tween that away while the card flips a full turn. Backdrop + text fade in behind
+  it; closing reverses the whole thing back into the originating card. Background scroll is locked while
+  open (lenis.stop); Escape / the X / clicking the dim area close it. Labelled modal dialog; focus moves
+  to the close button and returns to the opener.
 */
 const DURATION = 0.85
 const EASE = 'power3.inOut'
+const PERSPECTIVE = 1100 // px; depth for the vertical-axis flip (lower = more dramatic foreshortening)
 
 export function ProjectExpanded({
   project,
@@ -34,7 +39,7 @@ export function ProjectExpanded({
   const closingRef = useRef(false)
 
   // The transform that places the full-size media exactly over the originating card. Center pivot so
-  // the spin shares it; uniform scale because both cards are aspect-video.
+  // the flip shares it; uniform scale because both are aspect-video.
   function transformToOrigin() {
     const last = lastRectRef.current!
     return {
@@ -51,7 +56,7 @@ export function ProjectExpanded({
     const to = transformToOrigin()
     const tl = gsap.timeline({ onComplete: onClose })
     tl.to(bodyRef.current, { opacity: 0, y: 18, duration: 0.25, ease: 'power2.in' }, 0)
-    tl.to(mediaRef.current, { ...to, rotation: -360, duration: DURATION * 0.8, ease: EASE }, 0)
+    tl.to(mediaRef.current, { ...to, rotationY: -360, transformPerspective: PERSPECTIVE, duration: DURATION * 0.8, ease: EASE }, 0)
     tl.to(backdropRef.current, { opacity: 0, duration: 0.4, ease: 'power2.in' }, DURATION * 0.35)
   }
 
@@ -61,15 +66,15 @@ export function ProjectExpanded({
     const body = bodyRef.current!
     // Clear any leftover transform before measuring so we get the true NATURAL rect. This also makes
     // the effect safe under React StrictMode's double-invoke: the second run would otherwise measure
-    // the element while the first run's spin/scale transform is still applied and read a wrong rect.
+    // the element while the first run's flip/scale transform is still applied and read a wrong rect.
     gsap.set(media, { clearProps: 'transform' })
     lastRectRef.current = media.getBoundingClientRect()
     const from = transformToOrigin()
     const tl = gsap.timeline()
     tl.fromTo(
       media,
-      { ...from, rotation: -360 },
-      { x: 0, y: 0, scale: 1, rotation: 0, duration: DURATION, ease: EASE },
+      { ...from, rotationY: -360, transformPerspective: PERSPECTIVE },
+      { x: 0, y: 0, scale: 1, rotationY: 0, transformPerspective: PERSPECTIVE, duration: DURATION, ease: EASE },
       0,
     )
     tl.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: 'power2.out' }, 0)
@@ -94,14 +99,17 @@ export function ProjectExpanded({
   }, [])
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={project.title} className="fixed inset-0 z-50 overflow-y-auto">
-      <div ref={backdropRef} aria-hidden onClick={requestClose} className="fixed inset-0 bg-bg/95 backdrop-blur-md" />
+    <div role="dialog" aria-modal="true" aria-label={project.title} className="fixed inset-0 z-50 overflow-hidden">
+      <div ref={backdropRef} aria-hidden className="absolute inset-0 bg-bg/95 backdrop-blur-md" />
 
-      <div className="relative flex min-h-full flex-col items-center px-6 py-12 sm:py-16">
-        <div className="w-full max-w-4xl">
+      {/* Full-height flex column: media area flexes to fill the space above the natural-height text, so
+          the whole thing fits one screen. Clicking the dim area (not the media/text) closes. */}
+      <div onClick={requestClose} className="relative flex h-full flex-col items-center justify-center gap-6 px-6 py-8 sm:py-10">
+        <div className="flex min-h-0 w-full max-w-5xl flex-1 items-center justify-center">
           <div
             ref={mediaRef}
-            className="relative aspect-video w-full overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-2xl shadow-black/60 will-change-transform"
+            onClick={(event) => event.stopPropagation()}
+            className="relative aspect-video h-full w-auto max-w-full overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-2xl shadow-black/60 will-change-transform"
           >
             {MEDIA_READY ? (
               project.media.kind === 'video' ? (
@@ -129,22 +137,22 @@ export function ProjectExpanded({
               </svg>
             </button>
           </div>
+        </div>
 
-          <div ref={bodyRef} className="mx-auto mt-10 max-w-3xl">
-            <h3 className="text-h2 text-text">{project.title}</h3>
-            <p className="mt-3 text-body-lg text-text-mute">{project.tagline}</p>
-            <p className="mt-6 text-body text-text">{project.description}</p>
-            <ul className="mt-8 flex flex-wrap gap-2">
-              {project.tech.map((tag) => (
-                <li
-                  key={tag}
-                  className="rounded-md border border-border px-3 py-1 font-mono text-label uppercase text-text-mute"
-                >
-                  {tag}
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div ref={bodyRef} onClick={(event) => event.stopPropagation()} className="w-full max-w-3xl flex-none">
+          <h3 className="text-h3 text-text">{project.title}</h3>
+          <p className="mt-2 text-body-lg text-text-mute">{project.tagline}</p>
+          <p className="mt-4 max-w-prose text-body text-text">{project.description}</p>
+          <ul className="mt-5 flex flex-wrap gap-2">
+            {project.tech.map((tag) => (
+              <li
+                key={tag}
+                className="rounded-md border border-border px-3 py-1 font-mono text-label uppercase text-text-mute"
+              >
+                {tag}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </div>
