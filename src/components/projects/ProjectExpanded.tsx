@@ -18,7 +18,7 @@ import type { Project } from './projectsData'
   open (lenis.stop); Escape / the X / clicking the dim area close it. Labelled modal dialog; focus moves
   to the close button and returns to the opener.
 */
-const DURATION = 0.85
+const DURATION = 1.3
 const EASE = 'power3.inOut'
 const PERSPECTIVE = 1100 // px; depth for the vertical-axis flip (lower = more dramatic foreshortening)
 
