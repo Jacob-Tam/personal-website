@@ -95,13 +95,23 @@ function patchRingMaterial(material: THREE.MeshBasicMaterial, ring: PlanetRing, 
         '#include <map_fragment>',
         /* glsl */ `#include <map_fragment>
         float rt = clamp((vRingR - uInner) / (uOuter - uInner), 0.0, 1.0);
-        // Feather both edges so the ring fades into dust rather than ending on a hard rim.
-        float edge = smoothstep(0.0, 0.16, rt) * (1.0 - smoothstep(0.8, 1.0, rt));
-        // Two overlaid sines -> fine, slightly irregular banding (not one regular ripple).
-        float bands = 0.74 + 0.15 * sin(rt * 38.0) + 0.11 * sin(rt * 97.0 + 1.3);
-        // Two soft Cassini-style gaps where the ring thins out.
-        float gap = 1.0 - 0.5 * exp(-pow((rt - 0.46) / 0.045, 2.0)) - 0.32 * exp(-pow((rt - 0.72) / 0.03, 2.0));
-        diffuseColor.a *= edge * bands * gap;`,
+        // Feather the inner + outer edges into dust.
+        float edge = smoothstep(0.0, 0.06, rt) * (1.0 - smoothstep(0.94, 1.0, rt));
+        // A handful of distinct concentric bands (kept LOW frequency so they actually read at this
+        // on-screen size instead of aliasing to a flat tone); two incommensurate sines + a per-band
+        // brightness jitter give it irregular Saturn-ring texture rather than one regular ripple.
+        float fine = mix(0.5 + 0.5 * sin(rt * 23.0), 0.5 + 0.5 * sin(rt * 9.0 + 1.7), 0.5);
+        float bandId = floor(rt * 15.0);
+        float jitter = fract(sin(bandId * 78.233) * 43758.5453);
+        float bands = mix(0.25, 1.0, fine) * mix(0.55, 1.2, jitter);
+        // Major structure: a dimmer inner ring, a sharp Cassini gap, a fainter outer gap.
+        float innerFade = mix(0.5, 1.0, smoothstep(0.0, 0.26, rt));
+        float cassini = 1.0 - 0.92 * exp(-pow((rt - 0.5) / 0.025, 2.0));
+        float outerGap = 1.0 - 0.5 * exp(-pow((rt - 0.78) / 0.025, 2.0));
+        float profile = edge * innerFade * cassini * outerGap;
+        // Drive BRIGHTNESS (clear light/dark bands), not just alpha, so the ring has real texture.
+        diffuseColor.rgb *= 0.4 + 0.9 * bands;
+        diffuseColor.a *= profile * (0.4 + 0.6 * bands);`,
       )
   }
 }

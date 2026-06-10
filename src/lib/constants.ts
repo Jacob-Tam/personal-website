@@ -165,7 +165,7 @@ export const PROJECTS_JOURNEY = {
     {
       color: '#d68a4e', radius: 1.4, style: 'gas', dispScale: 1.4, dispAmp: 0.08, bumpScale: 0.12, roughness: 0.62, rimStrength: 1.1, rimPower: 1.9,
       // Negative x-tilt puts the near edge at the BOTTOM (natural Saturn read, not a hoop over the face).
-      ring: { inner: 1.5, outer: 2.2, tilt: [-1.1, 0.16], color: '#e7c79b', opacity: 0.5 },
+      ring: { inner: 1.5, outer: 2.25, tilt: [-1.05, 0.16], color: '#e7c79b', opacity: 0.72 },
     },
     // Teal ice world: pale frost veined with sharp cracks, glossy.
     { color: '#5bbf9a', radius: 1.4, style: 'ice', dispScale: 2.1, dispAmp: 0.26, bumpScale: 0.55, roughness: 0.5, rimStrength: 0.85, rimPower: 3.0 },
