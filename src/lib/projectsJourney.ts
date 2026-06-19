@@ -14,18 +14,37 @@ import { PROJECTS_JOURNEY as J } from './constants'
 
 export type Vec3 = [number, number, number]
 
-// The leva-tunable spatial inputs (positions in world units + the arrive dim/recede behaviour).
+// The leva-tunable spatial inputs: the shared BASE path (enter/arrive/exit in world units), the arrive
+// dim/recede behaviour, and the lane amplitude/squash that offsets each planet laterally off the base
+// path by a CONSTANT amount (so each planet flies one straight line toward the camera, not a kinked
+// path). laneDirs (the per-planet corner) are baked in constants.
 export type JourneyLook = {
   enter: Vec3
   arrive: Vec3
   exit: Vec3
   dim: number
   recede: boolean
+  laneAmp: number
+  laneYScale: number
 }
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x))
 const mix = (a: number, b: number, t: number) => a + (b - a) * t
 const mix3 = (a: Vec3, b: Vec3, t: number): Vec3 => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)]
+const addv = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+
+// This planet's own enter/arrive/exit. The SAME constant lateral offset (its lane corner * amplitude)
+// is added to every waypoint, so only Z changes: the planet flies one straight line toward the camera.
+// Perspective then grows it and drifts it off its corner of the screen - a continuous zoom, no veer.
+function planetPath(index: number, look: JourneyLook) {
+  const dir = J.laneDirs[index % J.laneDirs.length]
+  const offset: Vec3 = [dir[0] * look.laneAmp, dir[1] * look.laneAmp * look.laneYScale, 0]
+  return {
+    enter: addv(look.enter, offset),
+    arrive: addv(look.arrive, offset),
+    exit: addv(look.exit, offset),
+  }
+}
 const smoothstep = (edge0: number, edge1: number, x: number) => {
   const t = clamp((x - edge0) / (edge1 - edge0), 0, 1)
   return t * t * (3 - 2 * t)
@@ -48,19 +67,21 @@ export function planetMotion(progress: number, index: number, look: JourneyLook)
   const s = localPhase(progress, index)
   const sc = clamp(s, -1, 1)
 
-  // Linear (constant-velocity) interpolation, NOT eased - with the equal-length enter->arrive and
-  // arrive->exit halves this keeps a constant world velocity, so simultaneously-visible planets stay
-  // an equal distance apart (no easing bunch-up). Flat horizontal sweep (constant height).
+  // Linear interpolation along THIS planet's lane path (enter -> arrive -> exit). The two halves are
+  // deliberately UNEQUAL in length (long slow approach from deep ahead, short fast pass at the camera
+  // plane), so perspective makes the planet drift in gently and then whip past - a flight THROUGH
+  // space, not a sideways conveyor.
+  const path = planetPath(index, look)
   const position =
     sc <= 0
-      ? mix3(look.enter, look.arrive, sc + 1) // enter -> arrive
-      : mix3(look.arrive, look.exit, sc) //        arrive -> exit
+      ? mix3(path.enter, path.arrive, sc + 1) // distant speck ahead -> readable arrive
+      : mix3(path.arrive, path.exit, sc) //       arrive -> balloon past the camera (lane swings it off)
 
   // Fade the mesh in over its leading edge and out over its trailing edge; nothing outside its beat.
   let opacity = 0
   if (s > -1 && s < 1) {
     const rise = smoothstep(-1, -1 + J.fadeFrac, s)
-    const fall = 1 - smoothstep(1 - J.fadeFrac, 1, s)
+    const fall = 1 - smoothstep(1 - J.exitFadeFrac, 1, s)
     opacity = Math.min(rise, fall)
   }
   // Fully-disappear mode: drop out right after arrive instead of lingering as a dim backdrop.
@@ -68,7 +89,12 @@ export function planetMotion(progress: number, index: number, look: JourneyLook)
   // Whole-scene intro/outro so planet 1 fades in as the pin engages and the last clears as it releases.
   opacity *= smoothstep(0, J.introFade, progress) * (1 - smoothstep(1 - J.outroFade, 1, progress))
 
-  const brightness = 1 - look.dim * smoothstep(J.dimStart, J.dimStart + J.dimRange, s)
+  // Dim toward arrive so the media/text read over the planet; then keep DARKENING through the exit (s>0)
+  // so a passed planet sinks into the dark background as it balloons past, instead of looming brightly
+  // over the next project. Only the trailing half darkens - the approaching planet stays bright.
+  const arriveDim = look.dim * smoothstep(J.dimStart, J.dimStart + J.dimRange, s)
+  const exitDark = J.exitDark * smoothstep(0.1, 1, s)
+  const brightness = Math.max(1 - arriveDim - exitDark, J.minBrightness)
 
   return { position, opacity, brightness, visible: opacity > 0.001, phase: s }
 }

@@ -144,32 +144,35 @@ export function Scene() {
     rotationStill: CHOREOGRAPHY.rotationStill,
   }
 
-  // DEV-only tuning for the Projects journey: the planet enter/arrive/exit world-path, the arrive
-  // recede+dim, the gentle camera dolly, and the pin length. Timing/pacing is in PROJECTS_JOURNEY
-  // (shared with the DOM panels). Bake whatever lands here back into PROJECTS_JOURNEY by hand.
+  // DEV-only tuning for the Projects journey: the depth-led base path (enter/arrive/exit), the per-planet
+  // lane spread, the arrive recede+dim, the streaming-star speed, and the pin length. Timing/pacing is in
+  // PROJECTS_JOURNEY (shared with the DOM panels). Bake whatever lands here back into PROJECTS_JOURNEY.
   const projects = useControls('projects', {
     pinVh: { value: PROJECTS_JOURNEY.pinVh, min: 1, max: 8, step: 0.25 },
     rotationSpeed: { value: PROJECTS_JOURNEY.rotationSpeed, min: 0, max: 0.5, step: 0.01 },
     camZ: { value: PROJECTS_JOURNEY.camZ, min: 4, max: 12, step: 0.1 },
-    camZTravel: { value: PROJECTS_JOURNEY.camZTravel, min: 0, max: 5, step: 0.1 },
-    camYDrift: { value: PROJECTS_JOURNEY.camYDrift, min: 0, max: 2, step: 0.05 },
-    enterX: { value: PROJECTS_JOURNEY.enter[0], min: 0, max: 9, step: 0.1 },
-    enterZ: { value: PROJECTS_JOURNEY.enter[2], min: -16, max: -2, step: 0.1 },
-    arriveX: { value: PROJECTS_JOURNEY.arrive[0], min: -8, max: 4, step: 0.1 },
+    enterZ: { value: PROJECTS_JOURNEY.enter[2], min: -60, max: -10, step: 0.5 }, // depth of the distant speck
+    arriveX: { value: PROJECTS_JOURNEY.arrive[0], min: -4, max: 4, step: 0.1 }, // base lateral (lane adds the side)
     arriveY: { value: PROJECTS_JOURNEY.arrive[1], min: -3, max: 3, step: 0.1 },
-    arriveZ: { value: PROJECTS_JOURNEY.arrive[2], min: -9, max: -1, step: 0.1 },
-    exitX: { value: PROJECTS_JOURNEY.exit[0], min: -14, max: 0, step: 0.1 },
-    exitZ: { value: PROJECTS_JOURNEY.exit[2], min: -12, max: 0, step: 0.1 },
+    arriveZ: { value: PROJECTS_JOURNEY.arrive[2], min: -9, max: -2, step: 0.1 },
+    exitZ: { value: PROJECTS_JOURNEY.exit[2], min: -4, max: 8, step: 0.1 }, // + = at/past the camera plane
+    laneAmp: { value: PROJECTS_JOURNEY.laneAmp, min: 0, max: 8, step: 0.1 }, // constant lateral offset
+    laneYScale: { value: PROJECTS_JOURNEY.laneYScale, min: 0, max: 1, step: 0.02 },
+    starDrift: { value: PROJECTS_JOURNEY.stars.baseDrift, min: 0, max: 12, step: 0.1 }, // coast speed (reading)
+    starBoost: { value: PROJECTS_JOURNEY.stars.boost, min: 0, max: 200, step: 5 }, // scroll velocity -> warp
     dim: { value: PROJECTS_JOURNEY.dim, min: 0, max: 1, step: 0.02 },
     recede: PROJECTS_JOURNEY.recede,
   }, { collapsed: true })
 
+  // enter/exit base x and y stay centred (0); each planet's lane offset supplies the lateral spread.
   const journeyLook: JourneyLook = {
-    enter: [projects.enterX, PROJECTS_JOURNEY.enter[1], projects.enterZ],
+    enter: [0, 0, projects.enterZ],
     arrive: [projects.arriveX, projects.arriveY, projects.arriveZ],
-    exit: [projects.exitX, PROJECTS_JOURNEY.exit[1], projects.exitZ],
+    exit: [0, 0, projects.exitZ],
     dim: projects.dim,
     recede: projects.recede,
+    laneAmp: projects.laneAmp,
+    laneYScale: projects.laneYScale,
   }
 
   // Live-tune the Projects journey pin length. (The interlude pin uses CHOREOGRAPHY.interludePinVh.)
@@ -204,9 +207,11 @@ export function Scene() {
         >
           {isDev && <Perf position="bottom-right" />}
           <PerspectiveCamera makeDefault fov={CAMERA.fov} position={[0, 0, orb.distance]} />
+          {/* Camera holds STATIC through the journey (the planets + streaming stars carry the motion, and
+              the screen must not move vertically while you read). camZTravel/camYDrift stay baked at 0. */}
           <CameraRig
             orbDistance={orb.distance}
-            journey={{ camZ: projects.camZ, camZTravel: projects.camZTravel, camYDrift: projects.camYDrift }}
+            journey={{ camZ: projects.camZ, camZTravel: PROJECTS_JOURNEY.camZTravel, camYDrift: PROJECTS_JOURNEY.camYDrift }}
           />
           {/* Fog stays mounted the whole time (the orb particles dim into it for depth); the planets
               opt OUT via material.fog=false. We never toggle scene.fog because adding/removing it
@@ -223,7 +228,14 @@ export function Scene() {
           <group visible={!projectsActive}>
             <OrbSystem core={core} particles={particles} cursor={cursor} choreo={choreography} />
           </group>
-          <ProjectsScene look={journeyLook} rotationSpeed={projects.rotationSpeed} active={projectsActive} />
+          <ProjectsScene
+            look={journeyLook}
+            rotationSpeed={projects.rotationSpeed}
+            active={projectsActive}
+            camZ={projects.camZ}
+            starDrift={projects.starDrift}
+            starBoost={projects.starBoost}
+          />
           {/* Precompile every material up front (incl. the hidden planets) so a shader doesn't compile
               the first frame a planet becomes visible at the About->Projects seam - that lazy compile
               was the last hitch lurching the scroll. */}

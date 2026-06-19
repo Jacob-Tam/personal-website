@@ -98,13 +98,15 @@ export const VIGNETTE = {
 }
 
 // Projects "solar system journey" (feat/projects-planets). A pinned section whose scroll
-// (projectsProgress 0..1) drives a trip past 4 planets (one per project). Each planet owns a beat and
-// flies a shared world-path enter(far, upper-right) -> arrive(near, right, behind the text) ->
-// exit(off-left), growing via depth then receding + dimming at arrive; neighbouring beats overlap so
-// the next fades in from the right as the current exits left. The camera dollies gently forward for a
-// through-space feel. TIMING lives here (shared by the 3D planets AND the 2D panels via
-// lib/projectsJourney, so they stay in lockstep); SPATIAL/look/camera are seeded into the dev leva
-// 'projects' folder. Bake whatever lands in leva back into the spatial defaults here.
+// (projectsProgress 0..1) drives a flight THROUGH space past 4 planets (one per project). Each planet
+// owns a beat and flies a depth-led path: it enters as a distant speck dead ahead, grows as you zoom
+// toward it, pulls in + dims for the read (its lane slides it beside a panel), then balloons past the
+// camera as the next speck appears ahead. A corridor of star streaks streams past the whole time -
+// coasting while you read, warping with scroll velocity as you travel (the "moving through space"
+// backdrop). Neighbouring beats overlap so the next is already a speck ahead while the current sits
+// arrived. TIMING lives here (shared by the 3D planets AND the 2D panels via lib/projectsJourney, so
+// they stay in lockstep); SPATIAL/look/lanes/stars are seeded into the dev leva 'projects' folder.
+// Bake whatever lands in leva back into the defaults here.
 export const PROJECTS_JOURNEY = {
   pinVh: 5.5, // pin length (fraction of viewport height); larger = more scroll between each planet
   rotationSpeed: 0.06, // rad/s, gentle planet self-rotation (idle rate, at arrive)
@@ -115,11 +117,15 @@ export const PROJECTS_JOURNEY = {
 
   // --- TIMING (constants; shared by canvas + DOM; not in leva so the two layers can't desync) ---
   count: 4, // number of planets/beats; beat i is centred at (i + 0.5) / count
-  life: 0.3, // half-width (progress units) of a planet's presence; wide so neighbours overlap a lot ->
-  // the NEXT planet is already small in the right-background while the current sits arrived on the left
-  fadeFrac: 0.26, // fraction of the leading/trailing edge used to fade the mesh in/out
-  introFade: 0.05, // the whole scene fades in over the first slice of the journey (planet 1 "arrives")
-  outroFade: 0.06, // and fades out over the last slice as the pin releases into Contact
+  life: 0.26, // half-width (progress units) of a planet's presence. Smaller = consecutive planets
+  // overlap LESS, so they read as further apart - more empty space travelled between worlds, and the
+  // current planet sits mostly alone instead of crowded by the next one already looming.
+  fadeFrac: 0.26, // fraction of the LEADING edge used to fade the mesh IN (as it appears far ahead)
+  exitFadeFrac: 0.62, // fraction of the TRAILING edge used to fade it OUT - larger, so a planet has
+  // mostly receded as it passes instead of lingering large over the NEXT project (the beats overlap)
+  introFade: 0.11, // the whole scene eases in over the first slice of the journey (wider = smoother
+  // entry from About: planets fade up gently as the pin engages instead of appearing abruptly)
+  outroFade: 0.07, // and fades out over the last slice as the pin releases into Contact
   panelHalf: 0.3, // |s| within which a project's 2D media/text panels are shown (around arrive). Kept
   // BELOW the half-beat spacing (~0.42 in s units) so consecutive panels no longer overlap - that
   // leaves a planet-only stretch (no text/media) as one project exits before the next fades in. Lower
@@ -128,17 +134,65 @@ export const PROJECTS_JOURNEY = {
   panelRise: 10, // px the panels translate up as they fade in (subtle life)
   dimStart: -0.35, // local phase s at which a planet begins to dim (well before arrive)
   dimRange: 0.4, // length of the dim ramp
+  exitDark: 0.6, // EXTRA darkening applied through the exit (after arrive). Planets are brightly lit, so
+  // alpha alone leaves a passed planet looming; darkening it sinks it into the background as it balloons
+  // past, so the CURRENT planet stays the focus. Only the trailing (exit) half is affected, not approach.
+  minBrightness: 0.05, // floor the darkening hits near the exit (it is also fading out via opacity by then)
   disappearRange: 0.42, // (fully-disappear mode only) how fast a planet vanishes after arrive
-  // --- SPATIAL path (leva-tunable; every planet travels enter -> arrive -> exit in world units, the
-  // SAME path for all). A flat HORIZONTAL sweep at one height (all y = 0): enters small far-RIGHT
-  // (next-planet teaser), arrives LEFT behind the media (fully blocked is fine) clearing the text,
-  // exits off to the left. Depth (z) still gives the grow as it approaches. ---
-  enter: [9, 0, -16] as [number, number, number], //    far RIGHT -> small "next planet" teaser
-  arrive: [-2.5, 0, -5] as [number, number, number], //  near, LEFT, behind the media (occluded is fine)
-  exit: [-14, 0, -16] as [number, number, number], //   off far-left + recedes; mirrors enter around arrive
-  // (enter->arrive and arrive->exit are equal-length, traversed at constant velocity = even spacing)
-  dim: 0.4, // gentle now (the planet sits on the LEFT, not over the text), so the current planet stays visible
+  // --- SPATIAL path (leva-tunable). DEPTH-LED, not a sideways sweep: every planet shares a BASE path
+  // (mostly along Z) that each one offsets into its own "lane" (see below), so the journey reads as
+  // flying THROUGH space toward each world rather than planets sliding across a conveyor.
+  //   enter  = far ahead, near screen-centre -> a distant speck you zoom toward (z deep, x/y ~ 0)
+  //   arrive = the readable beat, pulled in close; the lane offset slides it beside a panel
+  //   exit   = at the camera plane (z ~ +): it balloons and the lane swings it off-screen = a fly-by
+  // enter->arrive (long, slow approach) and arrive->exit (short, fast pass) differ in length on purpose:
+  // perspective then makes the planet drift in gently and whip past at the end.
+  enter: [0, 0, -38] as [number, number, number], //   far ahead, centred -> distant speck
+  arrive: [0, 0, -5.5] as [number, number, number], // pulled in close for the read (lane offsets it sideways)
+  exit: [0, 0, 1.5] as [number, number, number], //    near the camera -> grows + drifts off as we pass
+  dim: 0.42, // dims at arrive so the media/text read over it; stays dim as it passes
   recede: true, // arrive = recede + dim (default) vs. fully disappear (the single tunable from the spec)
+
+  // --- LANES: each planet flies a STRAIGHT line straight toward the camera, offset laterally by a
+  // CONSTANT [x, y] (only Z changes along enter -> arrive -> exit). Because the offset is constant in
+  // world space, the planet's screen position moves radially OUTWARD from the centre vanishing point as
+  // it nears - the exact lines the star streaks flow along - so the planet just "keeps zooming" and
+  // slides off its own corner naturally, never veering sideways, and the background lines up with it.
+  // The corners ALTERNATE left/right (and up/down) so you fly past worlds on BOTH sides of the screen,
+  // not just one - which also keeps consecutive planets well apart (one exits left as the next comes in
+  // on the right). laneYScale squashes the vertical so the planets stay in the readable band.
+  laneDirs: [
+    [0.72, -0.48], //  planet 0: passes on the RIGHT, low
+    [-0.72, 0.5], //   planet 1: passes on the LEFT, high
+    [0.72, 0.5], //    planet 2: passes on the RIGHT, high
+    [-0.72, -0.48], // planet 3: passes on the LEFT, low
+  ] as [number, number][],
+  laneAmp: 4.0, //    constant world-space lateral offset (the reading spot + how far to the side it passes)
+  laneYScale: 0.7, // global squash on the vertical lane offset (keep planets in the readable band)
+
+  // --- STARS: the "moving through space" backdrop - a corridor of faint star streaks that stream past
+  // the journey camera (three/JourneyStars). A slow constant drift keeps it alive while you read a
+  // project; it accelerates into warp streaks with SCROLL VELOCITY as you travel to the next one. ---
+  stars: {
+    count: 460,
+    spreadX: 22, //   half-width of the corridor (world units) - wide enough to fill frame near the camera
+    spreadY: 13, //   half-height
+    depth: 118, //    corridor length along Z (stars recycle from the near end back to the far end)
+    near: 4.5, //     recycle once a star passes this far in FRONT of the camera (camZ + near)
+    baseDrift: 3.0, // units/s the field always coasts toward you (gentle, while you read a project)
+    boost: 92, //     scroll velocity (d projectsProgress / dt) -> extra speed. Roughly tracks the planet
+    //                approach rate so the background moves WITH the planets, but a touch under for calm.
+    maxSpeed: 50, //  clamp so a fast scroll flick doesn't tear the field into long streaks
+    streakScale: 0.065, // world speed -> streak length. Low, so the warp stays a gentle drift of short
+    //                    streaks (subtle), not an aggressive hyperspace tunnel.
+    streakMin: 0.1, //  a near-point at rest
+    streakMax: 2.6, //  longest warp streak (short = subtle)
+    opacityBase: 0.16, // faint at coast (while reading)
+    opacityPeak: 0.42, // and only modestly brighter at full warp (kept low so it stays a backdrop)
+    fadeIn: 0.1, //     ease the whole field IN over the first slice of the journey (no pop at the pin)
+    fadeOut: 0.07, //   and OUT over the last slice as the pin releases
+    color: '#bcd4f2', // faint blue-white
+  },
 
   // --- CAMERA (leva-tunable): STATIC during the journey (the planets carry all the motion, and the
   // screen must not move vertically). Keep the knobs at 0; raise only if a little drift is wanted. ---
