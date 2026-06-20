@@ -43,6 +43,13 @@ function OrbSystem({
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   useOrbChoreography(groupRef, cursor, choreo)
+  // Reduced motion runs the canvas on 'demand'; nudge a render when the orb is activated so its
+  // (instant) reveal actually paints. On the animated path the 'always' loop already covers it.
+  const invalidate = useThree((state) => state.invalidate)
+  const orbStarted = useScrollStore((state) => state.orbStarted)
+  useEffect(() => {
+    if (orbStarted) invalidate()
+  }, [orbStarted, invalidate])
   return (
     <group ref={groupRef}>
       <Orb {...core} segments={CORE.segments} />

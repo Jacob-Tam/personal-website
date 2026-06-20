@@ -72,6 +72,16 @@ export const CHOREOGRAPHY = {
   interludePinVh: 0.9, // interlude pin length as a fraction of viewport height ("harder to scroll")
 }
 
+// Click-to-reveal intro (Hero start circle -> store.orbStarted/orbStartAt). The core grows in from a
+// point first, then the particles pop in ONE BY ONE (a staggered cascade), so the orb assembles itself
+// when the user activates it. Times in seconds from the click. Skipped (instant) under reduced motion.
+export const ORB_REVEAL = {
+  coreDur: 1.4, // the core eases up from scale 0 over this (slow, graceful)
+  particleStart: 1.0, // particles begin appearing at this point (while the core is still finishing)
+  particleStagger: 0.05, // gap between consecutive particles popping in -> the "one by one" cascade
+  particleFade: 0.6, // each particle eases up over this
+}
+
 export const SHED = {
   startFraction: 0.15, // driftProgress at which the first particles begin to release
   lift: 5, // extra upward distance a fully-released particle travels

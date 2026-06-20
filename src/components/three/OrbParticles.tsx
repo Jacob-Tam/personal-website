@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
-import { SEED, SHED } from '../../lib/constants'
+import { ORB_REVEAL, SEED, SHED } from '../../lib/constants'
 import { SUPERNOVA, supernovaEnvelope } from '../../lib/supernova'
 
 export type ParticleProps = {
@@ -174,7 +174,10 @@ export function OrbParticles(props: ParticleProps) {
   }, [material, props.brightness, invalidate])
 
   useFrame((state) => {
-    const { driftProgress: drift, reducedMotion, supernovaAt } = useScrollStore.getState()
+    const { driftProgress: drift, reducedMotion, supernovaAt, orbStarted, orbStartAt } = useScrollStore.getState()
+    // Click-to-reveal: before activation every particle is hidden (scale 0); after, they pop in ONE BY
+    // ONE (staggered by index) once the core has started forming. Instant under reduced motion.
+    const revealElapsed = orbStarted ? (performance.now() - orbStartAt) / 1000 : 0
     // Under reduced motion the particles hold their positions (frozen orbit). drift stays 0 anyway
     // (choreography is off under reduced motion), so there's no shedding either (docs/01).
     const time = reducedMotion ? 0 : state.clock.elapsedTime
@@ -213,7 +216,17 @@ export function OrbParticles(props: ParticleProps) {
         dummy.quaternion.identity()
       }
 
-      dummy.scale.setScalar(size[i] * (1 + nova * (SUPERNOVA.pieceGrowth - 1)))
+      let pReveal = 0
+      if (orbStarted) {
+        pReveal = reducedMotion
+          ? 1
+          : THREE.MathUtils.clamp(
+              (revealElapsed - ORB_REVEAL.particleStart - i * ORB_REVEAL.particleStagger) / ORB_REVEAL.particleFade,
+              0,
+              1,
+            )
+      }
+      dummy.scale.setScalar(size[i] * (1 + nova * (SUPERNOVA.pieceGrowth - 1)) * pReveal)
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
 

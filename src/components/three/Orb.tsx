@@ -3,7 +3,13 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
 import { SUPERNOVA, supernovaEnvelope } from '../../lib/supernova'
+import { ORB_REVEAL } from '../../lib/constants'
 import { coreFragmentShader, coreVertexShader } from './coreShader'
+
+const smoothstep = (edge0: number, edge1: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)))
+  return t * t * (3 - 2 * t)
+}
 
 export type OrbProps = {
   radius: number
@@ -53,7 +59,7 @@ export function Orb(props: OrbProps) {
   useEffect(() => () => material.dispose(), [material])
 
   useFrame((state) => {
-    const { reducedMotion, supernovaAt } = useScrollStore.getState()
+    const { reducedMotion, supernovaAt, orbStarted, orbStartAt } = useScrollStore.getState()
     const u = material.uniforms
     // "67" supernova: a bright emissive flash + scale swell that eases back. Off under reduced
     // motion, where the core also holds still (uTime + breathing frozen, docs/01).
@@ -75,7 +81,14 @@ export function Orb(props: OrbProps) {
     // reforms as they stream back. A scale dip is used (not the emissive flash, which the bloom/tone-
     // mapping pipeline swallows) so the detonation reads reliably.
     const novaScale = Math.max(0.06, 1 - nova * SUPERNOVA.coreCollapse)
-    meshRef.current.scale.setScalar(breathe * novaScale)
+    // Click-to-reveal: the core is hidden (scale 0) until activated, then grows in from a point. Instant
+    // under reduced motion. This is the FIRST beat of the reveal; the particles cascade in after.
+    const reveal = !orbStarted
+      ? 0
+      : reducedMotion
+        ? 1
+        : smoothstep(0, ORB_REVEAL.coreDur, (performance.now() - orbStartAt) / 1000)
+    meshRef.current.scale.setScalar(breathe * novaScale * reveal)
   })
 
   return <mesh ref={meshRef} geometry={geometry} material={material} />

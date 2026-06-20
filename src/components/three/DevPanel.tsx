@@ -68,7 +68,7 @@ export function DevPanel() {
           <span aria-hidden>⠿</span> drag
         </div>
         <div className="dev-scroll overflow-y-auto" style={{ maxHeight: maxBodyHeight }}>
-          <Leva fill flat collapsed titleBar={{ drag: false, title: 'orb controls' }} theme={levaTheme} />
+          <Leva fill flat collapsed titleBar={{ drag: false, title: 'controls' }} theme={levaTheme} />
         </div>
       </div>
     </div>

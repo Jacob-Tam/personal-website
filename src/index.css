@@ -84,6 +84,145 @@
   }
 }
 
+/* Hero name reveal (Hero.tsx): a soft LEFT-TO-RIGHT wipe. The mask gradient's opaque (#000) region
+   grows from the left edge to the right as --hero-wipe animates from off-left to past-right, so the
+   name fades in left to right with a soft leading edge. Registering the custom property via @property
+   is what lets it (and therefore the gradient stop) interpolate in a transition. Reduced motion shows
+   the name immediately. */
+@property --hero-wipe {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+.hero-name {
+  --hero-wipe: -14%;
+  -webkit-mask-image: linear-gradient(to right, #000 var(--hero-wipe), transparent calc(var(--hero-wipe) + 14%));
+  mask-image: linear-gradient(to right, #000 var(--hero-wipe), transparent calc(var(--hero-wipe) + 14%));
+  transition: --hero-wipe 1.2s ease-out;
+}
+.hero-name.is-in {
+  --hero-wipe: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-name {
+    --hero-wipe: 100%;
+    transition: none;
+  }
+}
+
+/* Hero start circle (Hero.tsx): the click target that reveals the orb, sized to match the orb itself.
+   By default it shows ONLY a softly pulsing accent "seed" (no outline); on hover the orb-sized ring
+   lights up, the seed brightens, and the mini particle orbs (.orb-spark) spit outward on a loop. Fades
+   itself in/out via the Tailwind opacity it's given. Looping motion is disabled under reduced motion. */
+.orb-start {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 7rem; /* ~matches the orb core's on-screen diameter */
+  height: 7rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--color-text) 24%, transparent); /* subtle grey ring; lights to accent on hover */
+  cursor: pointer;
+  transition: opacity 0.7s ease, border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+}
+.orb-start:hover {
+  border-color: var(--color-accent-hi);
+  box-shadow: 0 0 34px 6px color-mix(in oklab, var(--color-accent) 26%, transparent);
+  transform: scale(1.04);
+}
+.orb-start-core {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: var(--color-accent-hi);
+  box-shadow: 0 0 14px 2px color-mix(in oklab, var(--color-accent-hi) 60%, transparent);
+  animation: orb-seed-pulse 2.6s ease-in-out infinite;
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+}
+.orb-start:hover .orb-start-core {
+  box-shadow: 0 0 22px 5px var(--color-accent-hi);
+  transform: scale(1.3);
+}
+.orb-spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 9999px;
+  background: var(--color-accent-hi);
+  box-shadow: 0 0 9px 2px color-mix(in oklab, var(--color-accent-hi) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+.orb-start:hover .orb-spark {
+  animation: orb-spark 1.2s ease-out infinite;
+  animation-delay: var(--d);
+}
+@keyframes orb-seed-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+@keyframes orb-spark {
+  0% {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x), var(--y)) scale(0.25);
+    opacity: 0;
+  }
+}
+/* Subtle "click here" cue under the start circle (Hero.tsx): mono label + a small cursor glyph that
+   gently bobs. Fades out with the circle once the orb is started. */
+.orb-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-mute);
+  transition: opacity 0.7s ease;
+  animation: orb-hint-bob 2.4s ease-in-out infinite;
+}
+.orb-hint svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+@keyframes orb-hint-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orb-start-core {
+    animation: none;
+  }
+  .orb-start:hover .orb-spark {
+    animation: none;
+  }
+  .orb-hint {
+    animation: none;
+  }
+}
+
 /* DEV-only: a visible, grabbable scrollbar for the leva control panel (DevPanel). */
 .dev-scroll {
   scrollbar-width: thin;

@@ -1,6 +1,6 @@
-import { useRef, type RefObject } from 'react'
-import { useFrame } from '@react-three/fiber'
-import type { Group } from 'three'
+import { useEffect, useRef, type RefObject } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import type { Group, PerspectiveCamera } from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
 import { GROUP } from '../../lib/constants'
 
@@ -25,7 +25,7 @@ function beatEnvelope(progress: number) {
   Drives the orb group each frame from the scroll store (docs/03, docs/05). All values are read
   via getState() (no reactive subscription). Tuning values come from the dev leva 'choreography'
   folder (defaults baked in lib/constants). The full lifecycle:
-    hero       -> cursor-follow offset, fading out as heroProgress rises (x settles to 0)
+    hero       -> rests at the start circle, cursor-follow offset, fading out as heroProgress rises
     interlude  -> arcs clockwise around the centered text (above -> right -> below), one pulse
     about      -> drifts upward (driftProgress) from below the text until it clears the screen
   Particle shedding is handled in OrbParticles (also off driftProgress).
@@ -41,6 +41,26 @@ export function useOrbChoreography(
   // (e.g. already off-screen when phase is 'past'), then lerp as usual. The position is a pure
   // function of scroll state, so snapping is always correct - the lerp is only for in-motion smoothing.
   const settled = useRef(false)
+
+  // Hero resting spot, anchored to the START CIRCLE (Hero.tsx) so the orb reveals EXACTLY where the
+  // circle sits. Computed from the circle's on-screen centre projected onto the orb plane (world z = 0),
+  // once + on resize/font load (not per frame), so it's robust to layout/viewport with no hand-tuning.
+  const camera = useThree((state) => state.camera)
+  const size = useThree((state) => state.size)
+  const heroBase = useRef({ x: 0, y: 0 })
+  useEffect(() => {
+    const compute = () => {
+      const el = document.querySelector('.orb-start')
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const ndcX = ((rect.left + rect.width / 2) / size.width) * 2 - 1
+      const ndcY = -((rect.top + rect.height / 2) / size.height) * 2 + 1
+      const halfHeight = Math.tan(((camera as PerspectiveCamera).fov * Math.PI) / 360) * camera.position.z
+      heroBase.current = { x: ndcX * halfHeight * (size.width / size.height), y: ndcY * halfHeight }
+    }
+    compute()
+    document.fonts?.ready.then(compute) // fonts can reflow the name (and shift the circle) after mount
+  }, [camera, size])
 
   useFrame((_, delta) => {
     const group = groupRef.current
@@ -66,12 +86,15 @@ export function useOrbChoreography(
     const orbitX = choreo.interludeRadius * Math.cos(theta)
     const orbitY = choreo.interludeRadius * Math.sin(theta)
 
-    // x: faded cursor offset (-> 0 as the hero exits) + the interlude arc.
-    // y: faded cursor offset + the interlude arc + the upward scroll drift through About.
+    // x: circle anchor + faded cursor offset (-> 0 as the hero exits) + the interlude arc.
+    // y: same + the interlude arc + the upward scroll drift through About.
+    const base = phase === 'hero' ? heroBase.current : null
     const cursorInfluence = reducedMotion ? 0 : 1 - heroProgress
-    const targetX = mouse.x * cursor.clampX * cursorInfluence + interludeActive * orbitX
+    const targetX = ((base?.x ?? 0) + mouse.x * cursor.clampX) * cursorInfluence + interludeActive * orbitX
     const targetY =
-      mouse.y * cursor.clampY * cursorInfluence + interludeActive * orbitY + driftProgress * choreo.driftDistance
+      ((base?.y ?? 0) + mouse.y * cursor.clampY) * cursorInfluence +
+      interludeActive * orbitY +
+      driftProgress * choreo.driftDistance
 
     // Frame-rate-independent easing: cursor rate for x, the choreography rate for the y drift.
     // First frame after (re)mount snaps (alpha 1) so the orb never eases in from the origin.

@@ -24,6 +24,8 @@ interface ScrollState {
   reducedMotion: boolean // prefers-reduced-motion
   lowPower: boolean // mobile / weak GPU -> 3D fallback (no canvas, no choreography/parallax)
   supernovaAt: number // performance.now() of the last "67" supernova trigger (0 = never)
+  orbStarted: boolean // the hero orb has been activated (clicked) - drives the staged reveal
+  orbStartAt: number // performance.now() of the activation, so the reveal can ease in over time
   projectsActive: boolean // the Projects journey pin is engaged (canvas re-enabled; low-freq toggle)
   projectsProgress: number // 0..1 across the whole pinned Projects journey (high-freq scrub)
 
@@ -38,6 +40,7 @@ interface ScrollState {
   setReducedMotion: (value: boolean) => void
   setLowPower: (value: boolean) => void
   triggerSupernova: () => void
+  startOrb: () => void
   setProjectsActive: (value: boolean) => void
   setProjectsProgress: (value: number) => void
 }
@@ -55,6 +58,8 @@ export const useScrollStore = create<ScrollState>((set) => ({
   reducedMotion: detectReducedMotion(), // seeded at load; useReducedMotion keeps it live
   lowPower: detectLowPower(), // resolved once at load; gates the canvas, choreography, and parallax
   supernovaAt: 0,
+  orbStarted: false,
+  orbStartAt: 0,
   projectsActive: false,
   projectsProgress: 0,
 
@@ -69,6 +74,8 @@ export const useScrollStore = create<ScrollState>((set) => ({
   setReducedMotion: (value) => set({ reducedMotion: value }),
   setLowPower: (value) => set({ lowPower: value }),
   triggerSupernova: () => set({ supernovaAt: performance.now() }),
+  // One-shot: activate the orb (idempotent so a double-click can't restart the reveal mid-flight).
+  startOrb: () => set((state) => (state.orbStarted ? {} : { orbStarted: true, orbStartAt: performance.now() })),
   setProjectsActive: (value) => set({ projectsActive: value }),
   setProjectsProgress: (value) => set({ projectsProgress: value }),
 }))
