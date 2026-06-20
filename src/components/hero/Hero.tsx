@@ -105,8 +105,16 @@ export function Hero() {
               orbStarted ? 'opacity-0' : isLoaded ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M5.5 3.5l11.5 6.2-4.8 1.2-2.1 4.6z" />
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 12H5" />
+              <path d="M11 6l-6 6 6 6" />
             </svg>
             click here
           </span>

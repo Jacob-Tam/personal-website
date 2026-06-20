@@ -174,7 +174,10 @@ export function OrbParticles(props: ParticleProps) {
   }, [material, props.brightness, invalidate])
 
   useFrame((state) => {
-    const { driftProgress: drift, reducedMotion, supernovaAt, orbStarted, orbStartAt } = useScrollStore.getState()
+    const { driftProgress, reducedMotion, supernovaAt, orbStarted, orbStartAt, phase: orbPhase } = useScrollStore.getState()
+    // Shedding only happens during the upward phases; gate by phase so a stale driftProgress (left
+    // non-zero by a scroll jump / restore) can't shed the hero orb's particles before it's revealed.
+    const drift = orbPhase === 'about' || orbPhase === 'past' ? driftProgress : 0
     // Click-to-reveal: before activation every particle is hidden (scale 0); after, they pop in ONE BY
     // ONE (staggered by index) once the core has started forming. Instant under reduced motion.
     const revealElapsed = orbStarted ? (performance.now() - orbStartAt) / 1000 : 0

@@ -2,7 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import type { Group, PerspectiveCamera } from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
-import { GROUP } from '../../lib/constants'
+import { GROUP, ORB_REVEAL } from '../../lib/constants'
 
 type CursorTuning = { lerp: number; clampX: number; clampY: number }
 type ChoreographyTuning = {
@@ -44,8 +44,8 @@ export function useOrbChoreography(
   const settled = useRef(false)
 
   // Hero resting spot, anchored to the START CIRCLE (Hero.tsx) so the orb reveals EXACTLY where the
-  // circle sits. Computed from the circle's on-screen centre projected onto the orb plane (world z = 0),
-  // once + on resize/font load (not per frame), so it's robust to layout/viewport with no hand-tuning.
+  // circle sits. Computed from the circle's centre projected onto the orb plane (world z = 0), once +
+  // on resize/font load (not per frame), so it's robust to layout/viewport with no hand-tuning.
   const camera = useThree((state) => state.camera)
   const size = useThree((state) => state.size)
   const heroBase = useRef({ x: 0, y: 0 })
@@ -54,8 +54,15 @@ export function useOrbChoreography(
       const el = document.querySelector('.orb-start')
       if (!el) return
       const rect = el.getBoundingClientRect()
-      const ndcX = ((rect.left + rect.width / 2) / size.width) * 2 - 1
-      const ndcY = -((rect.top + rect.height / 2) / size.height) * 2 + 1
+      // Measure the circle in DOCUMENT space (add the scroll offset) so this is scroll-independent: the
+      // hero sits at document top, so its document position equals its viewport position at the frame
+      // this anchor is actually used (heroProgress 0, page at top). Without the offset, a re-run while
+      // scrolled - a canvas resize fires one when the scrollbar toggles as a pin engages - would measure
+      // the circle off-screen and park the orb's hero rest spot at the top of the screen.
+      const cx = rect.left + rect.width / 2 + window.scrollX
+      const cy = rect.top + rect.height / 2 + window.scrollY
+      const ndcX = (cx / size.width) * 2 - 1
+      const ndcY = -(cy / size.height) * 2 + 1
       const halfHeight = Math.tan(((camera as PerspectiveCamera).fov * Math.PI) / 360) * camera.position.z
       heroBase.current = { x: ndcX * halfHeight * (size.width / size.height), y: ndcY * halfHeight }
     }
@@ -67,7 +74,7 @@ export function useOrbChoreography(
     const group = groupRef.current
     if (!group) return
 
-    const { mouse, heroProgress, interludeProgress, driftProgress, phase, reducedMotion } =
+    const { mouse, heroProgress, interludeProgress, driftProgress, phase, reducedMotion, orbStarted, orbStartAt } =
       useScrollStore.getState()
     const beat = reducedMotion ? 0 : beatEnvelope(interludeProgress)
 
@@ -88,21 +95,41 @@ export function useOrbChoreography(
 
     // x: circle anchor + faded cursor offset (-> 0 as the hero exits) + the interlude arc.
     // y: same + the interlude arc + the upward scroll drift through About.
+    // The cursor offset fades with the hero exit (cursorFade) AND eases in over the reveal (revealRamp)
+    // so the orb appears EXACTLY centred on the start circle - where the click landed - then begins
+    // trailing the cursor, instead of snapping to the cursor (which is sitting on the circle at click).
     const base = phase === 'hero' ? heroBase.current : null
-    const cursorInfluence = reducedMotion ? 0 : 1 - heroProgress
-    const targetX = ((base?.x ?? 0) + mouse.x * cursor.clampX) * cursorInfluence + interludeActive * orbitX
+    const cursorFade = reducedMotion ? 0 : 1 - heroProgress
+    const revealRamp = orbStarted
+      ? Math.min(1, (performance.now() - orbStartAt) / 1000 / ORB_REVEAL.coreDur)
+      : 0
+    const cursorOffsetX = mouse.x * cursor.clampX * cursorFade * revealRamp
+    const cursorOffsetY = mouse.y * cursor.clampY * cursorFade * revealRamp
+    // Drift only applies once we're actually in the upward phases. Gating by phase (not just trusting
+    // the raw value) keeps a stale driftProgress - ScrollTrigger can leave it non-zero after a jump /
+    // scroll-restore - from yanking the hero/interlude orb off the top of the screen.
+    const drift = phase === 'about' || phase === 'past' ? driftProgress : 0
+    const targetX = (base?.x ?? 0) * cursorFade + cursorOffsetX + interludeActive * orbitX
     const targetY =
-      ((base?.y ?? 0) + mouse.y * cursor.clampY) * cursorInfluence +
-      interludeActive * orbitY +
-      driftProgress * choreo.driftDistance
+      (base?.y ?? 0) * cursorFade + cursorOffsetY + interludeActive * orbitY + drift * choreo.driftDistance
 
-    // Frame-rate-independent easing: cursor rate for x, the choreography rate for the y drift.
+    // Frame-rate-independent easing. The hero keeps its floaty trailing ease (cursor follow). But once
+    // we're past the hero we ease MUCH faster so the orb tracks the interlude orbit/drift closely and
+    // can't short-cut the straight chord across the text on a quick scroll (with the slow ease it lags
+    // ~1s behind a far-ahead target and cuts through the middle; tracking tightly keeps it on the arc).
     // First frame after (re)mount snaps (alpha 1) so the orb never eases in from the origin.
-    const cursorAlpha = settled.current ? 1 - Math.pow(1 - cursor.lerp, delta * 60) : 1
-    const driftAlpha = settled.current ? 1 - Math.pow(1 - choreo.positionLerp, delta * 60) : 1
+    const orbitLerp = 0.32
+    const cursorRate = phase === 'hero' ? cursor.lerp : orbitLerp
+    const yRate = phase === 'hero' ? choreo.positionLerp : orbitLerp
+    const cursorAlpha = settled.current ? 1 - Math.pow(1 - cursorRate, delta * 60) : 1
+    const driftAlpha = settled.current ? 1 - Math.pow(1 - yRate, delta * 60) : 1
     group.position.x += (targetX - group.position.x) * cursorAlpha
     group.position.y += (targetY - group.position.y) * driftAlpha
     settled.current = true
+    ;(window as unknown as { __orb: unknown }).__orb = {
+      x: +group.position.x.toFixed(2), y: +group.position.y.toFixed(2),
+      tx: +targetX.toFixed(2), ty: +targetY.toFixed(2), phase, ip: +interludeProgress.toFixed(2),
+    }
 
     // The beat: a brief scale bump on the whole system.
     group.scale.setScalar(1 + choreo.pulseAmount * beat)
