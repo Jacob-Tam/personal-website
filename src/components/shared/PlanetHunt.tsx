@@ -25,6 +25,14 @@ const GRACE_MS = 900 // before the planets open fire
 const OVER_HOLD_MS = 2200
 const ACCENT = '120, 200, 245'
 const HOSTILE = '255, 120, 90'
+// Asteroids: solid obstacles you weave around. They block your shots and your ship, but the planets'
+// bolts pass straight through them (so they're never cover - only a hindrance).
+const ASTEROID_SPOTS = [
+  [0.3, 0.4],
+  [0.66, 0.34],
+  [0.5, 0.62],
+  [0.8, 0.56],
+]
 
 function mulberry32(seed: number) {
   return function () {
@@ -52,6 +60,7 @@ const STARS = (() => {
 
 type Bullet = { x: number; y: number; vx: number; vy: number; life: number }
 type Boom = { x: number; y: number; t: number; big: boolean; hostile?: boolean }
+type Asteroid = { x: number; y: number; vx: number; vy: number; r: number; angle: number; spin: number; verts: number[] }
 
 export function PlanetHunt({
   planetEls,
@@ -89,6 +98,20 @@ export function PlanetHunt({
     const bullets: Bullet[] = []
     const enemies: Bullet[] = []
     const booms: Boom[] = []
+    const asteroids: Asteroid[] = ASTEROID_SPOTS.map(([fx, fy]) => {
+      const dir = Math.random() * Math.PI * 2
+      const speed = 26 + Math.random() * 22
+      return {
+        x: fx * window.innerWidth,
+        y: fy * window.innerHeight,
+        vx: Math.cos(dir) * speed,
+        vy: Math.sin(dir) * speed,
+        r: 17 + Math.random() * 12,
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() * 2 - 1) * 0.5,
+        verts: Array.from({ length: 9 }, () => 0.7 + Math.random() * 0.45),
+      }
+    })
     const hp = planetEls.map(() => PLANET_HP)
     const nextEnemyFire = planetEls.map((_, i) => GRACE_MS + i * 450) // staggered first shots (ms elapsed)
     let lives = LIVES
@@ -142,6 +165,17 @@ export function PlanetHunt({
       const elapsed = now - t0
       const over = wonAt > 0 || lostAt > 0
 
+      // --- asteroids drift + bounce off the edges ---
+      for (const a of asteroids) {
+        a.x += a.vx * dt
+        a.y += a.vy * dt
+        a.angle += a.spin * dt
+        if (a.x < a.r) { a.x = a.r; a.vx = Math.abs(a.vx) }
+        else if (a.x > W - a.r) { a.x = W - a.r; a.vx = -Math.abs(a.vx) }
+        if (a.y < a.r) { a.y = a.r; a.vy = Math.abs(a.vy) }
+        else if (a.y > H - a.r) { a.y = H - a.r; a.vy = -Math.abs(a.vy) }
+      }
+
       // --- movement ---
       if (!over) {
         if (mouse.active) {
@@ -161,6 +195,17 @@ export function PlanetHunt({
         ship.x = clamp(ship.x + ship.vx, 8, W - 8)
         ship.y = clamp(ship.y + ship.vy, 8, H - 8)
         if (speed > 0.5) ship.angle = Math.atan2(ship.vy, ship.vx)
+        // can't fly through asteroids - get pushed to their edge, so you weave around them
+        for (const a of asteroids) {
+          const dx = ship.x - a.x
+          const dy = ship.y - a.y
+          const d = Math.hypot(dx, dy)
+          const min = a.r + SHIP.hitRadius
+          if (d > 0.001 && d < min) {
+            ship.x = a.x + (dx / d) * min
+            ship.y = a.y + (dy / d) * min
+          }
+        }
       }
 
       // --- live target rects (alive planets only) ---
@@ -205,6 +250,16 @@ export function PlanetHunt({
             damage(t, 1, bull.x, bull.y)
             hit = true
             break
+          }
+        }
+        // YOUR bolts are stopped by asteroids (the planets' bolts pass through, handled below)
+        if (!hit) {
+          for (const a of asteroids) {
+            if (Math.hypot(bull.x - a.x, bull.y - a.y) < a.r) {
+              booms.push({ x: bull.x, y: bull.y, t: 0, big: false })
+              hit = true
+              break
+            }
           }
         }
         if (hit || bull.life <= 0 || bull.x < -20 || bull.x > W + 20 || bull.y < -20 || bull.y > H + 20) {
@@ -270,6 +325,9 @@ export function PlanetHunt({
         ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2)
         ctx.fill()
       }
+
+      // asteroids
+      for (const a of asteroids) drawAsteroid(ctx, a)
 
       // target reticles + remaining-hp arcs
       for (const t of targets) {
@@ -415,4 +473,35 @@ function drawSaucer(ctx: CanvasRenderingContext2D) {
     ctx.arc(lx, 1.6, 1.1, 0, Math.PI * 2)
     ctx.fill()
   }
+}
+
+function drawAsteroid(ctx: CanvasRenderingContext2D, a: Asteroid) {
+  ctx.save()
+  ctx.translate(a.x, a.y)
+  ctx.rotate(a.angle)
+  ctx.beginPath()
+  const n = a.verts.length
+  for (let i = 0; i < n; i++) {
+    const ang = (i / n) * Math.PI * 2
+    const rr = a.r * a.verts[i]
+    const px = Math.cos(ang) * rr
+    const py = Math.sin(ang) * rr
+    if (i === 0) ctx.moveTo(px, py)
+    else ctx.lineTo(px, py)
+  }
+  ctx.closePath()
+  ctx.fillStyle = '#4b5059'
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(185, 200, 220, 0.35)'
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+  // a couple of craters for texture
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'
+  ctx.beginPath()
+  ctx.arc(-a.r * 0.22, -a.r * 0.12, a.r * 0.2, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(a.r * 0.28, a.r * 0.18, a.r * 0.13, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
 }
