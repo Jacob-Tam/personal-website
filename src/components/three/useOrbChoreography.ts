@@ -7,6 +7,7 @@ import { GROUP } from '../../lib/constants'
 type CursorTuning = { lerp: number; clampX: number; clampY: number }
 type ChoreographyTuning = {
   interludeRadius: number
+  interludeRadiusY: number
   driftDistance: number
   positionLerp: number
   pulseAmount: number
@@ -75,16 +76,15 @@ export function useOrbChoreography(
       group.rotation.y += delta * GROUP.idleSpinY * (1 - choreo.rotationStill * beat)
     }
 
-    // Interlude: the orb arcs CLOCKWISE around the centered text - starts above it, swings through
-    // the right, ends below it at horizontal center. Smoothstep eases the arc in/out so there is no
-    // snap at the start. theta: +pi/2 (top) -> 0 (right) -> -pi/2 (bottom). Active from the
-    // interlude onward; during About the arc holds at the bottom (0, -radius) and the drift lifts
-    // it from there up and off the screen.
+    // Interlude: the orb ORBITS the centered text on a wide, short ellipse - in from ABOVE, around the
+    // RIGHT side, and down to BELOW it (so it travels WITH the downward scroll). Smoothstep eases it
+    // in/out so there is no snap. theta: +pi/2 (top) -> 0 (right) -> -pi/2 (bottom). The wide, short
+    // ellipse keeps it hugging the one-line text and never riding too high above it.
     const interludeActive = phase === 'hero' ? 0 : 1
     const eased = interludeProgress * interludeProgress * (3 - 2 * interludeProgress)
     const theta = (0.5 - eased) * Math.PI
     const orbitX = choreo.interludeRadius * Math.cos(theta)
-    const orbitY = choreo.interludeRadius * Math.sin(theta)
+    const orbitY = choreo.interludeRadiusY * Math.sin(theta)
 
     // x: circle anchor + faded cursor offset (-> 0 as the hero exits) + the interlude arc.
     // y: same + the interlude arc + the upward scroll drift through About.

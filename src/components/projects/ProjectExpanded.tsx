@@ -1,8 +1,44 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useRef, type CSSProperties } from 'react'
 import gsap from 'gsap'
 import { MEDIA_READY } from '../../lib/assets'
 import { lenis } from '../../lib/lenis'
 import type { Project } from './projectsData'
+
+// Seeded space backdrop for the expanded view: faint stars (a subset twinkle) + a few meteors that
+// streak across on a loop. Deterministic so it never reshuffles. Reuses .star / .shooting-star (css).
+function mulberry32(seed: number) {
+  return function () {
+    seed |= 0
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+const EXPANDED_STARS = (() => {
+  const rand = mulberry32(4471)
+  return Array.from({ length: 48 }, () => {
+    const size = rand() > 0.86 ? 2 : rand() > 0.6 ? 1.5 : 1
+    return {
+      top: rand() * 100,
+      left: rand() * 100,
+      size,
+      opacity: Math.min(0.2 + rand() * 0.4, 0.6),
+      twinkle: rand() > 0.55,
+      duration: 4 + rand() * 4,
+      delay: -rand() * 8,
+    }
+  })
+})()
+const EXPANDED_METEORS = (() => {
+  const rand = mulberry32(9012)
+  return Array.from({ length: 4 }, (_, i) => ({
+    top: rand() * 55 - 5,
+    left: rand() * 70 - 5,
+    duration: 4.5 + rand() * 3,
+    delay: i * 2.7 + rand() * 1.4,
+  }))
+})()
 
 /*
   Full-screen expanded project view, opened by clicking a journey project's MEDIA. The media card
@@ -32,6 +68,7 @@ export function ProjectExpanded({
   onClose: () => void
 }) {
   const backdropRef = useRef<HTMLDivElement>(null)
+  const starsRef = useRef<HTMLDivElement>(null)
   const mediaRef = useRef<HTMLDivElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -52,17 +89,18 @@ export function ProjectExpanded({
   function requestClose() {
     if (closingRef.current) return
     closingRef.current = true
-    gsap.killTweensOf([mediaRef.current, backdropRef.current, bodyRef.current])
+    gsap.killTweensOf([mediaRef.current, backdropRef.current, bodyRef.current, starsRef.current])
     const to = transformToOrigin()
     const tl = gsap.timeline({ onComplete: onClose })
     tl.to(bodyRef.current, { opacity: 0, y: 18, duration: 0.25, ease: 'power2.in' }, 0)
     tl.to(mediaRef.current, { ...to, rotationY: -360, transformPerspective: PERSPECTIVE, duration: DURATION * 0.8, ease: EASE }, 0)
-    tl.to(backdropRef.current, { opacity: 0, duration: 0.4, ease: 'power2.in' }, DURATION * 0.35)
+    tl.to([backdropRef.current, starsRef.current], { opacity: 0, duration: 0.4, ease: 'power2.in' }, DURATION * 0.35)
   }
 
   useLayoutEffect(() => {
     const media = mediaRef.current!
     const backdrop = backdropRef.current!
+    const stars = starsRef.current!
     const body = bodyRef.current!
     // Clear any leftover transform before measuring so we get the true NATURAL rect. This also makes
     // the effect safe under React StrictMode's double-invoke: the second run would otherwise measure
@@ -78,6 +116,7 @@ export function ProjectExpanded({
       0,
     )
     tl.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: 'power2.out' }, 0)
+    tl.fromTo(stars, { opacity: 0 }, { opacity: 1, duration: 0.7, ease: 'power2.out' }, 0.15)
     tl.fromTo(body, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }, DURATION * 0.45)
 
     // a11y + scroll lock. Focus the close button; restore focus to the opener on unmount.
@@ -91,7 +130,7 @@ export function ProjectExpanded({
 
     return () => {
       window.removeEventListener('keydown', handleKey)
-      gsap.killTweensOf([media, backdrop, body])
+      gsap.killTweensOf([media, backdrop, body, stars])
       if (lenis) lenis.start()
       previouslyFocused?.focus?.()
     }
@@ -101,6 +140,33 @@ export function ProjectExpanded({
   return (
     <div role="dialog" aria-modal="true" aria-label={project.title} className="fixed inset-0 z-50 overflow-hidden">
       <div ref={backdropRef} aria-hidden className="absolute inset-0 bg-bg/95 backdrop-blur-md" />
+
+      {/* Space backdrop over the dim layer (behind the media + text): faint stars + streaking meteors. */}
+      <div ref={starsRef} aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        {EXPANDED_STARS.map((star, index) => {
+          const style: Record<string, string | number> = {
+            top: `${star.top}%`,
+            left: `${star.left}%`,
+            width: `${star.size}px`,
+            height: `${star.size}px`,
+          }
+          if (star.twinkle) {
+            style['--peak'] = star.opacity
+            style.animationDuration = `${star.duration}s`
+            style.animationDelay = `${star.delay}s`
+          } else {
+            style.opacity = star.opacity
+          }
+          return <span key={`s${index}`} className={star.twinkle ? 'star star-twinkle' : 'star'} style={style as CSSProperties} />
+        })}
+        {EXPANDED_METEORS.map((meteor, index) => (
+          <span
+            key={`m${index}`}
+            className="shooting-star"
+            style={{ top: `${meteor.top}%`, left: `${meteor.left}%`, animationDuration: `${meteor.duration}s`, animationDelay: `${meteor.delay}s` }}
+          />
+        ))}
+      </div>
 
       {/* Full-height flex column: media area flexes to fill the space above the natural-height text, so
           the whole thing fits one screen. Clicking the dim area (not the media/text) closes. */}

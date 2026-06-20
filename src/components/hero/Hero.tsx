@@ -57,7 +57,7 @@ export function Hero() {
         }}
       />
 
-      <div className="relative flex w-full translate-y-[7vh] flex-col items-center">
+      <div className="relative flex w-full translate-y-[3vh] flex-col items-center">
         {/* Name in the same face as the giant section background words (BackgroundWord: semibold,
             tracking-tighter), faint over the orb. Fades in LEFT-TO-RIGHT via the .hero-name mask wipe. */}
         <h1
@@ -67,45 +67,50 @@ export function Hero() {
         >
           Jacob Tam
         </h1>
-        {/* Tagline fades in only AFTER the orb is started (the click), not on load, with a short delay so
-            it lands as the orb is forming. Kept in the flow (reserved space) so nothing shifts on click. */}
+        {/* Tagline sits directly below the name (so it reads high, near "Jacob Tam"). Fades in only
+            AFTER the orb is started (the click), not on load, with a short delay so it lands as the orb
+            is forming. Kept in the flow (reserved space) so nothing shifts on the click. */}
         <p
-          className={`mt-10 max-w-xl text-body-lg text-text-mute transition-all delay-500 duration-1000 ease-out ${
+          className={`mt-[3vh] max-w-xl text-body-lg text-text-mute transition-all delay-500 duration-1000 ease-out ${
             orbStarted ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           }`}
         >
           Electrical engineering and varsity tennis at Queen's. I build things that mix hardware,
           code, and the occasional bad idea.
         </p>
-        {/* The click target that reveals the orb (sized to the orb). Hidden once started (it hands off
-            to the orb fading in). Grey ring by default that lights to accent + spits mini orbs on hover;
-            a subtle "click here" cue sits below it. */}
-        <button
-          type="button"
-          onClick={startOrb}
-          aria-label="Reveal the orb"
-          className={`orb-start mt-[4vh] ${
-            orbStarted ? 'pointer-events-none opacity-0' : isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          {SPARKS.map((spark, index) => (
-            <span
-              key={index}
-              className="orb-spark"
-              style={{ '--x': spark.x, '--y': spark.y, '--d': spark.d } as React.CSSProperties}
-            />
-          ))}
-          <span className="orb-start-core" />
-        </button>
-        <span
-          aria-hidden
-          className={`orb-hint mt-5 ${orbStarted ? 'opacity-0' : isLoaded ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M5.5 3.5l11.5 6.2-4.8 1.2-2.1 4.6z" />
-          </svg>
-          click here
-        </span>
+        {/* The click target (sized to the orb), with the "click here" cue on the SAME line to its right.
+            Hidden once started (it hands off to the orb fading in); grey ring by default that lights to
+            accent + spits mini orbs on hover. The orb reveals here. */}
+        <div className="relative mt-[2vh]">
+          <button
+            type="button"
+            onClick={startOrb}
+            aria-label="Reveal the orb"
+            className={`orb-start ${
+              orbStarted ? 'pointer-events-none opacity-0' : isLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {SPARKS.map((spark, index) => (
+              <span
+                key={index}
+                className="orb-spark"
+                style={{ '--x': spark.x, '--y': spark.y, '--d': spark.d } as React.CSSProperties}
+              />
+            ))}
+            <span className="orb-start-core" />
+          </button>
+          <span
+            aria-hidden
+            className={`orb-hint absolute left-full top-1/2 ml-5 -translate-y-1/2 whitespace-nowrap ${
+              orbStarted ? 'opacity-0' : isLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M5.5 3.5l11.5 6.2-4.8 1.2-2.1 4.6z" />
+            </svg>
+            click here
+          </span>
+        </div>
       </div>
 
       <div

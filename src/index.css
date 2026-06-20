@@ -184,8 +184,8 @@
     opacity: 0;
   }
 }
-/* Subtle "click here" cue under the start circle (Hero.tsx): mono label + a small cursor glyph that
-   gently bobs. Fades out with the circle once the orb is started. */
+/* Subtle "click here" cue beside the start circle (Hero.tsx): mono label + a small cursor glyph.
+   Positioned/centred by Tailwind (absolute, -translate-y-1/2); fades out with the circle once started. */
 .orb-hint {
   display: inline-flex;
   align-items: center;
@@ -196,29 +196,16 @@
   text-transform: uppercase;
   color: var(--color-text-mute);
   transition: opacity 0.7s ease;
-  animation: orb-hint-bob 2.4s ease-in-out infinite;
 }
 .orb-hint svg {
   width: 0.85rem;
   height: 0.85rem;
-}
-@keyframes orb-hint-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(3px);
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .orb-start-core {
     animation: none;
   }
   .orb-start:hover .orb-spark {
-    animation: none;
-  }
-  .orb-hint {
     animation: none;
   }
 }

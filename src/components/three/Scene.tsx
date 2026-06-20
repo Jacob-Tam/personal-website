@@ -23,6 +23,7 @@ const DevPanel = isDev ? lazy(() => import('./DevPanel').then((m) => ({ default:
 type CursorTuning = { lerp: number; clampX: number; clampY: number }
 type ChoreographyTuning = {
   interludeRadius: number
+  interludeRadiusY: number
   driftDistance: number
   positionLerp: number
   pulseAmount: number
@@ -145,6 +146,7 @@ export function Scene() {
   const cursor = { lerp: CURSOR.lerp, clampX: CURSOR.clampX, clampY: CURSOR.clampY }
   const choreography = {
     interludeRadius: CHOREOGRAPHY.interludeRadius,
+    interludeRadiusY: CHOREOGRAPHY.interludeRadiusY,
     driftDistance: CHOREOGRAPHY.driftDistance,
     positionLerp: CHOREOGRAPHY.positionLerp,
     pulseAmount: CHOREOGRAPHY.pulseAmount,
