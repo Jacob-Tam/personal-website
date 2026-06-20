@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { useScrollStore } from '../../store/useScrollStore'
+import { PlanetHunt } from './PlanetHunt'
 
 // A few small, dim planets drifting slowly far behind the site - distant muted spheres (soft CSS
 // radial-gradient bodies lit from the upper-left with a faint glow, near-monochrome plus one faint
@@ -13,6 +15,9 @@ import { useEffect, useRef, useState } from 'react'
 //   - hover  -> a small, faint click icon floats just above the planet + a gentle brighten + a pointer
 //               cursor, so it quietly reads as interactive without shouting.
 //   - click  -> the planet brightens for a beat (.is-lit), then eases back.
+//
+// Easter egg: light all THREE at once and a controllable saucer (PlanetHunt) spawns - fly it (mouse or
+// arrow keys) and blow up every planet. Desktop only (needs a cursor/keys).
 
 type Planet = {
   top: number
@@ -42,6 +47,28 @@ export function Planets() {
   const timers = useRef<number[]>([])
   const [lit, setLit] = useState<boolean[]>(() => PLANETS.map(() => false))
   const [hovered, setHovered] = useState<number | null>(null)
+  const [dead, setDead] = useState<boolean[]>(() => PLANETS.map(() => false))
+  const [gameOn, setGameOn] = useState(false)
+  const gameOnRef = useRef(false)
+  const lowPower = useScrollStore((state) => state.lowPower)
+  const reducedMotion = useScrollStore((state) => state.reducedMotion)
+
+  // Keep a ref the window listeners can read so they go quiet while the hunt is running.
+  useEffect(() => {
+    gameOnRef.current = gameOn
+  }, [gameOn])
+
+  // Trigger: all three lit at once -> launch the hunt. Desktop only (cursor / keys); reset the lights
+  // so it doesn't immediately re-fire when the game ends.
+  useEffect(() => {
+    if (gameOn || lowPower || reducedMotion || !lit.every(Boolean)) return
+    timers.current.forEach((timer) => window.clearTimeout(timer))
+    setLit(PLANETS.map(() => false))
+    setDead(PLANETS.map(() => false))
+    setHovered(null)
+    document.body.style.cursor = ''
+    setGameOn(true)
+  }, [lit, gameOn, lowPower, reducedMotion])
 
   useEffect(() => {
     const planetAt = (x: number, y: number): Hit | null => {
@@ -63,7 +90,7 @@ export function Planets() {
       !!(target as HTMLElement | null)?.closest('a, button, input, textarea, select, label')
 
     const onPointerMove = (event: PointerEvent) => {
-      if (event.pointerType === 'touch') return // the hover cue is a desktop affordance
+      if (gameOnRef.current || event.pointerType === 'touch') return // hover cue off during the hunt
       const hit = isControl(event.target) ? null : planetAt(event.clientX, event.clientY)
       if (hit && cueRef.current) {
         // float the cue just above the planet, horizontally centred on it
@@ -78,7 +105,7 @@ export function Planets() {
     }
 
     const onPointerDown = (event: PointerEvent) => {
-      if (isControl(event.target)) return
+      if (gameOnRef.current || isControl(event.target)) return
       const hit = planetAt(event.clientX, event.clientY)
       if (!hit) return
       const { index } = hit
@@ -102,7 +129,8 @@ export function Planets() {
 
   return (
     <>
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-[4]">
+      {/* Raised above the dim backdrop (z-60) while the hunt is on, so the planets read as targets. */}
+      <div aria-hidden className={`pointer-events-none fixed inset-0 ${gameOn ? 'z-[61]' : 'z-[4]'}`}>
         {PLANETS.map((planet, index) => {
           const style: Record<string, string | number> = {
             top: `${planet.top}%`,
@@ -113,15 +141,16 @@ export function Planets() {
             '--dur': `${planet.duration}s`,
             animationDelay: `${planet.delay}s`,
           }
+          const state = gameOn
+            ? ` is-target${dead[index] ? ' is-dead' : ''}`
+            : `${lit[index] ? ' is-lit' : ''}${hovered === index ? ' is-hover' : ''}`
           return (
             <span
               key={index}
               ref={(el) => {
                 refs.current[index] = el
               }}
-              className={`planet planet-${planet.palette}${lit[index] ? ' is-lit' : ''}${
-                hovered === index ? ' is-hover' : ''
-              }`}
+              className={`planet planet-${planet.palette}${state}`}
               style={style as React.CSSProperties}
             />
           )
@@ -135,6 +164,18 @@ export function Planets() {
           <path d="M5 3l14 8-6 1.5-3 5.5z" />
         </svg>
       </div>
+
+      {gameOn && (
+        <PlanetHunt
+          planetEls={refs.current}
+          onKill={(index) => setDead((prev) => prev.map((value, i) => (i === index ? true : value)))}
+          onEnd={() => {
+            setGameOn(false)
+            setDead(PLANETS.map(() => false))
+            setLit(PLANETS.map(() => false))
+          }}
+        />
+      )}
     </>
   )
 }

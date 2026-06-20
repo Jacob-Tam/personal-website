@@ -313,6 +313,15 @@
 .planet-accent.is-lit {
   box-shadow: 0 0 30px 7px rgba(120, 200, 245, 0.82);
 }
+/* During the PlanetHunt easter egg: planets read as bright targets, and vanish (the canvas draws the
+   explosion) once shot down. */
+.planet.is-target {
+  filter: brightness(1.55) saturate(1.1);
+  box-shadow: 0 0 22px 5px rgba(140, 195, 235, 0.5);
+}
+.planet.is-dead {
+  opacity: 0;
+}
 /* Hover cue (Planets.tsx): a small, faint click glyph that floats above the hovered planet. Fixed and
    above the content so it's visible, positioned by the listener; eases in only while a planet is hovered. */
 .planet-cue {
