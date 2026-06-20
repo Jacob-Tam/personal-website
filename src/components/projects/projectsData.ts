@@ -30,7 +30,7 @@ export const PROJECTS: Project[] = [
     description:
       'A package-delivery box with facial recognition and remote unlock. Arduino-driven hardware (motion sensors, solenoid lock, live camera feed) with a Python ML pipeline running OpenCV and DeepFace for intruder detection. ~98% recognition accuracy. SQL-backed web interface for owners.',
     tech: ['Arduino', 'Python', 'OpenCV', 'DeepFace', 'SQL', 'IoT'],
-    media: { kind: 'video', src: '/media/smartbox.mp4', alt: 'Anti-Theft Package Smartbox demo', ready: true, cardStart: 67 },
+    media: { kind: 'video', src: '/media/smartbox.mp4', alt: 'Anti-Theft Package Smartbox demo', ready: true, cardStart: 68 },
   },
   {
     id: 'taxi',

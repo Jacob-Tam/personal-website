@@ -22,6 +22,12 @@ function beatEnvelope(progress: number) {
   return Math.exp(-x * x)
 }
 
+// Smoothstep easing across [edge0, edge1].
+function smoothstep(edge0: number, edge1: number, x: number) {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)))
+  return t * t * (3 - 2 * t)
+}
+
 /*
   Drives the orb group each frame from the scroll store (docs/03, docs/05). All values are read
   via getState() (no reactive subscription). Tuning values come from the dev leva 'choreography'
@@ -87,7 +93,9 @@ export function useOrbChoreography(
     // RIGHT side, and down to BELOW it (so it travels WITH the downward scroll). Smoothstep eases it
     // in/out so there is no snap. theta: +pi/2 (top) -> 0 (right) -> -pi/2 (bottom). The wide, short
     // ellipse keeps it hugging the one-line text and never riding too high above it.
-    const interludeActive = phase === 'hero' ? 0 : 1
+    // The orbit eases IN over the first slice of the interlude rather than snapping on at the phase
+    // boundary, so a fast scroll out of the hero doesn't pop the orb up to the top of the arc.
+    const orbitMix = phase === 'hero' ? 0 : smoothstep(0, 0.2, interludeProgress)
     const eased = interludeProgress * interludeProgress * (3 - 2 * interludeProgress)
     const theta = (0.5 - eased) * Math.PI
     const orbitX = choreo.interludeRadius * Math.cos(theta)
@@ -109,18 +117,18 @@ export function useOrbChoreography(
     // the raw value) keeps a stale driftProgress - ScrollTrigger can leave it non-zero after a jump /
     // scroll-restore - from yanking the hero/interlude orb off the top of the screen.
     const drift = phase === 'about' || phase === 'past' ? driftProgress : 0
-    const targetX = (base?.x ?? 0) * cursorFade + cursorOffsetX + interludeActive * orbitX
+    const targetX = (base?.x ?? 0) * cursorFade + cursorOffsetX + orbitMix * orbitX
     const targetY =
-      (base?.y ?? 0) * cursorFade + cursorOffsetY + interludeActive * orbitY + drift * choreo.driftDistance
+      (base?.y ?? 0) * cursorFade + cursorOffsetY + orbitMix * orbitY + drift * choreo.driftDistance
 
-    // Frame-rate-independent easing. The hero keeps its floaty trailing ease (cursor follow). But once
-    // we're past the hero we ease MUCH faster so the orb tracks the interlude orbit/drift closely and
-    // can't short-cut the straight chord across the text on a quick scroll (with the slow ease it lags
-    // ~1s behind a far-ahead target and cuts through the middle; tracking tightly keeps it on the arc).
-    // First frame after (re)mount snaps (alpha 1) so the orb never eases in from the origin.
+    // Frame-rate-independent easing. The hero starts floaty (cursor trailing) and tightens toward the
+    // fast orbit ease as it scrolls out (ramped by heroProgress) - so the rate doesn't jump at the
+    // phase boundary and the orb doesn't lag-then-snap on a fast scroll. Past the hero it stays fast so
+    // the orb tracks the interlude orbit/drift closely. First frame after (re)mount snaps (alpha 1).
     const orbitLerp = 0.32
-    const cursorRate = phase === 'hero' ? cursor.lerp : orbitLerp
-    const yRate = phase === 'hero' ? choreo.positionLerp : orbitLerp
+    const exit = phase === 'hero' ? heroProgress : 1
+    const cursorRate = cursor.lerp + (orbitLerp - cursor.lerp) * exit
+    const yRate = choreo.positionLerp + (orbitLerp - choreo.positionLerp) * exit
     const cursorAlpha = settled.current ? 1 - Math.pow(1 - cursorRate, delta * 60) : 1
     const driftAlpha = settled.current ? 1 - Math.pow(1 - yRate, delta * 60) : 1
     group.position.x += (targetX - group.position.x) * cursorAlpha
