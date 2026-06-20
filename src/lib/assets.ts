@@ -3,10 +3,11 @@
   Everything is a placeholder right now; see ASSETS.md for the swap-in checklist. Drop a real
   file at one of these paths to replace it, no code change needed.
 
-  MEDIA_READY flips the project cards from CSS placeholder posters to the real video/image once
-  the files exist under /public/media. Leave false until the trimmed/compressed media is in.
+  MEDIA_READY flips the ABOUT photo (TiltPhoto) from its placeholder block to the real portrait
+  once aboutPhoto exists under /public/media. (Project cards have their own per-card `ready` flag in
+  projectsData.ts.) Leave false until the portrait is in.
 */
-export const MEDIA_READY = false
+export const MEDIA_READY = true
 
 export const ASSETS = {
   jtLogo: '/jt-logo.png', // nav + loading screen; placeholder is the "Jacob Tam" / "JT" text

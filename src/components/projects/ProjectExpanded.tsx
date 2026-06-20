@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react'
 import gsap from 'gsap'
-import { MEDIA_READY } from '../../lib/assets'
 import { lenis } from '../../lib/lenis'
 import type { Project } from './projectsData'
 
@@ -17,14 +16,15 @@ function mulberry32(seed: number) {
 }
 const EXPANDED_STARS = (() => {
   const rand = mulberry32(4471)
-  return Array.from({ length: 48 }, () => {
-    const size = rand() > 0.86 ? 2 : rand() > 0.6 ? 1.5 : 1
+  return Array.from({ length: 92 }, () => {
+    const sizeRoll = rand()
+    const size = sizeRoll > 0.92 ? 2.5 : sizeRoll > 0.78 ? 2 : sizeRoll > 0.5 ? 1.5 : 1
     return {
       top: rand() * 100,
       left: rand() * 100,
       size,
-      opacity: Math.min(0.2 + rand() * 0.4, 0.6),
-      twinkle: rand() > 0.55,
+      opacity: Math.min(0.3 + rand() * 0.48, 0.8),
+      twinkle: rand() > 0.5,
       duration: 4 + rand() * 4,
       delay: -rand() * 8,
     }
@@ -57,6 +57,7 @@ const EXPANDED_METEORS = (() => {
 const DURATION = 1.3
 const EASE = 'power3.inOut'
 const PERSPECTIVE = 1100 // px; depth for the vertical-axis flip (lower = more dramatic foreshortening)
+const MAX_TILT = 8 // degrees of cursor-follow tilt once settled; mirrors the About photo (TiltPhoto)
 
 export function ProjectExpanded({
   project,
@@ -74,6 +75,31 @@ export function ProjectExpanded({
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const lastRectRef = useRef<DOMRect | null>(null)
   const closingRef = useRef(false)
+  const tiltEnabledRef = useRef(false) // cursor tilt only after the open flip settles (and never while closing)
+
+  // Cursor-follow tilt on the settled media, matching the About photo (TiltPhoto). Driven through GSAP
+  // (not a raw style write) so it shares the element's transform with the flip/close tweens without a
+  // jump: the close timeline picks up from wherever the tilt left rotationX/Y.
+  function handleTilt(event: React.PointerEvent<HTMLDivElement>) {
+    const media = mediaRef.current
+    if (!media || !tiltEnabledRef.current || closingRef.current) return
+    const rect = media.getBoundingClientRect()
+    const px = (event.clientX - rect.left) / rect.width
+    const py = (event.clientY - rect.top) / rect.height
+    gsap.to(media, {
+      rotationY: (px - 0.5) * 2 * MAX_TILT,
+      rotationX: -(py - 0.5) * 2 * MAX_TILT,
+      transformPerspective: PERSPECTIVE,
+      duration: 0.5,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    })
+  }
+  function handleTiltReset() {
+    const media = mediaRef.current
+    if (!media || closingRef.current) return
+    gsap.to(media, { rotationX: 0, rotationY: 0, transformPerspective: PERSPECTIVE, duration: 0.6, ease: 'power2.out', overwrite: 'auto' })
+  }
 
   // The transform that places the full-size media exactly over the originating card. Center pivot so
   // the flip shares it; uniform scale because both are aspect-video.
@@ -89,11 +115,13 @@ export function ProjectExpanded({
   function requestClose() {
     if (closingRef.current) return
     closingRef.current = true
+    tiltEnabledRef.current = false
     gsap.killTweensOf([mediaRef.current, backdropRef.current, bodyRef.current, starsRef.current])
     const to = transformToOrigin()
     const tl = gsap.timeline({ onComplete: onClose })
     tl.to(bodyRef.current, { opacity: 0, y: 18, duration: 0.25, ease: 'power2.in' }, 0)
-    tl.to(mediaRef.current, { ...to, rotationY: -360, transformPerspective: PERSPECTIVE, duration: DURATION * 0.8, ease: EASE }, 0)
+    // rotationX: 0 unwinds any leftover tilt as it flips back into the card.
+    tl.to(mediaRef.current, { ...to, rotationX: 0, rotationY: -360, transformPerspective: PERSPECTIVE, duration: DURATION * 0.8, ease: EASE }, 0)
     tl.to([backdropRef.current, starsRef.current], { opacity: 0, duration: 0.4, ease: 'power2.in' }, DURATION * 0.35)
   }
 
@@ -112,7 +140,18 @@ export function ProjectExpanded({
     tl.fromTo(
       media,
       { ...from, rotationY: -360, transformPerspective: PERSPECTIVE },
-      { x: 0, y: 0, scale: 1, rotationY: 0, transformPerspective: PERSPECTIVE, duration: DURATION, ease: EASE },
+      {
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotationY: 0,
+        transformPerspective: PERSPECTIVE,
+        duration: DURATION,
+        ease: EASE,
+        onComplete: () => {
+          tiltEnabledRef.current = true // arm the cursor tilt once the flip-in settles
+        },
+      },
       0,
     )
     tl.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: 'power2.out' }, 0)
@@ -175,9 +214,11 @@ export function ProjectExpanded({
           <div
             ref={mediaRef}
             onClick={(event) => event.stopPropagation()}
+            onPointerMove={handleTilt}
+            onPointerLeave={handleTiltReset}
             className="relative aspect-video h-full w-auto max-w-full overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-2xl shadow-black/60 will-change-transform"
           >
-            {MEDIA_READY ? (
+            {project.media.ready ? (
               project.media.kind === 'video' ? (
                 <video src={project.media.src} controls autoPlay muted loop playsInline className="h-full w-full object-cover" />
               ) : (

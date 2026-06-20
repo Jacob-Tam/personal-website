@@ -1,13 +1,13 @@
 import { useRef } from 'react'
 import { Parallax } from '../shared/Parallax'
-import { MEDIA_READY } from '../../lib/assets'
 import type { Project, ProjectMediaKind } from './projectsData'
 
 /*
   Project card: media + title + tagline (tags live in the expanded view, docs/06). Hover lifts
   and scales the card, hints the border toward blue, and starts the video (muted/loop). Videos
   use preload="none" and only play on hover, so the four never autoplay at once (docs/03). Until
-  MEDIA_READY the media is a placeholder poster with a play affordance.
+  the project's media.ready (projectsData) is set, the media is a placeholder poster with a play
+  affordance.
 */
 export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (project: Project) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -30,7 +30,7 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (pr
       {/* Media drifts a touch slower than the caption below it (docs/05 parallax). */}
       <Parallax speed={0.08}>
         <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2 transition-[transform,border-color] duration-300 ease-out group-hover:scale-[1.02] group-hover:border-accent/40">
-          {MEDIA_READY ? (
+          {project.media.ready ? (
             project.media.kind === 'video' ? (
               <video
                 ref={videoRef}
