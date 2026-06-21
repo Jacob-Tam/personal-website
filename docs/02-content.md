@@ -23,35 +23,32 @@ Name and tagline, white, centered, fading in on load over the orb.
 ```
 Jacob Tam
 
-Electrical engineering and varsity tennis at Queen's. I build things that mix hardware,
-code, and the occasional bad idea.
+Electrical engineering and varsity tennis at Queen's University. I build projects that mix
+hardware, code, and the occasional bad idea.
 ```
 
 ## Interlude (between Hero and About)
 
-A short full-height section. Near-black. One line of text, centered. The orb arrives,
-slows almost to a stop, pulses once, then resumes drifting upward as the user continues.
-
-```
-Here's some of it.
-```
+A short full-height section. Near-black. No text (the "Here's some of it." line was removed).
+The orb arrives, slows almost to a stop, pulses once, then resumes drifting upward as the user
+continues. (Transition-section rework pending.)
 
 ## About
 
 Short section. Image of Jacob on the right, text on the left. Three short paragraphs.
 
 ```
-I'm a fourth-year electrical engineering student at Queen's and a member of the varsity
-tennis team. Most of what I work on lives at the intersection of embedded systems,
-computer vision, and figuring out how to make hardware do something useful.
+I'm a third-year electrical engineering student at Queen's and a member of the varsity
+tennis team. Most of my work lives at the intersection of embedded systems and computer
+vision, turning complex data into real-world hardware solutions.
 
-Currently an AMIO Support intern at Hydro One, working with the meters that monitor power
-usage across Ontario. Last summer I was a software dev at Forum Asset Management, where I
-built internal tools including a LinkedIn bot that auto-generates company posts and a
-dynamic pricing engine for real estate listings.
+Currently on a 16-month internship at Hydro One in Toronto, working on the meters and
+systems that monitor power usage across Ontario. Last summer I was a software dev at Forum
+Asset Management, where I built tools including a LinkedIn bot that auto-generates company
+posts and a dynamic pricing engine for real estate listings.
 
-When I'm not in the lab I'm on a tennis court or trying to recreate a restaurant dish I
-had once and never wrote down.
+When I'm not in the lab I'm on the tennis court or trying to recreate a dish I saw
+scrolling on reels.
 ```
 
 ## Projects
@@ -80,7 +77,7 @@ for owners.
 ```
 Built for Queen's autonomous-vehicle competition. Raspberry Pi + Coral USB Accelerator
 running a quantized MobileNetV2 for road sign classification, with custom training data and
-a horizontal-flip bug that took longer to find than the rest of the pipeline combined.
+a mapping algorithm bug that took longer to find than the rest of the pipeline combined.
 ```
 - Tech tags: `Raspberry Pi` `Edge TPU` `TensorFlow` `Computer Vision` `Python`
 

@@ -75,8 +75,8 @@ export function Hero() {
             orbStarted ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           }`}
         >
-          Electrical engineering and varsity tennis at Queen's. I build things that mix hardware,
-          code, and the occasional bad idea.
+          Electrical engineering and varsity tennis at Queen's University. I build projects that mix
+          hardware, code, and the occasional bad idea.
         </p>
         {/* The click target (sized to the orb), with the "click here" cue on the SAME line to its right.
             Hidden once started (it hands off to the orb fading in); grey ring by default that lights to

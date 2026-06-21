@@ -5,9 +5,9 @@ import { TiltPhoto } from './TiltPhoto'
 
 // Three short paragraphs, VERBATIM from docs/02. Revealed staggered as the section enters.
 const PARAGRAPHS = [
-  "I'm a fourth-year electrical engineering student at Queen's and a member of the varsity tennis team. Most of what I work on lives at the intersection of embedded systems, computer vision, and figuring out how to make hardware do something useful.",
-  'Currently an AMIO Support intern at Hydro One, working with the meters that monitor power usage across Ontario. Last summer I was a software dev at Forum Asset Management, where I built internal tools including a LinkedIn bot that auto-generates company posts and a dynamic pricing engine for real estate listings.',
-  "When I'm not in the lab I'm on a tennis court or trying to recreate a restaurant dish I had once and never wrote down.",
+  "I'm a third-year electrical engineering student at Queen's and a member of the varsity tennis team. Most of my work lives at the intersection of embedded systems and computer vision, turning complex data into real-world hardware solutions.",
+  'Currently on a 16-month internship at Hydro One in Toronto, working on the meters and systems that monitor power usage across Ontario. Last summer I was a software dev at Forum Asset Management, where I built tools including a LinkedIn bot that auto-generates company posts and a dynamic pricing engine for real estate listings.',
+  "When I'm not in the lab I'm on the tennis court or trying to recreate a dish I saw scrolling on reels.",
 ]
 
 export function About() {

@@ -1,13 +1,6 @@
-import { Reveal } from '../shared/Reveal'
-
-// Interlude: a single centered line (verbatim, docs/02). The orb's slow-and-pulse beat that
-// pairs with this lands in Step 8.
+// Interlude: the pinned dwell where the orb slows and pulses (orb choreography in useOrbChoreography).
+// The text was removed; the section shell stays so the ScrollTrigger pin + orb beat still have a region
+// to act over. (Transition-section rework is the next task.)
 export function Interlude() {
-  return (
-    <section id="interlude" className="flex min-h-svh items-center justify-center px-6 text-center">
-      <Reveal>
-        <p className="text-h2 text-text">Here's some of it.</p>
-      </Reveal>
-    </section>
-  )
+  return <section id="interlude" className="min-h-svh" aria-hidden />
 }
