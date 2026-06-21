@@ -89,17 +89,16 @@ export function useOrbChoreography(
       group.rotation.y += delta * GROUP.idleSpinY * (1 - choreo.rotationStill * beat)
     }
 
-    // Interlude: the orb ORBITS the centered text on a wide, short ellipse - in from ABOVE, around the
-    // RIGHT side, and down to BELOW it (so it travels WITH the downward scroll). Smoothstep eases it
-    // in/out so there is no snap. theta: +pi/2 (top) -> 0 (right) -> -pi/2 (bottom). The wide, short
-    // ellipse keeps it hugging the one-line text and never riding too high above it.
-    // The orbit eases IN over the first slice of the interlude rather than snapping on at the phase
-    // boundary, so a fast scroll out of the hero doesn't pop the orb up to the top of the arc.
+    // Interlude: the orb ZIG-ZAGS down through the centered section as it travels WITH the downward
+    // scroll - descending top -> bottom (orbitY) while swinging once to the RIGHT and then to the LEFT
+    // (orbitX). The swing is symmetric (equal both sides) and a shorter reach than the old single
+    // rightward arc. Smoothstep (eased) keeps it from snapping at the ends.
+    // The swing also eases IN over the first slice of the interlude (orbitMix) rather than snapping on
+    // at the phase boundary, so a fast scroll out of the hero doesn't pop the orb sideways.
     const orbitMix = phase === 'hero' ? 0 : smoothstep(0, 0.2, interludeProgress)
     const eased = interludeProgress * interludeProgress * (3 - 2 * interludeProgress)
-    const theta = (0.5 - eased) * Math.PI
-    const orbitX = choreo.interludeRadius * Math.cos(theta)
-    const orbitY = choreo.interludeRadiusY * Math.sin(theta)
+    const orbitX = choreo.interludeRadius * Math.sin(eased * 2 * Math.PI) // 0 -> +right -> 0 -> -left -> 0
+    const orbitY = choreo.interludeRadiusY * Math.sin((0.5 - eased) * Math.PI) // +top -> -bottom
 
     // x: circle anchor + faded cursor offset (-> 0 as the hero exits) + the interlude arc.
     // y: same + the interlude arc + the upward scroll drift through About.
