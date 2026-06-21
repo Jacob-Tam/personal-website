@@ -16,11 +16,10 @@ export const ASSETS = {
   ogImage: '/og-image.png', // LinkedIn share card (Step 14)
 }
 
-// TODO(jacob): real profile URLs. Placeholders point to site roots so they never 404.
 export const LINKS = {
   email: 'jotam916@gmail.com',
-  github: 'https://github.com',
-  linkedin: 'https://www.linkedin.com',
-  instagram: 'https://www.instagram.com',
-  resume: '/resume.pdf', // current version now; Jacob updates the PDF later
+  github: 'https://github.com/Jacob-Tam',
+  linkedin: 'https://www.linkedin.com/in/jacob--tam/',
+  instagram: 'https://www.instagram.com/jacob._tam/',
+  resume: '/resume.pdf', // placeholder until the PDF is ready
 }

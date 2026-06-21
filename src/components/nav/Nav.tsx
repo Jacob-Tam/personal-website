@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { GitHubIcon, InstagramIcon, LinkedInIcon } from '../shared/icons'
+import { GlowLink } from '../shared/GlowLink'
 import { LINKS } from '../../lib/assets'
 import { lenis } from '../../lib/lenis'
 
@@ -59,33 +60,33 @@ export function Nav() {
             ))}
           </ul>
           <div className="flex items-center gap-4">
-            <a
+            <GlowLink
               href={LINKS.github}
               target="_blank"
               rel="noreferrer"
               aria-label="GitHub"
-              className="text-text-mute transition-colors hover:text-accent-hi"
+              className="text-text-mute hover:text-accent-hi"
             >
               <GitHubIcon className="h-5 w-5" />
-            </a>
-            <a
+            </GlowLink>
+            <GlowLink
               href={LINKS.linkedin}
               target="_blank"
               rel="noreferrer"
               aria-label="LinkedIn"
-              className="text-text-mute transition-colors hover:text-accent-hi"
+              className="text-text-mute hover:text-accent-hi"
             >
               <LinkedInIcon className="h-5 w-5" />
-            </a>
-            <a
+            </GlowLink>
+            <GlowLink
               href={LINKS.instagram}
               target="_blank"
               rel="noreferrer"
               aria-label="Instagram"
-              className="text-text-mute transition-colors hover:text-accent-hi"
+              className="text-text-mute hover:text-accent-hi"
             >
               <InstagramIcon className="h-5 w-5" />
-            </a>
+            </GlowLink>
           </div>
         </div>
       </nav>

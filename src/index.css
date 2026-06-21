@@ -224,6 +224,58 @@
   }
 }
 
+/* Glow + particle hover for nav social icons and contact links (GlowLink). Keeps the blue colour
+   change, and adds an accent glow plus a few small particles that spit outward - echoing the hero
+   orb sparks. Particles are off under reduced motion; the glow stays. */
+.glow-link {
+  position: relative;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+.glow-link svg {
+  transition: filter 0.3s ease;
+}
+.glow-link:hover {
+  text-shadow: 0 0 12px color-mix(in oklab, var(--color-accent) 55%, transparent);
+}
+.glow-link:hover svg {
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--color-accent-hi) 75%, transparent));
+}
+.link-spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 9999px;
+  background: var(--color-accent-hi);
+  box-shadow: 0 0 6px 1px color-mix(in oklab, var(--color-accent-hi) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+.glow-link:hover .link-spark {
+  animation: link-spark 1s ease-out infinite;
+  animation-delay: var(--d);
+}
+@keyframes link-spark {
+  0% {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x), var(--y)) scale(0.2);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glow-link:hover .link-spark {
+    animation: none;
+  }
+}
+
 /* DEV-only: a visible, grabbable scrollbar for the leva control panel (DevPanel). */
 .dev-scroll {
   scrollbar-width: thin;
