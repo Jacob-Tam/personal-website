@@ -32,7 +32,7 @@ function smoothstep(edge0: number, edge1: number, x: number) {
   Drives the orb group each frame from the scroll store (docs/03, docs/05). All values are read
   via getState() (no reactive subscription). Tuning values come from the dev leva 'choreography'
   folder (defaults baked in lib/constants). The full lifecycle:
-    hero       -> rests at the start circle, cursor-follow offset, fading out as heroProgress rises
+    hero       -> reveals at the start circle, then floats UP to centre; cursor-follow offset, fading out
     interlude  -> arcs clockwise around the centered text (above -> right -> below), one pulse
     about      -> drifts upward (driftProgress) from below the text until it clears the screen
   Particle shedding is handled in OrbParticles (also off driftProgress).
@@ -105,20 +105,29 @@ export function useOrbChoreography(
     // The cursor offset fades with the hero exit (cursorFade) AND eases in over the reveal (revealRamp)
     // so the orb appears EXACTLY centred on the start circle - where the click landed - then begins
     // trailing the cursor, instead of snapping to the cursor (which is sitting on the circle at click).
+    const elapsed = orbStarted ? (performance.now() - orbStartAt) / 1000 : 0
     const base = phase === 'hero' ? heroBase.current : null
     const cursorFade = reducedMotion ? 0 : 1 - heroProgress
-    const revealRamp = orbStarted
-      ? Math.min(1, (performance.now() - orbStartAt) / 1000 / ORB_REVEAL.coreDur)
-      : 0
+    const revealRamp = orbStarted ? Math.min(1, elapsed / ORB_REVEAL.coreDur) : 0
     const cursorOffsetX = mouse.x * cursor.clampX * cursorFade * revealRamp
     const cursorOffsetY = mouse.y * cursor.clampY * cursorFade * revealRamp
+    // After the reveal, the hero orb floats UP from the start circle (where it appeared) to the CENTRE
+    // of the hero section (world origin). Time-based (not scroll) and eased; instant once started under
+    // reduced motion. baseHold blends the circle anchor out - 1 = on the circle, 0 = at centre - and
+    // also fades with the hero scroll-out (cursorFade) so the float and the scroll-out never fight.
+    const settleProgress = !orbStarted
+      ? 0
+      : reducedMotion
+        ? 1
+        : smoothstep(0, ORB_REVEAL.settleDur, elapsed - ORB_REVEAL.settleStart)
+    const baseHold = cursorFade * (1 - settleProgress)
     // Drift only applies once we're actually in the upward phases. Gating by phase (not just trusting
     // the raw value) keeps a stale driftProgress - ScrollTrigger can leave it non-zero after a jump /
     // scroll-restore - from yanking the hero/interlude orb off the top of the screen.
     const drift = phase === 'about' || phase === 'past' ? driftProgress : 0
-    const targetX = (base?.x ?? 0) * cursorFade + cursorOffsetX + orbitMix * orbitX
+    const targetX = (base?.x ?? 0) * baseHold + cursorOffsetX + orbitMix * orbitX
     const targetY =
-      (base?.y ?? 0) * cursorFade + cursorOffsetY + orbitMix * orbitY + drift * choreo.driftDistance
+      (base?.y ?? 0) * baseHold + cursorOffsetY + orbitMix * orbitY + drift * choreo.driftDistance
 
     // Frame-rate-independent easing. The hero starts floaty (cursor trailing) and tightens toward the
     // fast orbit ease as it scrolls out (ramped by heroProgress) - so the rate doesn't jump at the

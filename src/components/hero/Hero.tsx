@@ -47,13 +47,15 @@ export function Hero() {
       )}
 
       {/* Contrast floor: a soft radial darkening behind the text so the name stays readable over
-          the bright orb wherever it drifts (docs/06). Subtle, non-interactive. */}
+          the bright orb (docs/06). Subtle, non-interactive. Kept LIGHT (30%) because the orb now
+          settles at the hero centre - i.e. right on the floor's darkest point - so a heavier floor
+          would mute its glow into a dull grey ball. 30% still gives the text a backdrop. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 42rem 26rem at center, color-mix(in oklab, var(--color-bg) 70%, transparent) 0%, transparent 70%)',
+            'radial-gradient(ellipse 42rem 26rem at center, color-mix(in oklab, var(--color-bg) 30%, transparent) 0%, transparent 70%)',
         }}
       />
 

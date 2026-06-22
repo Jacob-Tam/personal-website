@@ -81,6 +81,9 @@ export const ORB_REVEAL = {
   particleStart: 1.0, // particles begin appearing at this point (while the core is still finishing)
   particleStagger: 0.05, // gap between consecutive particles popping in -> the "one by one" cascade
   particleFade: 0.6, // each particle eases up over this
+  // After it reveals, the hero orb floats UP from the start circle to the centre of the hero section.
+  settleStart: 1.4, // seconds after the click before the float begins (lets the core fully form first)
+  settleDur: 1.4, // seconds it takes to travel from the circle up to centre (eased)
 }
 
 export const SHED = {
