@@ -49,7 +49,7 @@ chatbot for an affiliated non-profit, a LinkedIn bot that auto-generates company
 a dynamic pricing engine for real estate listings.
 
 When I'm not in the lab I'm on the tennis court or trying to recreate a dish I saw
-scrolling on reels.
+on reels.
 ```
 
 ## Projects
