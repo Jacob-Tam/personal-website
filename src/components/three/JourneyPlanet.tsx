@@ -126,7 +126,10 @@ export function JourneyPlanet({
   const ringMatRef = useRef<THREE.MeshBasicMaterial>(null)
 
   // Per-planet baked maps (hue + fine bump for this archetype) + per-planet seeds. Stable across renders.
-  const surface = useMemo(() => makePlanetSurface(planet.color, index * 17.3, planet.style), [planet.color, planet.style, index])
+  const surface = useMemo(
+    () => makePlanetSurface(planet.color, index * 17.3, planet.style, planet.craters ?? 0),
+    [planet.color, planet.style, planet.craters, index],
+  )
   const onBeforeCompile = useMemo(
     () => (material: THREE.MeshStandardMaterial) => patchPlanetMaterial(material, index * 13.7, planet),
     [index, planet],

@@ -236,10 +236,10 @@ export const PROJECTS_JOURNEY = {
       // Negative x-tilt puts the near edge at the BOTTOM (natural Saturn read, not a hoop over the face).
       ring: { inner: 1.5, outer: 2.25, tilt: [-1.05, 0.16], color: '#e7c79b', opacity: 0.72 },
     },
-    // Teal ice world: pale frost veined with sharp cracks, glossy.
-    { color: '#5bbf9a', radius: 1.4, style: 'ice', dispScale: 2.1, dispAmp: 0.26, bumpScale: 0.55, roughness: 0.5, rimStrength: 0.85, rimPower: 3.0 },
-    // Violet rocky moon: matte, cratered, rugged silhouette.
-    { color: '#9a7bd0', radius: 1.4, style: 'rocky', dispScale: 2.4, dispAmp: 0.55, bumpScale: 0.75, roughness: 1.0, rimStrength: 0.35, rimPower: 3.2 },
+    // Teal ice world: pale frost veined with sharp cracks, glossy, pocked with small craters.
+    { color: '#5bbf9a', radius: 1.4, style: 'ice', dispScale: 2.1, dispAmp: 0.3, bumpScale: 0.82, roughness: 0.5, rimStrength: 0.85, rimPower: 3.0, craters: 16 },
+    // Violet rocky moon: matte, rugged silhouette, heavily cratered.
+    { color: '#9a7bd0', radius: 1.4, style: 'rocky', dispScale: 2.4, dispAmp: 0.58, bumpScale: 0.95, roughness: 1.0, rimStrength: 0.35, rimPower: 3.2, craters: 20 },
   ] as PlanetConfig[],
 }
 
@@ -264,6 +264,7 @@ export type PlanetConfig = {
   roughness?: number
   rimStrength?: number
   rimPower?: number
+  craters?: number // small craters baked into the bump relief + floor shadow (0 = none)
   ring?: PlanetRing
 }
 

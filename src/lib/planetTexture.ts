@@ -76,13 +76,45 @@ function ridge(x: number, y: number, z: number, octaves: number): number {
   return 1 - Math.abs(2 * fbm(x, y, z, octaves) - 1)
 }
 
+type Crater = { x: number; y: number; z: number; r: number; cosR: number; depth: number; rim: number }
+
+// Seeded small craters scattered uniformly over the sphere - a depressed bowl with a raised rim, of
+// varied size. Applied on top of a planet's style (to the bump relief + a touch of floor shadow) so a
+// world reads as genuinely pocked, not just noisy.
+function makeCraters(seed: number, count: number): Crater[] {
+  const craters: Crater[] = []
+  const s = (Math.floor(seed * 7) + 1) >>> 0
+  for (let i = 0; i < count; i++) {
+    const theta = hash3(i + 1, 11, s) * TAU
+    const phi = Math.acos(2 * hash3(i + 1, 23, s + 4) - 1) // uniform on the sphere (no pole clustering)
+    const sinPhi = Math.sin(phi)
+    const r = 0.09 + 0.17 * hash3(i + 1, 37, s + 8) // angular radius (radians) - small craters
+    craters.push({
+      x: sinPhi * Math.cos(theta),
+      y: Math.cos(phi),
+      z: sinPhi * Math.sin(theta),
+      r,
+      cosR: Math.cos(r),
+      depth: 0.16 + 0.16 * hash3(i + 1, 53, s + 12),
+      rim: 0.08 + 0.1 * hash3(i + 1, 61, s + 16),
+    })
+  }
+  return craters
+}
+
 export type PlanetStyle = 'terran' | 'gas' | 'ice' | 'rocky'
 export type PlanetSurface = { map: THREE.DataTexture; bump: THREE.DataTexture }
 
-export function makePlanetSurface(baseHex: string, seed: number, style: PlanetStyle = 'terran'): PlanetSurface {
+export function makePlanetSurface(
+  baseHex: string,
+  seed: number,
+  style: PlanetStyle = 'terran',
+  craterCount = 0,
+): PlanetSurface {
   const base = new THREE.Color(baseHex)
   const hsl = { h: 0, s: 0, l: 0 }
   base.getHSL(hsl)
+  const craters = craterCount > 0 ? makeCraters(seed, craterCount) : []
 
   const colorBytes = new Uint8Array(W * H * 4)
   const bumpBytes = new Uint8Array(W * H * 4)
@@ -155,6 +187,29 @@ export function makePlanetSurface(baseHex: string, seed: number, style: PlanetSt
         t2.setHSL(0.58, 0.12, 0.92) // cold near-white
         c.lerp(t2, cap)
         height = 0.5 * region + 0.4 * detail + 0.3 * cap
+      }
+
+      // Craters (3rd/4th planets): bowl recesses the bump + shadows the floor, the rim lifts it - so
+      // the relief catches the light. Skip-by-dot keeps this cheap (only texels inside a crater work).
+      if (craters.length) {
+        let delta = 0
+        let bowlMax = 0
+        let rimMax = 0
+        for (let k = 0; k < craters.length; k++) {
+          const cr = craters[k]
+          const dot = px * cr.x + py * cr.y + pz * cr.z
+          if (dot <= cr.cosR) continue
+          const t = Math.acos(clamp(dot, -1, 1)) / cr.r
+          if (t >= 1) continue
+          const bowl = clamp(1 - t / 0.78, 0, 1)
+          const rimRing = Math.exp(-(((t - 0.9) / 0.12) ** 2))
+          delta += rimRing * cr.rim - bowl * cr.depth
+          if (bowl > bowlMax) bowlMax = bowl
+          if (rimRing > rimMax) rimMax = rimRing
+        }
+        if (delta !== 0) height = clamp(height + delta, 0, 1)
+        // dark bowl floor + a brighter rim -> reads as a 3D crater even at a flat lighting angle
+        if (bowlMax > 0 || rimMax > 0) c.multiplyScalar(clamp(1 - 0.3 * bowlMax + 0.16 * rimMax, 0.4, 1.3))
       }
 
       c.convertLinearToSRGB() // map is decoded sRGB->linear in the shader; round-trips to the intended colour
