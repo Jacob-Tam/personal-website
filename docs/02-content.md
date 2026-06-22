@@ -44,8 +44,9 @@ vision, turning complex data into real-world hardware solutions.
 
 Currently on a 16-month internship at Hydro One in Toronto, working on the meters and
 systems that monitor power usage across Ontario. Last summer I was a software dev at Forum
-Asset Management, where I built tools including a LinkedIn bot that auto-generates company
-posts and a dynamic pricing engine for real estate listings.
+Asset Management, where I built internal tools and external-facing AI, including an agentic
+chatbot for an affiliated non-profit, a LinkedIn bot that auto-generates company posts, and
+a dynamic pricing engine for real estate listings.
 
 When I'm not in the lab I'm on the tennis court or trying to recreate a dish I saw
 scrolling on reels.
@@ -82,7 +83,7 @@ a mapping algorithm bug that took longer to find than the rest of the pipeline c
 - Tech tags: `Raspberry Pi` `Edge TPU` `TensorFlow` `Computer Vision` `Python`
 
 ### 3. Hyperloop Pod Suspension
-- Visual: CAD render image (physical pod photo available as secondary)
+- Visual: pod test video (~12s; replaced the earlier chassis still)
 - Tagline: `Made the pod 56% more efficient and picked up some hardware along the way.`
 - Description:
 ```

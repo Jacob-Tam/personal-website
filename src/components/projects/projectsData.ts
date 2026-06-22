@@ -48,7 +48,7 @@ export const PROJECTS: Project[] = [
     description:
       "Suspension Design Engineer for Queen's Hyperloop. Redesigned the suspension and clamping mechanism using iterative CAD and FEA, validated through physical testing. Took the design to Hyperloop Week 2025 and won the most awards nationally at Hyperloop Global 2024.",
     tech: ['CAD', 'FEA', 'Mechanical Design', 'Simulation'],
-    media: { kind: 'image', src: '/media/hyperloop.webp', alt: 'Hyperloop pod suspension CAD render', ready: true },
+    media: { kind: 'video', src: '/media/hyperloop.mp4', alt: 'Hyperloop pod suspension test', ready: true },
   },
   {
     id: 'qhdt',
