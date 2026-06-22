@@ -38,24 +38,24 @@ export function Nav() {
         <div className="flex items-center gap-8">
           <ul className="hidden items-center gap-8 sm:flex">
             <li>
-              <a
+              <GlowLink
                 href={LINKS.resume}
                 target="_blank"
                 rel="noreferrer"
-                className="text-sm text-text-mute transition-colors hover:text-accent-hi"
+                className="text-sm text-text-mute hover:text-accent-hi"
               >
                 resume
-              </a>
+              </GlowLink>
             </li>
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
-                <a
+                <GlowLink
                   href={link.href}
                   onClick={(event) => smoothScrollTo(event, link.href)}
-                  className="text-sm text-text-mute transition-colors hover:text-accent-hi"
+                  className="text-sm text-text-mute hover:text-accent-hi"
                 >
                   {link.label}
-                </a>
+                </GlowLink>
               </li>
             ))}
           </ul>

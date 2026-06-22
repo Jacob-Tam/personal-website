@@ -7,17 +7,27 @@ const MARGIN = 16
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 
-// leva theme: brighter labels + a slightly larger font so the (sometimes long) control names read
-// clearly. Width is handled by the container (fill); the wider panel gives the label column room.
+// leva theme tuned to the site palette (lib tokens in index.css :root) so the panel reads as part of
+// the site: dark navy surfaces, the blue accent on controls, Geist Mono labels.
 const levaTheme = {
   colors: {
-    highlight1: '#9aa3ad', // dimmed text
-    highlight2: '#e7eaef', // labels
-    highlight3: '#ffffff', // active values
+    elevation1: '#0b1118', // panel background (= --color-surface-2, matches the container)
+    elevation2: '#0e141b', // rows / folders
+    elevation3: '#11171f', // inputs / widgets
+    accent1: '#1f4666', // --color-accent-lo
+    accent2: '#4489b7', // --color-accent
+    accent3: '#6bb0dc', // --color-accent-hi (hover / active)
+    highlight1: '#797b80', // dimmed text (= --color-text-mute)
+    highlight2: '#c9ccd2', // labels
+    highlight3: '#fcfcfc', // active values (= --color-text)
+    vivid: '#6bb0dc',
   },
-  fontSizes: {
-    root: '12px',
+  fonts: {
+    mono: '"Geist Mono Variable", ui-monospace, "SF Mono", monospace',
+    sans: '"Geist Variable", ui-sans-serif, system-ui, sans-serif',
   },
+  radii: { xs: '2px', sm: '6px', lg: '8px' },
+  fontSizes: { root: '12px' },
 }
 
 /*
@@ -60,7 +70,7 @@ export function DevPanel() {
 
   return (
     <div className="fixed z-50" style={{ left: pos.x, top: pos.y, width: PANEL_WIDTH }}>
-      <div className="overflow-hidden rounded-md border border-border bg-[#181c20] shadow-xl">
+      <div className="overflow-hidden rounded-md border border-border bg-surface-2 shadow-xl">
         <div
           onPointerDown={handleDragStart}
           className="flex cursor-grab select-none items-center gap-2 px-2.5 py-1.5 font-mono text-[0.7rem] uppercase tracking-wider text-text-mute active:cursor-grabbing"

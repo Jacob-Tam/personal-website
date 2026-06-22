@@ -1,6 +1,6 @@
 import { Reveal } from '../shared/Reveal'
 import { BackgroundWord } from '../shared/BackgroundWord'
-import { GlowLink } from '../shared/GlowLink'
+import { GlowLink, Sparks } from '../shared/GlowLink'
 import { LINKS } from '../../lib/assets'
 
 // Contact / footer (verbatim copy, docs/02). Calm, lots of space, blue only on hover.
@@ -9,7 +9,11 @@ export function Contact() {
     <section id="contact" className="relative flex min-h-svh items-center justify-center overflow-hidden px-6 text-center">
       <BackgroundWord className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" parallax={0.4}>CONTACT</BackgroundWord>
       <Reveal className="relative flex flex-col items-center gap-10" stagger={0.1}>
-        <h2 className="text-h2 text-text">Get in touch</h2>
+        {/* Glows + emits sparks on hover (it's not a link, so it keeps its colour - just the glow + particles). */}
+        <h2 className="glow-link text-h2 text-text">
+          Get in touch
+          <Sparks />
+        </h2>
 
         <GlowLink
           href={`mailto:${LINKS.email}`}
