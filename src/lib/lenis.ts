@@ -36,7 +36,10 @@ export function setProjectsPin(value: number) {
 */
 export function useSmoothScroll() {
   useEffect(() => {
-    const instance = new Lenis({ duration: 1.1, smoothWheel: true, autoRaf: false })
+    // wheelMultiplier < 1 damps how far one gesture travels, so a single hard (inertial) flick can't
+    // blow from the hero all the way down the page - the journey reads deliberately instead of snapping
+    // past the orb choreography. duration keeps the easing smooth on top of that.
+    const instance = new Lenis({ duration: 1.1, wheelMultiplier: 0.7, touchMultiplier: 0.9, smoothWheel: true, autoRaf: false })
     lenis = instance
 
     const raf = (time: number) => instance.raf(time * 1000)
