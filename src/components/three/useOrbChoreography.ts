@@ -98,7 +98,13 @@ export function useOrbChoreography(
     const time = state.clock.elapsedTime
     let flightX = 0
     let flightY = 0
-    if (phase === 'interlude') {
+    if (phase === 'hero') {
+      // As the hero scrolls out, lift the orb from centre up to the TOP of the belt field so it ARRIVES
+      // at weaveTop exactly as the interlude pins - no upward jolt at the seam (it used to sit at centre
+      // then rocket up over the first slice of the interlude). Eased so it decelerates into weaveTop,
+      // matching the interlude descent's slow start (both ~0 vertical velocity at the seam).
+      flightY = smoothstep(0, 1, heroProgress) * BELTS.weaveTop
+    } else if (phase === 'interlude') {
       const weaveMix = smoothstep(0, 0.15, interludeProgress)
       const eased = smoothstep(0, 1, interludeProgress)
       const descentY = BELTS.weaveTop + (BELTS.weaveBottom - BELTS.weaveTop) * eased
@@ -110,7 +116,9 @@ export function useOrbChoreography(
       // gap as it crosses the upper belt and on the lower gap as it crosses the lower belt.
       const beltBlend = smoothstep(BELTS.upperY, BELTS.lowerY, descentY)
       flightX = weaveMix * (upperGap + (lowerGap - upperGap) * beltBlend)
-      flightY = weaveMix * descentY
+      // descentY starts at weaveTop (= where the hero lift left the orb), so Y is continuous across the
+      // seam; only the horizontal weave eases in (weaveMix) so a fast hero exit can't pop it sideways.
+      flightY = descentY
     } else if (phase === 'about' || phase === 'past') {
       flightY = BELTS.weaveBottom + driftProgress * choreo.driftDistance
     }
