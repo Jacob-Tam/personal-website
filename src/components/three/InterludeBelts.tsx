@@ -17,21 +17,44 @@ export function InterludeBelts() {
   const asteroids = useMemo(() => makeAsteroids(), [])
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
-  const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 0), []) // 20-face low-poly = "rock"
-  const material = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: BELTS.color,
-        emissive: new THREE.Color(BELTS.emissive),
-        roughness: 1,
-        metalness: 0,
-        flatShading: true, // faceted, reads as rock rather than a smooth ball
-        transparent: true, // for the interlude fade in/out
-        opacity: 0,
-        fog: false, // they sit deep in the fog range; keep them crisp like the planets do
-      }),
-    [],
-  )
+  const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 1), []) // low-poly faceted "rock"
+  const material = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: BELTS.color,
+      emissive: new THREE.Color(BELTS.emissive),
+      roughness: 1,
+      metalness: 0,
+      flatShading: true, // faceted, reads as rock rather than a smooth ball
+      transparent: true, // for the interlude fade in/out
+      opacity: 0,
+      fog: false, // they sit deep in the fog range; keep them crisp like the planets do
+    })
+    // Blue fresnel RIM (the site's single accent), echoing the orb's rim so the belts feel part of the
+    // same world. A smooth, instance-rotated sphere normal drives the fresnel, so the silhouette glows
+    // cleanly even though the surface is faceted. Added to emissive -> reads as a cool edge light.
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uRim = { value: new THREE.Color('#6bb0dc') } // --color-accent-hi
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vRimNormal;')
+        .replace(
+          '#include <begin_vertex>',
+          '#include <begin_vertex>\nvRimNormal = normalize(normalMatrix * (mat3(instanceMatrix) * normalize(position)));',
+        )
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vRimNormal;\nuniform vec3 uRim;')
+        .replace(
+          '#include <emissivemap_fragment>',
+          /* glsl */ `#include <emissivemap_fragment>
+          {
+            // High power = a THIN crisp edge (a refined blue outline), not a wide glow that turns the
+            // rocks into blue bubbles. Kept low-intensity: the accent should whisper, not shout.
+            float rkFres = pow(1.0 - clamp(dot(normalize(vRimNormal), normalize(vViewPosition)), 0.0, 1.0), 4.5);
+            totalEmissiveRadiance += uRim * rkFres * 0.5;
+          }`,
+        )
+    }
+    return mat
+  }, [])
   useEffect(() => () => geometry.dispose(), [geometry])
   useEffect(() => () => material.dispose(), [material])
 

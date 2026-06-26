@@ -36,9 +36,10 @@ export const BELTS = {
   swayAmp: 1.5,
   swaySpeed: [0.55, -0.62] as const, // rad/s; opposite signs + different magnitudes = organic, drifting weave
 
-  // Simple look for v1 (low-poly grey rocks). Polished later.
-  color: '#828892',
-  emissive: '#2c333d', // faint self-glow so rocks far from the orb's light still read
+  // Dark, cool space rock that fits the site palette: a neutral-cool grey base, with the single blue
+  // accent reserved for the fresnel RIM (applied in InterludeBelts) - echoing the orb's blue rim.
+  color: '#565d66',
+  emissive: '#161d27', // faint cool glow so the shadowed sides still read against the black
   sizeMin: 0.22,
   sizeMax: 0.5,
   yJitter: 0.18, // per-rock vertical scatter so the belt isn't a perfect line
