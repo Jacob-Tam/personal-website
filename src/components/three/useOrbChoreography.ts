@@ -115,7 +115,11 @@ export function useOrbChoreography(
       // 0 at the upper belt's height -> 1 at the lower belt's height; so the orb is exactly on the upper
       // gap as it crosses the upper belt and on the lower gap as it crosses the lower belt.
       const beltBlend = smoothstep(BELTS.upperY, BELTS.lowerY, descentY)
-      flightX = weaveMix * (upperGap + (lowerGap - upperGap) * beltBlend)
+      // Recentre the weave back to x=0 over the last stretch (after the lower belt is threaded at ~0.65),
+      // so the orb LEAVES the interlude centred. Without this it carried the swaying gap-x into About and
+      // sat off-centre / drifted sideways there. About keeps flightX = 0, so the handoff is continuous at 0.
+      const recenter = 1 - smoothstep(0.7, 1, interludeProgress)
+      flightX = weaveMix * recenter * (upperGap + (lowerGap - upperGap) * beltBlend)
       // descentY starts at weaveTop (= where the hero lift left the orb), so Y is continuous across the
       // seam; only the horizontal weave eases in (weaveMix) so a fast hero exit can't pop it sideways.
       flightY = descentY
