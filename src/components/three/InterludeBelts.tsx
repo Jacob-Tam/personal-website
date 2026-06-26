@@ -40,7 +40,7 @@ export function InterludeBelts() {
   const asteroids = useMemo(() => makeAsteroids(), [])
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
-  const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 1), []) // low-poly faceted "rock"
+  const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 0), []) // 20-face low-poly "rock"; craters are shaded in (no extra geometry needed)
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
       color: BELTS.color,
