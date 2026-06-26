@@ -7,6 +7,7 @@ import * as THREE from 'three'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import { Orb, type OrbProps } from './Orb'
 import { OrbParticles, type ParticleProps } from './OrbParticles'
+import { InterludeBelts } from './InterludeBelts'
 import { useOrbChoreography } from './useOrbChoreography'
 import { ProjectsScene } from './ProjectsScene'
 import type { JourneyLook } from '../../lib/projectsJourney'
@@ -22,8 +23,6 @@ const DevPanel = isDev ? lazy(() => import('./DevPanel').then((m) => ({ default:
 
 type CursorTuning = { lerp: number; clampX: number; clampY: number }
 type ChoreographyTuning = {
-  interludeRadius: number
-  interludeRadiusY: number
   driftDistance: number
   positionLerp: number
   pulseAmount: number
@@ -145,8 +144,6 @@ export function Scene() {
   }
   const cursor = { lerp: CURSOR.lerp, clampX: CURSOR.clampX, clampY: CURSOR.clampY }
   const choreography = {
-    interludeRadius: CHOREOGRAPHY.interludeRadius,
-    interludeRadiusY: CHOREOGRAPHY.interludeRadiusY,
     driftDistance: CHOREOGRAPHY.driftDistance,
     positionLerp: CHOREOGRAPHY.positionLerp,
     pulseAmount: CHOREOGRAPHY.pulseAmount,
@@ -236,6 +233,9 @@ export function Scene() {
               the journey), so nothing mounts or recompiles at the seam. */}
           <group visible={!projectsActive}>
             <OrbSystem core={core} particles={particles} cursor={cursor} choreo={choreography} />
+            {/* Interlude asteroid belts (world space, sibling to the moving orb group). Self-hides
+                except during the interlude phase; the orb weaves through their gaps (useOrbChoreography). */}
+            <InterludeBelts />
           </group>
           <ProjectsScene
             look={journeyLook}

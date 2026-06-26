@@ -3,11 +3,10 @@ import { useFrame, useThree } from '@react-three/fiber'
 import type { Group, PerspectiveCamera } from 'three'
 import { useScrollStore } from '../../store/useScrollStore'
 import { GROUP, ORB_REVEAL } from '../../lib/constants'
+import { BELTS, nearestGapX } from '../../lib/interludeBelts'
 
 type CursorTuning = { lerp: number; clampX: number; clampY: number }
 type ChoreographyTuning = {
-  interludeRadius: number
-  interludeRadiusY: number
   driftDistance: number
   positionLerp: number
   pulseAmount: number
@@ -33,8 +32,8 @@ function smoothstep(edge0: number, edge1: number, x: number) {
   via getState() (no reactive subscription). Tuning values come from the dev leva 'choreography'
   folder (defaults baked in lib/constants). The full lifecycle:
     hero       -> reveals at the start circle, then floats UP to centre; cursor-follow offset, fading out
-    interlude  -> arcs clockwise around the centered text (above -> right -> below), one pulse
-    about      -> drifts upward (driftProgress) from below the text until it clears the screen
+    interlude  -> descends through two drifting asteroid belts, weaving x to the gap in each (one pulse)
+    about      -> drifts upward (driftProgress) from below the belts until it clears the screen
   Particle shedding is handled in OrbParticles (also off driftProgress).
 */
 export function useOrbChoreography(
@@ -76,7 +75,7 @@ export function useOrbChoreography(
     document.fonts?.ready.then(compute) // fonts can reflow the name (and shift the circle) after mount
   }, [camera, size])
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const group = groupRef.current
     if (!group) return
 
@@ -89,19 +88,35 @@ export function useOrbChoreography(
       group.rotation.y += delta * GROUP.idleSpinY * (1 - choreo.rotationStill * beat)
     }
 
-    // Interlude: the orb ZIG-ZAGS down through the centered section as it travels WITH the downward
-    // scroll - descending top -> bottom (orbitY) while swinging once to the RIGHT and then to the LEFT
-    // (orbitX). The swing is symmetric (equal both sides) and a shorter reach than the old single
-    // rightward arc. Smoothstep (eased) keeps it from snapping at the ends.
-    // The swing also eases IN over the first slice of the interlude (orbitMix) rather than snapping on
-    // at the phase boundary, so a fast scroll out of the hero doesn't pop the orb sideways.
-    const orbitMix = phase === 'hero' ? 0 : smoothstep(0, 0.2, interludeProgress)
-    const eased = interludeProgress * interludeProgress * (3 - 2 * interludeProgress)
-    const orbitX = choreo.interludeRadius * Math.sin(eased * 2 * Math.PI) // 0 -> +right -> 0 -> -left -> 0
-    const orbitY = choreo.interludeRadiusY * Math.sin((0.5 - eased) * Math.PI) // +top -> -bottom
+    // Interlude: the orb descends through two horizontal asteroid belts (InterludeBelts), WEAVING its x
+    // to thread the gaps. flightY descends weaveTop -> weaveBottom across the interlude; flightX steers to
+    // the gap NEAREST the orb in whichever belt it's crossing (blended by its height between the belts).
+    // Both belts' drift + gap positions come from the SHARED interludeBelts model on the SAME clock as the
+    // renderer, so the orb always threads a real gap - collision-free by construction. Eased so it never
+    // snaps; weaveMix ramps the whole thing in over the first slice so a fast scroll out of the hero
+    // doesn't pop the orb sideways. In About/Past the orb holds at the belt bottom and drifts up + off.
+    const time = state.clock.elapsedTime
+    let flightX = 0
+    let flightY = 0
+    if (phase === 'interlude') {
+      const weaveMix = smoothstep(0, 0.15, interludeProgress)
+      const eased = smoothstep(0, 1, interludeProgress)
+      const descentY = BELTS.weaveTop + (BELTS.weaveBottom - BELTS.weaveTop) * eased
+      // Anchor the gap search to screen centre (0), not the orb's own x, so the orb always threads the
+      // central gap and can't ride a gap off-screen if the user parks mid-interlude.
+      const upperGap = nearestGapX(0, time, 0)
+      const lowerGap = nearestGapX(1, time, 0)
+      // 0 at the upper belt's height -> 1 at the lower belt's height; so the orb is exactly on the upper
+      // gap as it crosses the upper belt and on the lower gap as it crosses the lower belt.
+      const beltBlend = smoothstep(BELTS.upperY, BELTS.lowerY, descentY)
+      flightX = weaveMix * (upperGap + (lowerGap - upperGap) * beltBlend)
+      flightY = weaveMix * descentY
+    } else if (phase === 'about' || phase === 'past') {
+      flightY = BELTS.weaveBottom + driftProgress * choreo.driftDistance
+    }
 
-    // x: circle anchor + faded cursor offset (-> 0 as the hero exits) + the interlude arc.
-    // y: same + the interlude arc + the upward scroll drift through About.
+    // x: circle anchor + faded cursor offset (-> 0 as the hero exits) + the interlude weave.
+    // y: same + the interlude descent, then the upward scroll drift through About.
     // The cursor offset fades with the hero exit (cursorFade) AND eases in over the reveal (revealRamp)
     // so the orb appears EXACTLY centred on the start circle - where the click landed - then begins
     // trailing the cursor, instead of snapping to the cursor (which is sitting on the circle at click).
@@ -121,13 +136,10 @@ export function useOrbChoreography(
         ? 1
         : smoothstep(0, ORB_REVEAL.settleDur, elapsed - ORB_REVEAL.settleStart)
     const baseHold = cursorFade * (1 - settleProgress)
-    // Drift only applies once we're actually in the upward phases. Gating by phase (not just trusting
-    // the raw value) keeps a stale driftProgress - ScrollTrigger can leave it non-zero after a jump /
-    // scroll-restore - from yanking the hero/interlude orb off the top of the screen.
-    const drift = phase === 'about' || phase === 'past' ? driftProgress : 0
-    const targetX = (base?.x ?? 0) * baseHold + cursorOffsetX + orbitMix * orbitX
-    const targetY =
-      (base?.y ?? 0) * baseHold + cursorOffsetY + orbitMix * orbitY + drift * choreo.driftDistance
+    // flightX/flightY (above) already gate the interlude weave + About drift by phase, so a stale
+    // interludeProgress/driftProgress left by a scroll jump can't yank the hero orb around.
+    const targetX = (base?.x ?? 0) * baseHold + cursorOffsetX + flightX
+    const targetY = (base?.y ?? 0) * baseHold + cursorOffsetY + flightY
 
     // Frame-rate-independent easing. The hero starts floaty (cursor trailing) and tightens toward the
     // fast orbit ease as it scrolls out (ramped by heroProgress) - so the rate doesn't jump at the

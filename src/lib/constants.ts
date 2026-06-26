@@ -62,12 +62,9 @@ export const CURSOR = {
 }
 
 export const CHOREOGRAPHY = {
-  driftDistance: 8, // world units the orb rises (group.y) from its below-text interlude end to off-screen
+  driftDistance: 8, // world units the orb rises (group.y) from the belt bottom to off-screen (About)
   positionLerp: 0.05, // floatier ease toward the scroll-driven target (less snappy)
-  // Interlude: the orb ZIG-ZAGS down through the centered section (travelling with the downward
-  // scroll) - descending while it swings once to the right, then once to the left.
-  interludeRadius: 1.5, // horizontal swing amplitude each side (symmetric; shorter than the old arc)
-  interludeRadiusY: 1.15, // vertical reach (top -> bottom of the descent)
+  // Interlude weave geometry lives in lib/interludeBelts (shared with the asteroid renderer).
   pulseAmount: 0.18, // group scale bump at the interlude beat
   rotationStill: 0.85, // how much the idle spin slows at the beat (0..1)
   interludePinVh: 0.9, // interlude pin length as a fraction of viewport height ("harder to scroll")
