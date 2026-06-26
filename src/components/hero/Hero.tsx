@@ -118,7 +118,7 @@ export function Hero() {
               <path d="M20 12H5" />
               <path d="M11 6l-6 6 6 6" />
             </svg>
-            click here
+            {lowPower ? 'tap here' : 'click here'}
           </span>
         </div>
       </div>

@@ -50,7 +50,9 @@ function App() {
       <Nav />
       <main className="relative z-20">
         <Hero />
-        <Interlude />
+        {/* The interlude is the orb's asteroid-weave moment - 3D only. On low-power/mobile there's no
+            canvas, so it would just be a blank screen; skip it and go straight Hero -> About. */}
+        {!lowPower && <Interlude />}
         <About />
         <Projects />
         <Contact />
