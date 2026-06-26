@@ -85,11 +85,14 @@ export function nearestGapX(belt: number, time: number, x: number) {
   return k * BELTS.period + drift
 }
 
-// Whole-belt opacity across the interlude: fades in at the start, holds, fades out at the end (so the
-// rocks are gone by the time About arrives). The orb crosses each belt well inside the full-opacity zone.
+// Whole-belt opacity across the interlude: the rocks EMERGE from the dark over the first quarter and
+// DISSOLVE back into it over the last quarter (wide, eased windows so neither end pops). Both windows
+// close well before the orb's belt crossings (~0.34 and ~0.65), so the rocks are at full opacity through
+// both threads. fade is exactly 0 at progress 0 and 1 (the phase boundaries), so the visibility toggle
+// never cuts a visible rock.
 export function beltFade(progress: number) {
-  const fadeIn = smooth(clamp01(progress / 0.12))
-  const fadeOut = smooth(1 - clamp01((progress - 0.88) / 0.12))
+  const fadeIn = smooth(clamp01(progress / 0.25))
+  const fadeOut = smooth(clamp01((1 - progress) / 0.25))
   return fadeIn * fadeOut
 }
 
