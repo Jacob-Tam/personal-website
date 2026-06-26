@@ -52,20 +52,14 @@ export function InterludeBelts() {
       opacity: 0,
       fog: false, // they sit deep in the fog range; keep them crisp like the planets do
     })
-    // Two shader touches (via onBeforeCompile):
-    //  - CRATERS: object-space bowls carved into the shading normal (+ a slightly darker floor) wherever
-    //    the surface direction falls inside a seeded crater. No UVs/seams; works on the faceted surface.
-    //  - blue fresnel RIM: the site's single accent, echoing the orb's rim so the belts feel part of the
-    //    same world. A smooth instance-rotated sphere normal drives it -> crisp thin outline, low intensity.
+    // CRATERS (via onBeforeCompile): object-space bowls carved into the shading normal (+ a slightly
+    // darker floor) wherever the surface direction falls inside a seeded crater. No UVs/seams; works on
+    // the faceted surface.
     mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uRim = { value: new THREE.Color('#6bb0dc') } // --color-accent-hi
       shader.uniforms.uCraters = { value: makeCraters() }
       shader.uniforms.uCraterDepth = { value: 0.7 } // how strongly the bowl tilts the normal
       shader.vertexShader = shader.vertexShader
-        .replace(
-          '#include <common>',
-          '#include <common>\nvarying vec3 vRimNormal;\nvarying vec3 vObjPos;\nvarying mat3 vNormalXf;',
-        )
+        .replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying mat3 vNormalXf;')
         .replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>
@@ -73,17 +67,14 @@ export function InterludeBelts() {
           // object-space normal/vector -> view space (same transform the engine uses for instanced
           // normals); constant per instance, so it interpolates trivially. The fragment needs it because
           // normalMatrix/instanceMatrix are vertex-only.
-          vNormalXf = normalMatrix * mat3(instanceMatrix);
-          vRimNormal = normalize(vNormalXf * normalize(position));`,
+          vNormalXf = normalMatrix * mat3(instanceMatrix);`,
         )
       shader.fragmentShader = shader.fragmentShader
         .replace(
           '#include <common>',
           `#include <common>
-          varying vec3 vRimNormal;
           varying vec3 vObjPos;
           varying mat3 vNormalXf;
-          uniform vec3 uRim;
           uniform vec4 uCraters[${CRATER_COUNT}];
           uniform float uCraterDepth;`,
         )
@@ -123,14 +114,6 @@ export function InterludeBelts() {
               }
             }
             diffuseColor.rgb *= 1.0 - 0.28 * floorShade;
-          }`,
-        )
-        .replace(
-          '#include <emissivemap_fragment>',
-          /* glsl */ `#include <emissivemap_fragment>
-          {
-            float rkFres = pow(1.0 - clamp(dot(normalize(vRimNormal), normalize(vViewPosition)), 0.0, 1.0), 4.5);
-            totalEmissiveRadiance += uRim * rkFres * 0.5;
           }`,
         )
     }
