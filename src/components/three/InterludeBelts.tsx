@@ -12,6 +12,29 @@ import { BELTS, beltDrift, beltFade, makeAsteroids, wrapX } from '../../lib/inte
   across the interlude. Visible only during the interlude phase (and not under reduced motion); on
   low-power there's no canvas at all. Lives in world space (z ~ 0), the orb's plane.
 */
+
+// Seeded points on the unit sphere = crater centres (stable across reloads). Each is a vec4: xyz = the
+// centre direction, w = cos(angular radius). The shader carves a shaded bowl wherever the surface
+// direction falls inside one. Shared across instances (per-instance rotation makes them read differently).
+const CRATER_COUNT = 14
+function makeCraters() {
+  let seed = 70241
+  const rand = () => {
+    seed |= 0
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+  return Array.from({ length: CRATER_COUNT }, () => {
+    const u = rand() * 2 - 1
+    const theta = rand() * Math.PI * 2
+    const s = Math.sqrt(1 - u * u)
+    const radius = 0.16 + rand() * 0.22 // small angular radius (radians)
+    return new THREE.Vector4(s * Math.cos(theta), s * Math.sin(theta), u, Math.cos(radius))
+  })
+}
+
 export function InterludeBelts() {
   const meshRef = useRef<THREE.InstancedMesh>(null!)
   const asteroids = useMemo(() => makeAsteroids(), [])
@@ -29,25 +52,83 @@ export function InterludeBelts() {
       opacity: 0,
       fog: false, // they sit deep in the fog range; keep them crisp like the planets do
     })
-    // Blue fresnel RIM (the site's single accent), echoing the orb's rim so the belts feel part of the
-    // same world. A smooth, instance-rotated sphere normal drives the fresnel, so the silhouette glows
-    // cleanly even though the surface is faceted. Added to emissive -> reads as a cool edge light.
+    // Two shader touches (via onBeforeCompile):
+    //  - CRATERS: object-space bowls carved into the shading normal (+ a slightly darker floor) wherever
+    //    the surface direction falls inside a seeded crater. No UVs/seams; works on the faceted surface.
+    //  - blue fresnel RIM: the site's single accent, echoing the orb's rim so the belts feel part of the
+    //    same world. A smooth instance-rotated sphere normal drives it -> crisp thin outline, low intensity.
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uRim = { value: new THREE.Color('#6bb0dc') } // --color-accent-hi
+      shader.uniforms.uCraters = { value: makeCraters() }
+      shader.uniforms.uCraterDepth = { value: 0.7 } // how strongly the bowl tilts the normal
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vRimNormal;')
+        .replace(
+          '#include <common>',
+          '#include <common>\nvarying vec3 vRimNormal;\nvarying vec3 vObjPos;\nvarying mat3 vNormalXf;',
+        )
         .replace(
           '#include <begin_vertex>',
-          '#include <begin_vertex>\nvRimNormal = normalize(normalMatrix * (mat3(instanceMatrix) * normalize(position)));',
+          `#include <begin_vertex>
+          vObjPos = position;
+          // object-space normal/vector -> view space (same transform the engine uses for instanced
+          // normals); constant per instance, so it interpolates trivially. The fragment needs it because
+          // normalMatrix/instanceMatrix are vertex-only.
+          vNormalXf = normalMatrix * mat3(instanceMatrix);
+          vRimNormal = normalize(vNormalXf * normalize(position));`,
         )
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vRimNormal;\nuniform vec3 uRim;')
+        .replace(
+          '#include <common>',
+          `#include <common>
+          varying vec3 vRimNormal;
+          varying vec3 vObjPos;
+          varying mat3 vNormalXf;
+          uniform vec3 uRim;
+          uniform vec4 uCraters[${CRATER_COUNT}];
+          uniform float uCraterDepth;`,
+        )
+        // Carve the craters into the lighting normal. For each crater the fragment is inside, tilt the
+        // normal toward the crater centre on the walls (a bowl), strongest mid-wall (sin profile).
+        .replace(
+          '#include <normal_fragment_begin>',
+          /* glsl */ `#include <normal_fragment_begin>
+          {
+            vec3 dirObj = normalize(vObjPos);
+            vec3 tilt = vec3(0.0);
+            for (int i = 0; i < ${CRATER_COUNT}; i++) {
+              vec4 cr = uCraters[i];
+              float t = dot(dirObj, cr.xyz);
+              if (t > cr.w) {
+                float r = (1.0 - t) / (1.0 - cr.w);        // 0 centre .. 1 edge
+                vec3 outward = normalize(dirObj - cr.xyz * t + 1e-5);
+                tilt += outward * sin(r * 3.14159265);     // wall slope
+              }
+            }
+            normal = normalize(normal - vNormalXf * tilt * uCraterDepth); // toward centre -> depression
+          }`,
+        )
+        // Darken the crater floors a touch so the bowls read even in flat light.
+        .replace(
+          '#include <map_fragment>',
+          /* glsl */ `#include <map_fragment>
+          {
+            vec3 dirObj = normalize(vObjPos);
+            float floorShade = 0.0;
+            for (int i = 0; i < ${CRATER_COUNT}; i++) {
+              vec4 cr = uCraters[i];
+              float t = dot(dirObj, cr.xyz);
+              if (t > cr.w) {
+                float r = (1.0 - t) / (1.0 - cr.w);
+                floorShade = max(floorShade, 1.0 - r);     // deepest at the centre
+              }
+            }
+            diffuseColor.rgb *= 1.0 - 0.28 * floorShade;
+          }`,
+        )
         .replace(
           '#include <emissivemap_fragment>',
           /* glsl */ `#include <emissivemap_fragment>
           {
-            // High power = a THIN crisp edge (a refined blue outline), not a wide glow that turns the
-            // rocks into blue bubbles. Kept low-intensity: the accent should whisper, not shout.
             float rkFres = pow(1.0 - clamp(dot(normalize(vRimNormal), normalize(vViewPosition)), 0.0, 1.0), 4.5);
             totalEmissiveRadiance += uRim * rkFres * 0.5;
           }`,
