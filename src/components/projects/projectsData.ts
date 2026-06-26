@@ -34,7 +34,7 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'taxi',
-    title: 'Aylesbury 11 — Autonomous Robot Taxi',
+    title: 'Autonomous Robot Taxi',
     tagline: 'A Raspberry Pi car that can read road signs and not crash. Mostly.',
     description:
       "Built for Queen's autonomous-vehicle competition. Raspberry Pi + Coral USB Accelerator running a quantized MobileNetV2 for road sign classification, with custom training data and a mapping algorithm bug that took longer to find than the rest of the pipeline combined.",

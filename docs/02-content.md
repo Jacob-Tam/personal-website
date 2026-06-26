@@ -71,7 +71,7 @@ for owners.
 ```
 - Tech tags: `Arduino` `Python` `OpenCV` `DeepFace` `SQL` `IoT`
 
-### 2. Aylesbury 11 — Autonomous Robot Taxi
+### 2. Autonomous Robot Taxi
 - Visual: driving video (~20s highlight loop) + photos available
 - Tagline: `A Raspberry Pi car that can read road signs and not crash. Mostly.`
 - Description:
