@@ -167,13 +167,7 @@ export function useOrbChoreography(
       tx: +targetX.toFixed(2), ty: +targetY.toFixed(2), phase, ip: +interludeProgress.toFixed(2),
     }
 
-    // The beat: a brief scale bump on the whole system. On top of it, the orb RECEDES as it departs:
-    // it shrinks over the END of the interlude (after the last belt thread at ~0.65) and on through
-    // About, so it leaves as a small point in the distance instead of crowding the About photo at full
-    // size. Continuous across the interlude->About seam (both resolve to 0.5 there).
-    let recede = 1
-    if (phase === 'interlude') recede = 1 - 0.5 * smoothstep(0.7, 1, interludeProgress)
-    else if (phase === 'about' || phase === 'past') recede = 0.5 - 0.25 * smoothstep(0, 1, driftProgress)
-    group.scale.setScalar((1 + choreo.pulseAmount * beat) * recede)
+    // The beat: a brief scale bump on the whole system.
+    group.scale.setScalar(1 + choreo.pulseAmount * beat)
   })
 }
