@@ -52,12 +52,14 @@ export function InterludeBelts() {
       opacity: 0,
       fog: false, // they sit deep in the fog range; keep them crisp like the planets do
     })
-    // CRATERS (via onBeforeCompile): object-space bowls carved into the shading normal (+ a slightly
-    // darker floor) wherever the surface direction falls inside a seeded crater. No UVs/seams; works on
-    // the faceted surface.
+    // Surface detail (via onBeforeCompile), all object-space so there are no UVs/seams:
+    //  - CRATERS: bowls carved into the shading normal (+ darker floors) at seeded points.
+    //  - GRAIN: subtle fine value-noise roughening of the normal, so the flat low-poly faces read as
+    //    textured stone instead of clean facets. Kept low so it stays a hint, not a makeover.
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uCraters = { value: makeCraters() }
       shader.uniforms.uCraterDepth = { value: 0.7 } // how strongly the bowl tilts the normal
+      shader.uniforms.uGrain = { value: 0.25 } // subtle surface grain strength
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying mat3 vNormalXf;')
         .replace(
@@ -76,7 +78,16 @@ export function InterludeBelts() {
           varying vec3 vObjPos;
           varying mat3 vNormalXf;
           uniform vec4 uCraters[${CRATER_COUNT}];
-          uniform float uCraterDepth;`,
+          uniform float uCraterDepth;
+          uniform float uGrain;
+          float rkHash(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+          float rkVN(vec3 x){
+            vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(mix(rkHash(i + vec3(0.0,0.0,0.0)), rkHash(i + vec3(1.0,0.0,0.0)), f.x),
+                           mix(rkHash(i + vec3(0.0,1.0,0.0)), rkHash(i + vec3(1.0,1.0,0.0)), f.x), f.y),
+                       mix(mix(rkHash(i + vec3(0.0,0.0,1.0)), rkHash(i + vec3(1.0,0.0,1.0)), f.x),
+                           mix(rkHash(i + vec3(0.0,1.0,1.0)), rkHash(i + vec3(1.0,1.0,1.0)), f.x), f.y), f.z);
+          }`,
         )
         // Carve the craters into the lighting normal. For each crater the fragment is inside, tilt the
         // normal toward the crater centre on the walls (a bowl), strongest mid-wall (sin profile).
@@ -95,7 +106,17 @@ export function InterludeBelts() {
                 tilt += outward * sin(r * 3.14159265);     // wall slope
               }
             }
-            normal = normalize(normal - vNormalXf * tilt * uCraterDepth); // toward centre -> depression
+            // fine surface grain: tilt the normal by the tangent gradient of a high-freq value noise so
+            // the flat faces read as stone. Object-space, projected to the surface tangent plane.
+            vec3 gp = vObjPos * 13.0;
+            float g0 = rkVN(gp);
+            vec3 grain = vec3(
+              rkVN(gp + vec3(0.5, 0.0, 0.0)) - g0,
+              rkVN(gp + vec3(0.0, 0.5, 0.0)) - g0,
+              rkVN(gp + vec3(0.0, 0.0, 0.5)) - g0
+            );
+            grain -= dot(grain, dirObj) * dirObj;
+            normal = normalize(normal - vNormalXf * (tilt * uCraterDepth + grain * uGrain));
           }`,
         )
         // Darken the crater floors a touch so the bowls read even in flat light.
@@ -132,9 +153,14 @@ export function InterludeBelts() {
     const time = state.clock.elapsedTime
     material.opacity = beltFade(interludeProgress)
 
+    // Subtle scroll-linked depth drift: the field eases from slightly nearer (start) to slightly farther
+    // (end) as you scroll through, giving a gentle sense of passing through the belt. z only - it doesn't
+    // touch the x-gaps the orb threads, so the weave is unaffected.
+    const zDrift = (0.5 - interludeProgress) * 1.2
+
     for (let i = 0; i < asteroids.length; i++) {
       const a = asteroids[i]
-      dummy.position.set(wrapX(a.baseX + beltDrift(a.belt, time)), a.y, a.z)
+      dummy.position.set(wrapX(a.baseX + beltDrift(a.belt, time)), a.y, a.z + zDrift)
       dummy.rotation.set(
         a.rot[0] + time * a.rotRate[0],
         a.rot[1] + time * a.rotRate[1],
