@@ -67,7 +67,8 @@ export const CHOREOGRAPHY = {
   // Interlude weave geometry lives in lib/interludeBelts (shared with the asteroid renderer).
   pulseAmount: 0.18, // group scale bump at the interlude beat
   rotationStill: 0.85, // how much the idle spin slows at the beat (0..1)
-  interludePinVh: 0.9, // interlude pin length as a fraction of viewport height ("harder to scroll")
+  interludePinVh: 2.2, // interlude pin length (fraction of viewport height). Long so the belt weave is a
+  // deliberate, scroll-resisted moment rather than blowing by in one gesture (the hero->transition felt snappy).
 }
 
 // Click-to-reveal intro (Hero start circle -> store.orbStarted/orbStartAt). The core grows in from a
