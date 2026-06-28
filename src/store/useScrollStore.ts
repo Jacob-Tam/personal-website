@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { detectLowPower, detectReducedMotion } from '../lib/gpuTier'
+import { detectLowPower, detectMobile, detectReducedMotion } from '../lib/gpuTier'
 
 export type OrbPhase = 'hero' | 'interlude' | 'about' | 'past'
 
@@ -22,7 +22,8 @@ interface ScrollState {
   isLoaded: boolean // loading screen finished -> hero revealed
   canvasReady: boolean // the 3D canvas has rendered its first frame (loading-readiness signal)
   reducedMotion: boolean // prefers-reduced-motion
-  lowPower: boolean // mobile / weak GPU -> 3D fallback (no canvas, no choreography/parallax)
+  lowPower: boolean // no WebGL -> 3D fallback (no canvas, no choreography/parallax)
+  mobile: boolean // phone-ish viewport -> 3D still runs, but Scene scales quality down
   supernovaAt: number // performance.now() of the last "67" supernova trigger (0 = never)
   orbStarted: boolean // the hero orb has been activated (clicked) - drives the staged reveal
   orbStartAt: number // performance.now() of the activation, so the reveal can ease in over time
@@ -39,6 +40,7 @@ interface ScrollState {
   setCanvasReady: (value: boolean) => void
   setReducedMotion: (value: boolean) => void
   setLowPower: (value: boolean) => void
+  setMobile: (value: boolean) => void
   triggerSupernova: () => void
   startOrb: () => void
   setProjectsActive: (value: boolean) => void
@@ -57,6 +59,7 @@ export const useScrollStore = create<ScrollState>((set) => ({
   canvasReady: false,
   reducedMotion: detectReducedMotion(), // seeded at load; useReducedMotion keeps it live
   lowPower: detectLowPower(), // resolved once at load; gates the canvas, choreography, and parallax
+  mobile: detectMobile(), // resolved once at load; Scene reads it to scale 3D quality down on phones
   supernovaAt: 0,
   orbStarted: false,
   orbStartAt: 0,
@@ -73,6 +76,7 @@ export const useScrollStore = create<ScrollState>((set) => ({
   setCanvasReady: (value) => set({ canvasReady: value }),
   setReducedMotion: (value) => set({ reducedMotion: value }),
   setLowPower: (value) => set({ lowPower: value }),
+  setMobile: (value) => set({ mobile: value }),
   triggerSupernova: () => set({ supernovaAt: performance.now() }),
   // One-shot: activate the orb (idempotent so a double-click can't restart the reveal mid-flight).
   startOrb: () => set((state) => (state.orbStarted ? {} : { orbStarted: true, orbStartAt: performance.now() })),

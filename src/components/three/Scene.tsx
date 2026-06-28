@@ -95,6 +95,8 @@ export function Scene() {
   const phase = useScrollStore((state) => state.phase)
   const reducedMotion = useScrollStore((state) => state.reducedMotion)
   const projectsActive = useScrollStore((state) => state.projectsActive)
+  // Phones run the full scene but at reduced quality (DPR + counts) so it stays smooth.
+  const mobile = useScrollStore((state) => state.mobile)
 
   // DEV-only orb tuning, trimmed to ~9 knobs worth touching live; everything else is baked in
   // lib/constants (the panel was overwhelming with ~50 orb controls).
@@ -124,7 +126,7 @@ export function Scene() {
     rimColor: orb.rimColor,
   }
   const particles = {
-    count: orb.particleCount,
+    count: mobile ? Math.round(orb.particleCount * 0.5) : orb.particleCount, // fewer orbiting points on phones
     planes: PARTICLES.planes,
     radiusMin: PARTICLES.radiusMin,
     radiusMax: PARTICLES.radiusMax,
@@ -207,8 +209,10 @@ export function Scene() {
           // off-screen like the orb, so 'never' would freeze it over Contact. Reduced motion: static
           // orb, also 'demand'.
           frameloop={!reducedMotion && (projectsActive || phase !== 'past') ? 'always' : 'demand'}
-          gl={{ alpha: true, antialias: true }}
-          dpr={[1, 2]}
+          // Phones cap DPR at 1.5 (vs 2) - the single biggest mobile win: a 3x-DPR phone would otherwise
+          // render ~4x the pixels. antialias off on mobile too (MSAA is costly; the lower-res edges are fine).
+          gl={{ alpha: true, antialias: !mobile }}
+          dpr={mobile ? [1, 1.5] : [1, 2]}
           onCreated={() => useScrollStore.getState().setCanvasReady(true)}
         >
           {isDev && <Perf position="bottom-right" />}

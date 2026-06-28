@@ -1,16 +1,18 @@
-// Mobile / low-power detection for the 3D fallback (docs/03). When this is true we skip the WebGL
-// canvas entirely (a static hero stands in) and disable scroll choreography + parallax. Evaluated
-// once at load: a phone won't cross the breakpoint mid-session, and hot-swapping the whole 3D scene
-// when a desktop window is dragged very narrow isn't worth the complexity.
-//
-// (A finer GPU-tier check via detect-gpu, per docs/03, could be layered on later for weak GPUs on
-// larger screens; viewport width + WebGL availability covers the phone case this step targets.)
+// True ONLY when WebGL is unavailable - then the 3D scene can't render at all, so we fall back to the
+// static hero + flat sections. Phones now KEEP the full 3D scene (orb + projects journey); per Jacob the
+// mobile experience should match desktop. Quality is scaled down for phones instead (see detectMobile +
+// the mobile tuning in Scene), rather than dropping the scene. Evaluated once at load.
 export function detectLowPower(): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') return false
-  // Primary signal: a phone-ish viewport (docs/03 uses max-width: 768px).
-  const smallScreen = window.matchMedia('(max-width: 768px)').matches
-  // Hard requirement: without WebGL the orb can't render at all, so fall back regardless of size.
-  return smallScreen || !supportsWebGL()
+  return !supportsWebGL()
+}
+
+// Phone-ish viewport (docs/03 uses max-width: 768px). The 3D scene still runs, but Scene scales quality
+// down on mobile (lower DPR, fewer orb particles / journey stars / belt rocks, simpler planets) so it
+// stays smooth on mobile GPUs. Evaluated once at load - a phone won't cross the breakpoint mid-session.
+export function detectMobile(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(max-width: 768px)').matches
 }
 
 // Whether the user asked the OS to minimize motion (docs/01). Drives the static-orb + no-choreography

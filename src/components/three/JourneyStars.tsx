@@ -32,11 +32,14 @@ export function JourneyStars({
   const ref = useRef<THREE.LineSegments>(null!)
   const prevProgress = useRef(0)
   const speed = useRef(drift) // smoothed world speed (units/s), eased toward the scroll-driven target
+  // Fewer streaks on phones (lighter line-segment field) - the corridor still reads full.
+  const mobile = useScrollStore((state) => state.mobile)
+  const count = mobile ? Math.round(ST.count * 0.45) : ST.count
 
   // Seeded star positions filling the corridor, so the field is full on the first active frame (no
   // empty flash) and stable across reloads. Each star is 2 verts: head [0..2] + tail [3..5].
   const geometry = useMemo(() => {
-    const positions = new Float32Array(ST.count * 2 * 3)
+    const positions = new Float32Array(count * 2 * 3)
     let seed = 20260603
     const rand = () => {
       seed |= 0
@@ -46,7 +49,7 @@ export function JourneyStars({
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296
     }
     const recycleZ = camZ + ST.near
-    for (let i = 0; i < ST.count; i++) {
+    for (let i = 0; i < count; i++) {
       const x = (rand() * 2 - 1) * ST.spreadX
       const y = (rand() * 2 - 1) * ST.spreadY
       const z = recycleZ - rand() * ST.depth
@@ -60,7 +63,7 @@ export function JourneyStars({
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.BufferAttribute(positions, 3))
     return g
-  }, [camZ])
+  }, [camZ, count])
 
   useEffect(() => () => geometry.dispose(), [geometry])
 
@@ -84,7 +87,7 @@ export function JourneyStars({
     const attr = ref.current.geometry.attributes.position as THREE.BufferAttribute
     const arr = attr.array as Float32Array
 
-    for (let i = 0; i < ST.count; i++) {
+    for (let i = 0; i < count; i++) {
       let x = arr[i * 6 + 0]
       let y = arr[i * 6 + 1]
       let z = arr[i * 6 + 2] + step
