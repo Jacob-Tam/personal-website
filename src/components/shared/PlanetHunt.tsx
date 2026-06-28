@@ -3,15 +3,19 @@ import { lenis } from '../../lib/lenis'
 
 /*
   Easter-egg mini-game (triggered from Planets.tsx when all three background planets are lit at once).
-  You fly a little saucer - the same craft as the drifting Spaceship fly-by - with the MOUSE or the
-  ARROW KEYS (WASD too). It auto-fires in its heading; sweep across the planets (or ram them) to blow
-  all three up. But the planets shoot back: take three hits and your ship is destroyed. Clear them to
-  win, lose all lives to lose, Esc to bail.
+  You fly a little saucer - the same craft as the drifting Spaceship fly-by - and it auto-fires in its
+  heading; sweep across the planets (or ram them) to blow all three up. The planets shoot back: three
+  hits and your ship is destroyed. Clear them to win, lose all lives to lose, exit any time.
 
-  Graphics (saucer, bullets, explosions, reticles, stars) are drawn on a transparent full-screen
-  <canvas> so the per-frame motion never re-renders React. The planets stay their real DOM elements
-  (Planets raises them above the dim backdrop during play); we read their live rects each frame for
-  aiming + collisions, and call onKill(i) to pop each one. Scroll is locked (lenis.stop) for the run.
+  Controls adapt to the device:
+    - desktop: MOUSE (the ship trails the cursor) or ARROW KEYS / WASD; Esc exits.
+    - touch (tablet/phone): a floating VIRTUAL JOYSTICK - touch anywhere and drag to steer; an exit
+      button (top-right) closes it.
+
+  Graphics (saucer, bullets, debris, explosions, reticles, stars, joystick) are drawn on a transparent
+  full-screen <canvas> so the per-frame motion never re-renders React. The planets stay their real DOM
+  elements (Planets raises them above the dim backdrop during play); we read their live rects each frame
+  for aiming + collisions and call onKill(i) to pop each one. Scroll is locked (lenis.stop) for the run.
 */
 
 const SHIP = { cursorLerp: 0.14, accel: 0.85, friction: 0.9, maxSpeed: 13, nose: 16, hitRadius: 12 }
@@ -22,9 +26,10 @@ const RAM_DPS = 9 // hp/sec drained while the ship overlaps a planet
 const LIVES = 3
 const INVULN_MS = 1300 // grace (with a blink) after taking a hit
 const GRACE_MS = 900 // before the planets open fire
-const OVER_HOLD_MS = 2200
+const OVER_HOLD_MS = 2400
 const ACCENT = '120, 200, 245'
 const HOSTILE = '255, 120, 90'
+const JOY_RADIUS = 58 // virtual-joystick reach (touch): full speed at this drag distance
 // Asteroids: solid obstacles you weave around. They block your shots and your ship, but the planets'
 // bolts pass straight through them (so they're never cover - only a hindrance).
 const ASTEROID_SPOTS = [
@@ -60,6 +65,7 @@ const STARS = (() => {
 
 type Bullet = { x: number; y: number; vx: number; vy: number; life: number }
 type Boom = { x: number; y: number; t: number; big: boolean; hostile?: boolean }
+type Particle = { x: number; y: number; vx: number; vy: number; life: number; max: number; size: number; warm: boolean }
 type Asteroid = { x: number; y: number; vx: number; vy: number; r: number; angle: number; spin: number; verts: number[] }
 
 export function PlanetHunt({
@@ -73,6 +79,9 @@ export function PlanetHunt({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [showHint, setShowHint] = useState(true)
+  const finishRef = useRef<() => void>(() => {})
+  // Coarse pointer = touch device -> joystick controls + touch hint copy.
+  const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -95,9 +104,12 @@ export function PlanetHunt({
     const ship = { x: window.innerWidth / 2, y: window.innerHeight * 0.82, vx: 0, vy: 0, angle: -Math.PI / 2 }
     const mouse = { x: ship.x, y: ship.y, active: false }
     const keys = { up: false, down: false, left: false, right: false }
+    const joy = { active: false, id: -1, baseX: 0, baseY: 0, curX: 0, curY: 0 }
     const bullets: Bullet[] = []
     const enemies: Bullet[] = []
     const booms: Boom[] = []
+    const particles: Particle[] = []
+    let shake = 0
     const asteroids: Asteroid[] = ASTEROID_SPOTS.map(([fx, fy]) => {
       const dir = Math.random() * Math.PI * 2
       const speed = 26 + Math.random() * 22
@@ -128,11 +140,44 @@ export function PlanetHunt({
       ended = true
       onEnd()
     }
+    finishRef.current = finish
 
+    // A burst of flying debris - the juice on every hit/kill/ship-loss.
+    const spawnDebris = (x: number, y: number, n: number, warm: boolean) => {
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2
+        const sp = 50 + Math.random() * 230
+        const life = 0.4 + Math.random() * 0.55
+        particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life, max: life, size: 1 + Math.random() * 2.4, warm })
+      }
+    }
+
+    // --- input: mouse trails the cursor; touch drives the joystick; keys steer directly ---
     const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') {
+        if (joy.active && event.pointerId === joy.id) {
+          joy.curX = event.clientX
+          joy.curY = event.clientY
+        }
+        return
+      }
       mouse.x = event.clientX
       mouse.y = event.clientY
       mouse.active = true
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch') return
+      // ignore taps on the on-screen UI (the exit button)
+      const target = event.target
+      if (target instanceof Element && target.closest('[data-game-ui]')) return
+      joy.active = true
+      joy.id = event.pointerId
+      joy.baseX = joy.curX = event.clientX
+      joy.baseY = joy.curY = event.clientY
+      mouse.active = false
+    }
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerType === 'touch' && event.pointerId === joy.id) joy.active = false
     }
     const setKey = (event: KeyboardEvent, down: boolean) => {
       const k = event.key.toLowerCase()
@@ -148,11 +193,14 @@ export function PlanetHunt({
     const onKeyDown = (e: KeyboardEvent) => setKey(e, true)
     const onKeyUp = (e: KeyboardEvent) => setKey(e, false)
     window.addEventListener('pointermove', onPointerMove, { passive: true })
+    window.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerUp)
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('resize', resize)
     if (lenis) lenis.stop()
-    const hintTimer = window.setTimeout(() => setShowHint(false), 3800)
+    const hintTimer = window.setTimeout(() => setShowHint(false), 4200)
 
     const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
@@ -164,6 +212,7 @@ export function PlanetHunt({
       const H = window.innerHeight
       const elapsed = now - t0
       const over = wonAt > 0 || lostAt > 0
+      shake *= Math.pow(0.0025, dt) // smooth exponential decay of screen shake
 
       // --- asteroids drift + bounce off the edges ---
       for (const a of asteroids) {
@@ -178,7 +227,21 @@ export function PlanetHunt({
 
       // --- movement ---
       if (!over) {
-        if (mouse.active) {
+        if (joy.active) {
+          const dx = joy.curX - joy.baseX
+          const dy = joy.curY - joy.baseY
+          const dist = Math.hypot(dx, dy)
+          if (dist > 4) {
+            const mag = Math.min(dist, JOY_RADIUS) / JOY_RADIUS
+            const tvx = (dx / dist) * mag * SHIP.maxSpeed
+            const tvy = (dy / dist) * mag * SHIP.maxSpeed
+            ship.vx += (tvx - ship.vx) * 0.3
+            ship.vy += (tvy - ship.vy) * 0.3
+          } else {
+            ship.vx *= 0.8
+            ship.vy *= 0.8
+          }
+        } else if (mouse.active) {
           ship.vx = (mouse.x - ship.x) * SHIP.cursorLerp
           ship.vy = (mouse.y - ship.y) * SHIP.cursorLerp
         } else {
@@ -207,6 +270,7 @@ export function PlanetHunt({
           }
         }
       }
+      const shipSpeed = Math.hypot(ship.vx, ship.vy)
 
       // --- live target rects (alive planets only) ---
       const targets = planetEls.map((el, i) => {
@@ -219,8 +283,11 @@ export function PlanetHunt({
         if (hp[t.i] <= 0) return
         hp[t.i] -= amount
         booms.push({ x: bx, y: by, t: 0, big: false })
+        spawnDebris(bx, by, 4, false)
         if (hp[t.i] <= 0) {
           booms.push({ x: t.cx, y: t.cy, t: 0, big: true })
+          spawnDebris(t.cx, t.cy, 22, false)
+          shake = Math.min(shake + 10, 16)
           onKill(t.i)
         }
       }
@@ -257,6 +324,7 @@ export function PlanetHunt({
           for (const a of asteroids) {
             if (Math.hypot(bull.x - a.x, bull.y - a.y) < a.r) {
               booms.push({ x: bull.x, y: bull.y, t: 0, big: false })
+              spawnDebris(bull.x, bull.y, 3, false)
               hit = true
               break
             }
@@ -298,10 +366,14 @@ export function PlanetHunt({
           lives -= 1
           invulnUntil = now + INVULN_MS
           booms.push({ x: ship.x, y: ship.y, t: 0, big: false, hostile: true })
+          spawnDebris(ship.x, ship.y, 10, true)
+          shake = Math.min(shake + 8, 16)
           gone = true
           if (lives <= 0) {
             lostAt = now
             booms.push({ x: ship.x, y: ship.y, t: 0, big: true, hostile: true })
+            spawnDebris(ship.x, ship.y, 28, true)
+            shake = 18
             window.setTimeout(finish, OVER_HOLD_MS)
           }
         }
@@ -314,12 +386,28 @@ export function PlanetHunt({
         window.setTimeout(finish, OVER_HOLD_MS)
       }
 
+      // --- particles ---
+      for (let p = particles.length - 1; p >= 0; p--) {
+        const part = particles[p]
+        part.x += part.vx * dt
+        part.y += part.vy * dt
+        part.vx *= Math.pow(0.12, dt)
+        part.vy *= Math.pow(0.12, dt)
+        part.life -= dt
+        if (part.life <= 0) particles.splice(p, 1)
+      }
+
       // ============ render ============
       ctx.clearRect(0, 0, W, H)
+      // screen shake: jitter the whole gameplay layer (the HUD + joystick draw after, steady)
+      const sx = shake > 0.3 ? (Math.random() * 2 - 1) * shake : 0
+      const sy = shake > 0.3 ? (Math.random() * 2 - 1) * shake : 0
+      ctx.save()
+      ctx.translate(sx, sy)
 
       // stars
       for (const s of STARS) {
-        const a = s.tw ? s.a * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(now / 1000 * s.sp + s.ph))) : s.a
+        const a = s.tw ? s.a * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin((now / 1000) * s.sp + s.ph))) : s.a
         ctx.fillStyle = `rgba(255, 255, 255, ${a})`
         ctx.beginPath()
         ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2)
@@ -345,6 +433,15 @@ export function PlanetHunt({
         ctx.stroke()
       }
 
+      // debris particles (drawn under the bolts; glow via shadow)
+      for (const part of particles) {
+        const a = part.life / part.max
+        ctx.fillStyle = `rgba(${part.warm ? '255, 190, 150' : '200, 230, 255'}, ${a * 0.9})`
+        ctx.beginPath()
+        ctx.arc(part.x, part.y, part.size * (0.4 + a * 0.6), 0, Math.PI * 2)
+        ctx.fill()
+      }
+
       // player bullets (cool)
       ctx.fillStyle = `rgba(190, 225, 255, 0.95)`
       ctx.shadowColor = `rgba(${ACCENT}, 0.9)`
@@ -364,7 +461,7 @@ export function PlanetHunt({
       }
       ctx.shadowBlur = 0
 
-      // explosions
+      // explosions (shockwave rings, with a bright flash for the big ones)
       for (let e = booms.length - 1; e >= 0; e--) {
         const boom = booms[e]
         boom.t += dt * (boom.big ? 1.6 : 3)
@@ -373,14 +470,21 @@ export function PlanetHunt({
           continue
         }
         const max = boom.big ? 70 : 22
-        ctx.strokeStyle = `rgba(${boom.hostile ? HOSTILE : ACCENT}, ${(1 - boom.t) * 0.9})`
+        const col = boom.hostile ? HOSTILE : ACCENT
+        if (boom.big) {
+          ctx.fillStyle = `rgba(${col}, ${(1 - boom.t) * 0.4})`
+          ctx.beginPath()
+          ctx.arc(boom.x, boom.y, max * boom.t * 0.7, 0, Math.PI * 2)
+          ctx.fill()
+        }
+        ctx.strokeStyle = `rgba(${col}, ${(1 - boom.t) * 0.9})`
         ctx.lineWidth = boom.big ? 3 : 2
         ctx.beginPath()
         ctx.arc(boom.x, boom.y, max * boom.t, 0, Math.PI * 2)
         ctx.stroke()
       }
 
-      // ship (destroyed once lost) - blinks briefly after a hit
+      // ship (destroyed once lost) - blinks briefly after a hit; engine glow swells when moving
       if (lostAt === 0) {
         const blink = now < invulnUntil && Math.floor(now / 90) % 2 === 0
         ctx.save()
@@ -388,28 +492,55 @@ export function PlanetHunt({
         ctx.translate(ship.x, ship.y + Math.sin(now / 400) * 1.5)
         const flip = ship.vx < -0.4 ? -1 : 1
         ctx.scale(flip * 0.82, 0.82)
-        drawSaucer(ctx)
+        drawSaucer(ctx, shipSpeed / SHIP.maxSpeed)
         ctx.restore()
       }
 
+      ctx.restore() // end shake
+
+      // ---- HUD (steady, no shake) ----
       // lives (mini saucers, top-left)
       for (let i = 0; i < LIVES; i++) {
         ctx.save()
         ctx.globalAlpha = i < lives ? 1 : 0.22
         ctx.translate(28 + i * 30, 30)
         ctx.scale(0.5, 0.5)
-        drawSaucer(ctx)
+        drawSaucer(ctx, 0)
         ctx.restore()
       }
 
-      // banner
+      // virtual joystick (touch): faint base ring + thumb at the drag offset
+      if (joy.active && !over) {
+        const dx = joy.curX - joy.baseX
+        const dy = joy.curY - joy.baseY
+        const dist = Math.hypot(dx, dy)
+        const k = dist > JOY_RADIUS ? JOY_RADIUS / dist : 1
+        ctx.strokeStyle = `rgba(${ACCENT}, 0.25)`
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.arc(joy.baseX, joy.baseY, JOY_RADIUS, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.fillStyle = `rgba(${ACCENT}, 0.35)`
+        ctx.beginPath()
+        ctx.arc(joy.baseX + dx * k, joy.baseY + dy * k, 20, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // banner (win / lose) on a soft panel, fading in
       if (over) {
         const at = wonAt || lostAt
-        ctx.globalAlpha = Math.min((now - at) / 400, 1)
+        const fade = Math.min((now - at) / 400, 1)
+        ctx.globalAlpha = fade
+        ctx.fillStyle = 'rgba(6, 10, 15, 0.7)'
+        roundRect(ctx, W / 2 - 170, H / 2 - 52, 340, 104, 14)
+        ctx.fill()
         ctx.fillStyle = wonAt ? '#eaf3ff' : `rgb(${HOSTILE})`
         ctx.font = '600 28px Geist, system-ui, sans-serif'
         ctx.textAlign = 'center'
-        ctx.fillText(wonAt ? 'PLANETS CLEARED' : 'SHIP DESTROYED', W / 2, H / 2)
+        ctx.fillText(wonAt ? 'PLANETS CLEARED' : 'SHIP DESTROYED', W / 2, H / 2 - 2)
+        ctx.fillStyle = 'rgba(201, 204, 210, 0.8)'
+        ctx.font = '400 13px "Geist Mono Variable", ui-monospace, monospace'
+        ctx.fillText(wonAt ? 'nicely flown' : 'they got you', W / 2, H / 2 + 26)
         ctx.globalAlpha = 1
       }
 
@@ -420,6 +551,9 @@ export function PlanetHunt({
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerUp)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('resize', resize)
@@ -434,10 +568,26 @@ export function PlanetHunt({
       {/* dim backdrop (below the raised planets) - also blocks page clicks during play */}
       <div className="fixed inset-0 z-[60] bg-bg/80 backdrop-blur-sm" />
       <canvas ref={canvasRef} aria-hidden className="pointer-events-none fixed inset-0 z-[62]" />
+
+      {/* Exit button - the only way out on touch (no Esc); a quiet × top-right. */}
+      <button
+        type="button"
+        data-game-ui
+        onClick={() => finishRef.current()}
+        aria-label="Exit game"
+        className="fixed right-4 top-4 z-[63] flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface-2/80 text-text-mute backdrop-blur transition-colors hover:text-accent-hi"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+
       {showHint && (
-        <div className="pointer-events-none fixed inset-x-0 top-[12%] z-[62] text-center">
+        <div className="pointer-events-none fixed inset-x-0 top-[12%] z-[62] px-6 text-center">
           <p className="font-mono text-label uppercase tracking-wider text-text-mute">
-            Mouse or arrow keys to fly · clear the planets · dodge their fire · esc to exit
+            {isTouch
+              ? 'Drag to fly · clear the planets · dodge their fire'
+              : 'Mouse or arrow keys to fly · clear the planets · dodge their fire · esc to exit'}
           </p>
         </div>
       )}
@@ -445,13 +595,32 @@ export function PlanetHunt({
   )
 }
 
+// Rounded-rectangle path helper for the game-over panel.
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
 // The same craft as the Spaceship fly-by, drawn centred at the origin (canvas units ~ its 44x24 art,
-// body centre at 0,0). Caller applies position / scale / flip / alpha.
-function drawSaucer(ctx: CanvasRenderingContext2D) {
+// body centre at 0,0). Caller applies position / scale / flip / alpha. `thrust` (0..1) swells the
+// underside engine glow as the ship moves.
+function drawSaucer(ctx: CanvasRenderingContext2D, thrust = 0) {
   const ell = (cx: number, cy: number, rx: number, ry: number) => {
     ctx.beginPath()
     ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
     ctx.fill()
+  }
+  if (thrust > 0.05) {
+    ctx.shadowColor = `rgba(${ACCENT}, ${0.5 + 0.4 * thrust})`
+    ctx.shadowBlur = 8 + 14 * thrust
+    ctx.fillStyle = `rgba(150, 210, 245, ${0.25 + 0.3 * thrust})`
+    ell(0, 6, 8 + 6 * thrust, 2.5 + 2 * thrust) // engine glow under the hull
+    ctx.shadowBlur = 0
   }
   ctx.fillStyle = 'rgba(96, 170, 220, 0.22)'
   ell(0, 4, 20, 3) // ground-glow shadow

@@ -16,8 +16,9 @@ import { PlanetHunt } from './PlanetHunt'
 //               cursor, so it quietly reads as interactive without shouting.
 //   - click  -> the planet brightens for a beat (.is-lit), then eases back.
 //
-// Easter egg: light all THREE at once and a controllable saucer (PlanetHunt) spawns - fly it (mouse or
-// arrow keys) and blow up every planet. Desktop only (needs a cursor/keys).
+// Easter egg: light all THREE at once and a controllable saucer (PlanetHunt) spawns - fly it (mouse,
+// arrow keys, or a touch joystick) and blow up every planet. Works on desktop AND touch (tablet/phone);
+// only skipped with no WebGL (lowPower) or reduced motion.
 
 type Planet = {
   top: number
@@ -35,8 +36,9 @@ const PLANETS: Planet[] = [
   { top: 79, left: 72, size: 24, palette: 'cool', orbit: 60, duration: 37, delay: -12 },
 ]
 
-const LIT_MS = 2600 // how long a clicked planet stays brightened before easing back
-const HIT_PAD = 14 // extra px around the (small) planet so it's forgiving to hover/click
+const LIT_MS = 3200 // how long a tapped planet stays brightened (enough time to light all three)
+const HIT_PAD = 14 // extra px around the (small) planet so hover is forgiving
+const TAP_PAD = 32 // bigger forgiveness for taps/clicks - finger-friendly on touch
 
 type Hit = { index: number; cx: number; cy: number; top: number }
 
@@ -58,8 +60,8 @@ export function Planets() {
     gameOnRef.current = gameOn
   }, [gameOn])
 
-  // Trigger: all three lit at once -> launch the hunt. Desktop only (cursor / keys); reset the lights
-  // so it doesn't immediately re-fire when the game ends.
+  // Trigger: all three lit at once -> launch the hunt (desktop + touch; only blocked with no WebGL or
+  // reduced motion). Reset the lights so it doesn't immediately re-fire when the game ends.
   useEffect(() => {
     if (gameOn || lowPower || reducedMotion || !lit.every(Boolean)) return
     timers.current.forEach((timer) => window.clearTimeout(timer))
@@ -71,14 +73,14 @@ export function Planets() {
   }, [lit, gameOn, lowPower, reducedMotion])
 
   useEffect(() => {
-    const planetAt = (x: number, y: number): Hit | null => {
+    const planetAt = (x: number, y: number, pad: number): Hit | null => {
       let found: Hit | null = null
       refs.current.forEach((el, index) => {
         if (!el) return
         const rect = el.getBoundingClientRect()
         const cx = rect.left + rect.width / 2
         const cy = rect.top + rect.height / 2
-        if (Math.hypot(x - cx, y - cy) <= Math.max(rect.width, rect.height) / 2 + HIT_PAD) {
+        if (Math.hypot(x - cx, y - cy) <= Math.max(rect.width, rect.height) / 2 + pad) {
           found = { index, cx, cy, top: rect.top }
         }
       })
@@ -91,7 +93,7 @@ export function Planets() {
 
     const onPointerMove = (event: PointerEvent) => {
       if (gameOnRef.current || event.pointerType === 'touch') return // hover cue off during the hunt
-      const hit = isControl(event.target) ? null : planetAt(event.clientX, event.clientY)
+      const hit = isControl(event.target) ? null : planetAt(event.clientX, event.clientY, HIT_PAD)
       if (hit && cueRef.current) {
         // float the cue just above the planet, horizontally centred on it
         cueRef.current.style.transform = `translate(${hit.cx}px, ${hit.top - 12}px) translate(-50%, -100%)`
@@ -106,7 +108,7 @@ export function Planets() {
 
     const onPointerDown = (event: PointerEvent) => {
       if (gameOnRef.current || isControl(event.target)) return
-      const hit = planetAt(event.clientX, event.clientY)
+      const hit = planetAt(event.clientX, event.clientY, TAP_PAD)
       if (!hit) return
       const { index } = hit
       setLit((prev) => prev.map((value, i) => (i === index ? true : value)))
