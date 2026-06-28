@@ -20,6 +20,8 @@ export function Hero() {
   const lowPower = useScrollStore((state) => state.lowPower)
   const orbStarted = useScrollStore((state) => state.orbStarted)
   const startOrb = useScrollStore((state) => state.startOrb)
+  const mobile = useScrollStore((state) => state.mobile)
+  const cycleOrbColor = useScrollStore((state) => state.cycleOrbColor)
 
   return (
     <section
@@ -58,6 +60,18 @@ export function Hero() {
             'radial-gradient(ellipse 42rem 26rem at center, color-mix(in oklab, var(--color-bg) 30%, transparent) 0%, transparent 70%)',
         }}
       />
+
+      {/* Mobile: tap the orb (it sits at the section centre after revealing) to cycle its colour through
+          ORB_PALETTES (store.cycleOrbColor). Transparent target over the orb; a swipe still scrolls. */}
+      {mobile && orbStarted && (
+        <button
+          type="button"
+          aria-label="Change orb colour"
+          onClick={cycleOrbColor}
+          className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ width: 'clamp(220px, 70vw, 320px)', height: 'clamp(220px, 70vw, 320px)' }}
+        />
+      )}
 
       <div className="relative flex w-full translate-y-[3vh] flex-col items-center">
         {/* Name in the same face as the giant section background words (BackgroundWord: semibold,

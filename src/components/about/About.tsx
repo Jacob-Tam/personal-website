@@ -13,6 +13,10 @@ const PARAGRAPHS = [
 export function About() {
   return (
     <section id="about" className="relative flex min-h-svh items-center overflow-hidden px-6 py-24 md:px-12">
+      {/* Mobile: the orb drifts up through the full-width text and washes it out. A scrim dims whatever's
+          behind the section (orb/planets) so the copy stays readable. Desktop's 2-col layout keeps the orb
+          in the gap, so it's not needed there (md:hidden). */}
+      <div aria-hidden className="absolute inset-0 bg-bg/80 md:hidden" />
       <BackgroundWord className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" parallax={0.4}>ABOUT</BackgroundWord>
       <div className="relative mx-auto grid w-full max-w-5xl items-center gap-12 md:grid-cols-2 md:gap-16">
         <Reveal className="flex flex-col gap-6" stagger={0.12}>

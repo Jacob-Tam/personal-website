@@ -27,6 +27,7 @@ interface ScrollState {
   supernovaAt: number // performance.now() of the last "67" supernova trigger (0 = never)
   orbStarted: boolean // the hero orb has been activated (clicked) - drives the staged reveal
   orbStartAt: number // performance.now() of the activation, so the reveal can ease in over time
+  orbColorIndex: number // which ORB_PALETTES entry the orb uses (cycled by tapping it on mobile)
   projectsActive: boolean // the Projects journey pin is engaged (canvas re-enabled; low-freq toggle)
   projectsProgress: number // 0..1 across the whole pinned Projects journey (high-freq scrub)
 
@@ -43,6 +44,7 @@ interface ScrollState {
   setMobile: (value: boolean) => void
   triggerSupernova: () => void
   startOrb: () => void
+  cycleOrbColor: () => void
   setProjectsActive: (value: boolean) => void
   setProjectsProgress: (value: number) => void
 }
@@ -63,6 +65,7 @@ export const useScrollStore = create<ScrollState>((set) => ({
   supernovaAt: 0,
   orbStarted: false,
   orbStartAt: 0,
+  orbColorIndex: 0,
   projectsActive: false,
   projectsProgress: 0,
 
@@ -80,6 +83,7 @@ export const useScrollStore = create<ScrollState>((set) => ({
   triggerSupernova: () => set({ supernovaAt: performance.now() }),
   // One-shot: activate the orb (idempotent so a double-click can't restart the reveal mid-flight).
   startOrb: () => set((state) => (state.orbStarted ? {} : { orbStarted: true, orbStartAt: performance.now() })),
+  cycleOrbColor: () => set((state) => ({ orbColorIndex: state.orbColorIndex + 1 })),
   setProjectsActive: (value) => set({ projectsActive: value }),
   setProjectsProgress: (value) => set({ projectsProgress: value }),
 }))

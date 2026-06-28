@@ -13,7 +13,7 @@ import { ProjectsScene } from './ProjectsScene'
 import type { JourneyLook } from '../../lib/projectsJourney'
 import { useScrollStore } from '../../store/useScrollStore'
 import { setProjectsPin } from '../../lib/lenis'
-import { BLOOM, CAMERA, CHOREOGRAPHY, CORE, CURSOR, FOG, LIGHTS, PARTICLES, PROJECTS_JOURNEY, VIGNETTE } from '../../lib/constants'
+import { BLOOM, CAMERA, CHOREOGRAPHY, CORE, CURSOR, FOG, LIGHTS, ORB_PALETTES, PARTICLES, PROJECTS_JOURNEY, VIGNETTE } from '../../lib/constants'
 
 const isDev = import.meta.env.DEV
 
@@ -97,6 +97,8 @@ export function Scene() {
   const projectsActive = useScrollStore((state) => state.projectsActive)
   // Phones run the full scene but at reduced quality (DPR + counts) so it stays smooth.
   const mobile = useScrollStore((state) => state.mobile)
+  // Tapping the orb on mobile cycles its colour through ORB_PALETTES (index 0 = the default/leva colour).
+  const orbColorIndex = useScrollStore((state) => state.orbColorIndex)
 
   // DEV-only orb tuning, trimmed to ~9 knobs worth touching live; everything else is baked in
   // lib/constants (the panel was overwhelming with ~50 orb controls).
@@ -122,8 +124,10 @@ export function Scene() {
     noiseScale: CORE.noiseScale,
     noiseSpeed: CORE.noiseSpeed,
     fresnelPower: CORE.fresnelPower,
-    coreColor: orb.coreColor,
-    rimColor: orb.rimColor,
+    // Index 0 keeps the leva/default colour (so desktop tuning still works); a tap (mobile) advances to
+    // the next ORB_PALETTES entry and recolours the orb live.
+    coreColor: orbColorIndex % ORB_PALETTES.length === 0 ? orb.coreColor : ORB_PALETTES[orbColorIndex % ORB_PALETTES.length].core,
+    rimColor: orbColorIndex % ORB_PALETTES.length === 0 ? orb.rimColor : ORB_PALETTES[orbColorIndex % ORB_PALETTES.length].rim,
   }
   const particles = {
     count: mobile ? Math.round(orb.particleCount * 0.5) : orb.particleCount, // fewer orbiting points on phones

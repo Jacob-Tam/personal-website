@@ -41,21 +41,20 @@ const levaTheme = {
 */
 export function DevPanel() {
   const mobile = useScrollStore((state) => state.mobile)
+  // On phones the panel is narrower and parks top-left (out of the way); it starts collapsed (just the
+  // title bar) so it doesn't cover content, and the title bar expands it when you want to tune.
+  const panelWidth = mobile ? Math.min(280, window.innerWidth - 16) : PANEL_WIDTH
   const [pos, setPos] = useState(() => ({
-    x: Math.max(8, Math.round(window.innerWidth / 2 - PANEL_WIDTH / 2)),
+    x: mobile ? 8 : Math.max(8, Math.round(window.innerWidth / 2 - PANEL_WIDTH / 2)),
     y: 8,
   }))
   const grab = useRef({ x: 0, y: 0 })
-
-  // On phones the floating panel just covers the content (and leva isn't practical on touch). Keep leva
-  // MOUNTED but hidden so useControls still resolves and leva doesn't spawn its own default panel.
-  if (mobile) return <Leva hidden />
 
   function handleDragStart(event: React.PointerEvent) {
     grab.current = { x: event.clientX - pos.x, y: event.clientY - pos.y }
     const handleMove = (e: PointerEvent) => {
       setPos({
-        x: clamp(e.clientX - grab.current.x, 0, window.innerWidth - PANEL_WIDTH),
+        x: clamp(e.clientX - grab.current.x, 0, window.innerWidth - panelWidth),
         y: clamp(e.clientY - grab.current.y, 0, window.innerHeight - 48),
       })
     }
@@ -75,7 +74,7 @@ export function DevPanel() {
   )
 
   return (
-    <div className="fixed z-50" style={{ left: pos.x, top: pos.y, width: PANEL_WIDTH }}>
+    <div className="fixed z-50" style={{ left: pos.x, top: pos.y, width: panelWidth }}>
       <div className="overflow-hidden rounded-md border border-border bg-surface-2 shadow-xl">
         <div
           onPointerDown={handleDragStart}

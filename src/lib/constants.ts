@@ -26,6 +26,16 @@ export const CORE = {
   rimColor: '#6bb0dc', // --color-accent-hi
 }
 
+// Orb colour palettes the visitor cycles by TAPPING the orb on mobile (Hero -> store.cycleOrbColor).
+// Index 0 is the default (matches CORE above). core = near-white with a faint tint; rim = the fresnel accent.
+export const ORB_PALETTES = [
+  { core: '#eaf3ff', rim: '#6bb0dc' }, // blue (default)
+  { core: '#efe9ff', rim: '#a78bfa' }, // violet
+  { core: '#fff1e6', rim: '#f0a868' }, // amber
+  { core: '#e9fff1', rim: '#5fd99a' }, // green
+  { core: '#ffe9f3', rim: '#ec7ab8' }, // pink
+] as const
+
 export const PARTICLES = {
   count: 50, // sparse and elegant (docs/04)
   planes: 4, // distinct tilted orbital planes, stylized Bohr-atom feel
