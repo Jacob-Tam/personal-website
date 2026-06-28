@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Leva } from 'leva'
+import { useScrollStore } from '../../store/useScrollStore'
 
 const PANEL_WIDTH = 360 // wide enough that control labels aren't truncated to "lum..." / "pur..."
 const HANDLE_HEIGHT = 34 // the custom "drag" bar above the leva panel
@@ -39,11 +40,16 @@ const levaTheme = {
   (so `fill` measures correctly and leva doesn't spawn its own default panel). Never shipped.
 */
 export function DevPanel() {
+  const mobile = useScrollStore((state) => state.mobile)
   const [pos, setPos] = useState(() => ({
     x: Math.max(8, Math.round(window.innerWidth / 2 - PANEL_WIDTH / 2)),
     y: 8,
   }))
   const grab = useRef({ x: 0, y: 0 })
+
+  // On phones the floating panel just covers the content (and leva isn't practical on touch). Keep leva
+  // MOUNTED but hidden so useControls still resolves and leva doesn't spawn its own default panel.
+  if (mobile) return <Leva hidden />
 
   function handleDragStart(event: React.PointerEvent) {
     grab.current = { x: event.clientX - pos.x, y: event.clientY - pos.y }
