@@ -95,8 +95,10 @@ export function Scene() {
   const phase = useScrollStore((state) => state.phase)
   const reducedMotion = useScrollStore((state) => state.reducedMotion)
   const projectsActive = useScrollStore((state) => state.projectsActive)
-  // Phones run the full scene but at reduced quality (DPR + counts) so it stays smooth.
+  // Phones AND tablets run the full scene but at reduced quality (DPR + counts) so it stays smooth.
   const mobile = useScrollStore((state) => state.mobile)
+  const touch = useScrollStore((state) => state.touch)
+  const lowQuality = mobile || touch
   // Tapping the orb on mobile cycles its colour through ORB_PALETTES (index 0 = the default/leva colour).
   const orbColorIndex = useScrollStore((state) => state.orbColorIndex)
 
@@ -130,7 +132,7 @@ export function Scene() {
     rimColor: orbColorIndex % ORB_PALETTES.length === 0 ? orb.rimColor : ORB_PALETTES[orbColorIndex % ORB_PALETTES.length].rim,
   }
   const particles = {
-    count: mobile ? Math.round(orb.particleCount * 0.5) : orb.particleCount, // fewer orbiting points on phones
+    count: lowQuality ? Math.round(orb.particleCount * 0.5) : orb.particleCount, // fewer orbiting points on phones/tablets
     planes: PARTICLES.planes,
     radiusMin: PARTICLES.radiusMin,
     radiusMax: PARTICLES.radiusMax,
@@ -213,10 +215,10 @@ export function Scene() {
           // off-screen like the orb, so 'never' would freeze it over Contact. Reduced motion: static
           // orb, also 'demand'.
           frameloop={!reducedMotion && (projectsActive || phase !== 'past') ? 'always' : 'demand'}
-          // Phones cap DPR at 1.5 (vs 2) - the single biggest mobile win: a 3x-DPR phone would otherwise
-          // render ~4x the pixels. antialias off on mobile too (MSAA is costly; the lower-res edges are fine).
-          gl={{ alpha: true, antialias: !mobile }}
-          dpr={mobile ? [1, 1.5] : [1, 2]}
+          // Phones + tablets cap DPR at 1.5 (vs 2) - the single biggest win on high-DPR touch screens,
+          // which would otherwise render ~4x the pixels. antialias off there too (MSAA is costly).
+          gl={{ alpha: true, antialias: !lowQuality }}
+          dpr={lowQuality ? [1, 1.5] : [1, 2]}
           onCreated={() => useScrollStore.getState().setCanvasReady(true)}
         >
           {isDev && <Perf position="bottom-right" />}

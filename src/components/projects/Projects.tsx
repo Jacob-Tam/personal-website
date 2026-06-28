@@ -96,7 +96,7 @@ function ProjectsJourney() {
           }}
           className="absolute inset-0 flex items-center opacity-0 will-change-[opacity,transform]"
         >
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-6 px-6 md:grid-cols-2 md:gap-12 md:px-12">
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-6 px-6 lg:grid-cols-2 lg:gap-12 lg:px-12">
             <button
               type="button"
               aria-label={`Expand ${project.title}`}

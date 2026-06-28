@@ -15,6 +15,13 @@ export function detectMobile(): boolean {
   return window.matchMedia('(max-width: 768px)').matches
 }
 
+// Touch-primary device (phone OR tablet): a coarse pointer. Drives the touch-only UI (tap the orb to
+// recolour it, "tap here" cue) and, with detectMobile, the 3D quality scaling - so tablets get both.
+export function detectTouch(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(pointer: coarse)').matches
+}
+
 // Whether the user asked the OS to minimize motion (docs/01). Drives the static-orb + no-choreography
 // + no-parallax path. Seeded into the store once at load; useReducedMotion keeps it live after.
 export function detectReducedMotion(): boolean {

@@ -32,9 +32,10 @@ export function JourneyStars({
   const ref = useRef<THREE.LineSegments>(null!)
   const prevProgress = useRef(0)
   const speed = useRef(drift) // smoothed world speed (units/s), eased toward the scroll-driven target
-  // Fewer streaks on phones (lighter line-segment field) - the corridor still reads full.
+  // Fewer streaks on phones/tablets (lighter line-segment field) - the corridor still reads full.
   const mobile = useScrollStore((state) => state.mobile)
-  const count = mobile ? Math.round(ST.count * 0.45) : ST.count
+  const touch = useScrollStore((state) => state.touch)
+  const count = mobile || touch ? Math.round(ST.count * 0.45) : ST.count
 
   // Seeded star positions filling the corridor, so the field is full on the first active frame (no
   // empty flash) and stable across reloads. Each star is 2 verts: head [0..2] + tail [3..5].

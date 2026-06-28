@@ -20,7 +20,7 @@ export function Hero() {
   const lowPower = useScrollStore((state) => state.lowPower)
   const orbStarted = useScrollStore((state) => state.orbStarted)
   const startOrb = useScrollStore((state) => state.startOrb)
-  const mobile = useScrollStore((state) => state.mobile)
+  const touch = useScrollStore((state) => state.touch)
   const cycleOrbColor = useScrollStore((state) => state.cycleOrbColor)
 
   return (
@@ -63,7 +63,7 @@ export function Hero() {
 
       {/* Mobile: tap the orb (it sits at the section centre after revealing) to cycle its colour through
           ORB_PALETTES (store.cycleOrbColor). Transparent target over the orb; a swipe still scrolls. */}
-      {mobile && orbStarted && (
+      {touch && orbStarted && (
         <button
           type="button"
           aria-label="Change orb colour"
@@ -132,7 +132,7 @@ export function Hero() {
               <path d="M20 12H5" />
               <path d="M11 6l-6 6 6 6" />
             </svg>
-            {lowPower ? 'tap here' : 'click here'}
+            {touch ? 'tap here' : 'click here'}
           </span>
         </div>
       </div>
