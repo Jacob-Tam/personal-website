@@ -52,7 +52,7 @@ export function ProjectMedia({
 
   return (
     <div
-      className={`relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2 ${className ?? ''}`}
+      className={`relative aspect-video w-full overflow-hidden bg-surface-2 ${className ?? ''}`}
     >
       {project.media.ready ? (
         project.media.kind === 'video' ? (

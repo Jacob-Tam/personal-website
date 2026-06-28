@@ -106,7 +106,7 @@ function ProjectsJourney() {
               <ProjectMedia
                 project={project}
                 isActive={activeIndex === index}
-                className="transition-[transform,border-color] duration-300 ease-out group-hover:scale-[1.01] group-hover:border-accent/40"
+                className="rounded-xl border border-border transition-[transform,border-color] duration-300 ease-out group-hover:scale-[1.01] group-hover:border-accent/40"
               />
               <ExpandHint />
             </button>
@@ -152,10 +152,14 @@ function ProjectsFlat() {
           <h2 className="text-h2 text-text">Projects</h2>
         </Reveal>
 
-        <div className="mt-16 flex flex-col gap-24">
+        <div className="mt-12 flex flex-col gap-20 md:mt-16 md:gap-24">
           {PROJECTS.map((project) => (
-            <Reveal key={project.id} className="grid items-center gap-8 md:grid-cols-2">
-              <ProjectMedia project={project} controls />
+            <Reveal key={project.id} className="flex flex-col gap-5 md:grid md:grid-cols-2 md:items-center md:gap-8">
+              {/* Media goes full-bleed (edge to edge) on mobile so the clip is actually viewable; on
+                  desktop (the reduced-motion fallback) it's the normal framed card beside the text. */}
+              <div className="-ml-6 w-[calc(100%+3rem)] md:ml-0 md:w-full">
+                <ProjectMedia project={project} controls className="md:rounded-xl md:border md:border-border" />
+              </div>
               <ProjectText project={project} />
             </Reveal>
           ))}

@@ -9,8 +9,8 @@ export function ProjectText({ project, className }: { project: Project; classNam
   return (
     <div className={className}>
       <h3 className="text-h3 text-text">{project.title}</h3>
-      <p className="mt-3 text-body-lg text-text-mute">{project.tagline}</p>
-      <p className="mt-5 max-w-prose text-body text-text">{project.description}</p>
+      <p className="mt-3 text-body text-text-mute md:text-body-lg">{project.tagline}</p>
+      <p className="mt-4 max-w-prose text-body text-text md:mt-5">{project.description}</p>
       <ul className="mt-6 flex flex-wrap gap-2">
         {project.tech.map((tag) => (
           <li
