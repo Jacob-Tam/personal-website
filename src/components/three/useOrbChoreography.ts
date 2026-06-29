@@ -171,7 +171,11 @@ export function useOrbChoreography(
       tx: +targetX.toFixed(2), ty: +targetY.toFixed(2), phase, ip: +interludeProgress.toFixed(2),
     }
 
-    // The beat: a brief scale bump on the whole system.
-    group.scale.setScalar(1 + choreo.pulseAmount * beat)
+    // The beat: a brief scale bump on the whole system. On TALL screens the orb (sized by the camera =
+    // proportional to viewport height) would grow large and dominate the capped hero name + cover the
+    // tagline, which looked off on big Mac displays. Cap its apparent size above ~1000px tall so it stays
+    // consistent and balanced; laptops (<=1000px) are unaffected (heightCap = 1).
+    const heightCap = Math.min(1, 1000 / size.height)
+    group.scale.setScalar((1 + choreo.pulseAmount * beat) * heightCap)
   })
 }
