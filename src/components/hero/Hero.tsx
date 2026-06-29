@@ -77,7 +77,7 @@ export function Hero() {
         {/* Name in the same face as the giant section background words (BackgroundWord: semibold,
             tracking-tighter), faint over the orb. Fades in LEFT-TO-RIGHT via the .hero-name mask wipe. */}
         <h1
-          className={`hero-name text-[13vw] font-semibold leading-[0.82] tracking-tighter text-text/40 ${
+          className={`hero-name text-[clamp(2.5rem,13vw,12rem)] font-semibold leading-[0.82] tracking-tighter text-text/40 ${
             isLoaded ? 'is-in' : ''
           }`}
         >

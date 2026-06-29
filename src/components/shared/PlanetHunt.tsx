@@ -532,19 +532,13 @@ export function PlanetHunt({
         const at = wonAt || lostAt
         const fade = Math.min((now - at) / 400, 1)
         ctx.globalAlpha = fade
-        const panelH = won ? 76 : 104 // win = title only; loss = title + dry subtitle
         ctx.fillStyle = 'rgba(6, 10, 15, 0.7)'
-        roundRect(ctx, W / 2 - 170, H / 2 - panelH / 2, 340, panelH, 14)
+        roundRect(ctx, W / 2 - 170, H / 2 - 38, 340, 76, 14)
         ctx.fill()
         ctx.fillStyle = won ? '#eaf3ff' : `rgb(${HOSTILE})`
         ctx.font = '600 28px Geist, system-ui, sans-serif'
         ctx.textAlign = 'center'
-        ctx.fillText(won ? 'PLANETS CLEARED' : 'SHIP DESTROYED', W / 2, won ? H / 2 + 9 : H / 2 - 2)
-        if (!won) {
-          ctx.fillStyle = 'rgba(201, 204, 210, 0.8)'
-          ctx.font = '400 13px "Geist Mono Variable", ui-monospace, monospace'
-          ctx.fillText('they got you', W / 2, H / 2 + 26)
-        }
+        ctx.fillText(won ? 'PLANETS CLEARED' : 'SHIP DESTROYED', W / 2, H / 2 + 9)
         ctx.globalAlpha = 1
       }
 

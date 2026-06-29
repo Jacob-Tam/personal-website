@@ -45,7 +45,7 @@ export function BackgroundWord({ children, className, parallax = 0 }: Background
     <span
       ref={outerRef}
       aria-hidden
-      className={`pointer-events-none absolute select-none text-[22vw] font-semibold leading-none tracking-tighter text-text/5 ${className ?? ''}`}
+      className={`pointer-events-none absolute select-none text-[clamp(6rem,22vw,22rem)] font-semibold leading-none tracking-tighter text-text/5 ${className ?? ''}`}
     >
       <span ref={innerRef} className="block">
         {children}
