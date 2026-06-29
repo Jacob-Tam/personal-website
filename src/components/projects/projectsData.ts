@@ -15,6 +15,7 @@ export type Project = {
   media: {
     kind: ProjectMediaKind
     src: string
+    poster?: string // still frame shown instantly while the preload="none" video streams in (no blank flash)
     alt: string
     ready: boolean // is the real file in /public/media yet? false -> placeholder poster
     cardStart?: number // seconds; where the card preview begins + loops. The expanded view always
@@ -30,7 +31,7 @@ export const PROJECTS: Project[] = [
     description:
       'A package-delivery box with facial recognition and remote unlock. Arduino-driven hardware (motion sensors, solenoid lock, live camera feed) with a Python ML pipeline running OpenCV and DeepFace for intruder detection. ~98% recognition accuracy. SQL-backed web interface for owners.',
     tech: ['Arduino', 'Python', 'OpenCV', 'DeepFace', 'SQL', 'IoT'],
-    media: { kind: 'video', src: '/media/smartbox.mp4', alt: 'Anti-Theft Package Smartbox demo', ready: true, cardStart: 68 },
+    media: { kind: 'video', src: '/media/smartbox.mp4', poster: '/media/smartbox-poster.jpg', alt: 'Anti-Theft Package Smartbox demo', ready: true, cardStart: 68 },
   },
   {
     id: 'taxi',
@@ -39,7 +40,7 @@ export const PROJECTS: Project[] = [
     description:
       "Built for Queen's autonomous-vehicle competition. Raspberry Pi + Coral USB Accelerator running a quantized MobileNetV2 for road sign classification, with custom training data and a mapping algorithm bug that took longer to find than the rest of the pipeline combined.",
     tech: ['Raspberry Pi', 'Edge TPU', 'TensorFlow', 'Computer Vision', 'Python'],
-    media: { kind: 'video', src: '/media/taxi.mp4', alt: 'Autonomous robot taxi driving demo', ready: true },
+    media: { kind: 'video', src: '/media/taxi.mp4', poster: '/media/taxi-poster.jpg', alt: 'Autonomous robot taxi driving demo', ready: true },
   },
   {
     id: 'hyperloop',
@@ -48,7 +49,7 @@ export const PROJECTS: Project[] = [
     description:
       "Suspension Design Engineer for Queen's Hyperloop. Redesigned the suspension and clamping mechanism using iterative CAD and FEA, validated through physical testing. Took the design to Hyperloop Week 2025 and won the most awards nationally at Hyperloop Global 2024.",
     tech: ['CAD', 'FEA', 'Mechanical Design', 'Simulation'],
-    media: { kind: 'video', src: '/media/hyperloop.mp4', alt: 'Hyperloop pod suspension test', ready: true },
+    media: { kind: 'video', src: '/media/hyperloop.mp4', poster: '/media/hyperloop-poster.jpg', alt: 'Hyperloop pod suspension test', ready: true },
   },
   {
     id: 'qhdt',
@@ -58,6 +59,6 @@ export const PROJECTS: Project[] = [
     description:
       "Led full-stack development of a team-management platform for Queen's Hyperloop. Member registration, sub-team organization, task tracking. Integrated Sentry monitoring and analytics in prep for deployment. The launch didn't happen, but the build taught me more about coordinating a real codebase across a team than any class did.",
     tech: ['Full-Stack', 'React', 'Sentry'],
-    media: { kind: 'video', src: '/media/qhdt.mp4', alt: 'QHDT team platform walkthrough', ready: true, cardStart: 39 },
+    media: { kind: 'video', src: '/media/qhdt.mp4', poster: '/media/qhdt-poster.jpg', alt: 'QHDT team platform walkthrough', ready: true, cardStart: 39 },
   },
 ]

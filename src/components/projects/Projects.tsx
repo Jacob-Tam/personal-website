@@ -106,6 +106,7 @@ function ProjectsJourney() {
               <ProjectMedia
                 project={project}
                 isActive={activeIndex === index}
+                warm={activeIndex + 1 === index}
                 className="rounded-xl border border-border transition-[transform,border-color] duration-300 ease-out group-hover:scale-[1.01] group-hover:border-accent/40"
               />
               <ExpandHint />

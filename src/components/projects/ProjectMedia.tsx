@@ -13,11 +13,13 @@ import type { Project, ProjectMediaKind } from './projectsData'
 export function ProjectMedia({
   project,
   isActive,
+  warm,
   controls,
   className,
 }: {
   project: Project
   isActive?: boolean
+  warm?: boolean // next-up in the journey: start buffering early so arrival isn't a download stall
   controls?: boolean
   className?: string
 }) {
@@ -40,7 +42,13 @@ export function ProjectMedia({
     }
     video.pause()
     if (video.readyState >= 1) video.currentTime = start
-  }, [isActive, start])
+    // Warm the next-up clip: flip preload none->auto and start buffering so it's ready when its planet
+    // arrives (no on-arrival download stall - the live-vs-local stutter). Far-off clips stay idle.
+    if (warm && video.preload !== 'auto') {
+      video.preload = 'auto'
+      video.load()
+    }
+  }, [isActive, warm, start])
 
   // Loop from the card-start mark (not 0) so the preview keeps replaying the highlight, not the intro.
   function handleEnded() {
@@ -59,6 +67,7 @@ export function ProjectMedia({
           <video
             ref={videoRef}
             src={project.media.src}
+            poster={project.media.poster}
             muted
             playsInline
             controls={controls}
