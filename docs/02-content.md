@@ -38,7 +38,7 @@ continues. (Transition-section rework pending.)
 Short section. Image of Jacob on the right, text on the left. Three short paragraphs.
 
 ```
-I'm a fourth-year electrical engineering student at Queen's and a member of the varsity
+I'm a third-year electrical engineering student at Queen's and a member of the varsity
 tennis team. Most of my work lives at the intersection of embedded systems and computer
 vision, turning complex data into real-world hardware solutions.
 
