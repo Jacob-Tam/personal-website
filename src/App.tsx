@@ -15,6 +15,7 @@ import { Interlude } from './components/interlude/Interlude'
 import { About } from './components/about/About'
 import { Projects } from './components/projects/Projects'
 import { Contact } from './components/contact/Contact'
+import { Analytics } from '@vercel/analytics/react'
 
 // three.js (+ drei + postprocessing) is heavy; lazy-load the 3D scene as its own chunk so the
 // initial bundle and the loading screen paint fast. The loader stays up until the orb's first
@@ -57,7 +58,8 @@ function App() {
         <Projects />
         <Contact />
       </main>
-      {/* Analytics drop-in (docs/03): add <Analytics /> here later, no refactor needed. */}
+      {/* Vercel Web Analytics: privacy-friendly page views / visitors / referrers (enable in dashboard). */}
+      <Analytics />
       {/* Loading screen sits on top (z-100) and unmounts itself once everything is ready. */}
       <LoadingScreen />
     </>
