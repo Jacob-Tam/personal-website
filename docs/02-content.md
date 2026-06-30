@@ -24,7 +24,7 @@ Name and tagline, white, centered, fading in on load over the orb.
 Jacob Tam
 
 Electrical engineering and varsity tennis at Queen's University. I build projects that mix
-hardware, code, and the occasional bad idea.
+hardware, code and the occasional bad idea.
 ```
 
 ## Interlude (between Hero and About)

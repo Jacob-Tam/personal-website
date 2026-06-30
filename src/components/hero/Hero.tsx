@@ -92,7 +92,7 @@ export function Hero() {
           }`}
         >
           Electrical engineering and varsity tennis at Queen's University. I build projects that mix
-          hardware, code, and the occasional bad idea.
+          hardware, code and the occasional bad idea.
         </p>
         {/* The click target (sized to the orb), with the "click here" cue on the SAME line to its right.
             Hidden once started (it hands off to the orb fading in); grey ring by default that lights to
