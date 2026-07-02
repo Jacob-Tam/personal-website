@@ -12,6 +12,7 @@ export type Project = {
   tagline: string
   description: string
   tech: string[]
+  repo?: string // public code link -> renders a "View code" button; omit for private/no-repo projects
   media: {
     kind: ProjectMediaKind
     src: string
@@ -40,6 +41,7 @@ export const PROJECTS: Project[] = [
     description:
       "Built for Queen's autonomous-vehicle competition. Raspberry Pi + Coral USB Accelerator running a quantized MobileNetV2 for road sign classification, with custom training data and a mapping algorithm bug that took longer to find than the rest of the pipeline combined.",
     tech: ['Raspberry Pi', 'Edge TPU', 'TensorFlow', 'Computer Vision', 'Python'],
+    repo: 'https://github.com/Jacob-Tam/elec-392-project-aylesbury-11',
     media: { kind: 'video', src: '/media/taxi.mp4', poster: '/media/taxi-poster.jpg', alt: 'Autonomous robot taxi driving demo', ready: true },
   },
   {
